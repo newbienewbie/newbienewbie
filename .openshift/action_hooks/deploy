@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "Building static files using hexo..."
+
+cd $OPENSHIFT_REPO_DIR/hexo && npm install 
+cd $OPENSHIFT_REPO_DIR/hexo && node_modules/hexo/bin/hexo generate
