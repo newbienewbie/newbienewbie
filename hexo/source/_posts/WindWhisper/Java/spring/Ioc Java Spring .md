@@ -4,10 +4,11 @@ date: 2015-05-31 12:39:54
 tags:
 - IoC
 - Spring IoC
+- 依赖注入
 
 categories:
-- 大道
-- 控制反转
+- 风语
+- Java
 ---
 
 
