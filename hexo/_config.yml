@@ -4,8 +4,8 @@
 
 # Site
 title: itminus
-subtitle: 删繁就简、去芜存菁，挨踢信笔，不宜说乎？
-description:
+subtitle: 删繁就简、去芜存菁，挨踢信笔，不亦说乎？
+description: 山眉雾锁风飘雨，旧路回望似不识 ————紫金头陀登山有感
 author: 网络机器人
 language: zh-CN
 timezone: 
@@ -13,7 +13,7 @@ timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: http://www.itminus.com
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
