@@ -13,7 +13,7 @@ categories:
 [UEditor](http://ueditor.baidu.com/website/index.html)是由百度推出的一款所见即所得富文本web编辑器，开源，基于MIT协议。
 
 笔者十分喜欢这款产品，并在一个实际改造项目(基于`ASP.NET`)中替换原来老旧的`FCKEditor`，收到了很不错的效果。
-虽说大家对百度近些年来某些商业行为的口碑不太好，但是不得不说，他们工程师的技术造诣仍旧是我等低级码农之楷模。
+虽说大家对百度近些年来某些商业行为的口碑不太好，但是不得不说，他们工程师的技术造诣仍旧是我等低级码农学习之典范。
 
 本文只讲在`JavaScript`的前、后端应用中使用`UEditor`遇到的两个问题及解决方案：
 1. 后端方面：官方网站上只给出了`.NET`、`Java`、`PHP`的后端示例，并未提供`Node.js`版，目前官网、和npm上有几款相关包，可惜功能都有欠缺。以[netpi/ueditor](https://github.com/netpi/ueditor/)为例，并不像官方提供的`.NET`、`PHP`、`Java`的后台示例那样支持自配置功能。
