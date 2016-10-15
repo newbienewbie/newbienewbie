@@ -17,7 +17,7 @@ categories:
 
 本文只讲在`JavaScript`的前、后端应用中使用`UEditor`遇到的两个问题及解决方案：
 1. 后端方面：官方网站上只给出了`.NET`、`Java`、`PHP`的后端示例，并未提供`Node.js`版，目前官网、和npm上有几款相关包，可惜功能都有欠缺。以[netpi/ueditor](https://github.com/netpi/ueditor/)为例，并不像官方提供的`.NET`、`PHP`、`Java`的后台示例那样支持自配置功能。
-2. 前端方面：`React` 现在大红大紫，如何使用 `React` 包装一个 <UEditor> 元素来使用？ 如何避免`SPA`应用中的多次加载 <UEditor> 的坑？
+2. 前端方面：`React` 现在大红大紫，如何使用 `React` 包装一个 `UEditor` 元素来使用？ 如何避免`SPA`应用中的多次加载 `UEditor` 的坑？
 
 于是笔者写了两个包解决这两个问题。
 
@@ -104,7 +104,7 @@ app.use(router);
 ```
 
 有一个不方便的地方在于，目前`UEditor`并不支持`npm`安装。
-如果要简单的包装为一个React组件<UEditor>，还需要预先在页面中手工引入`ueditor.config.js`、`ueditor.config.js`。
+如果要简单的包装为一个React组件`UEditor`，还需要预先在页面中手工引入`ueditor.config.js`、`ueditor.config.js`。
 如果是传统的多页面应用问题倒不严重，因为只有在访问特定页面的时候在会加载。
 单若是开发单页面应用，就比较麻烦了：
 1. 对于特定角色的用户，SPA的功能可能只有一部分被使用，如何确保只在用户执行了某个操作的时候才加载这两个脚本文件？
@@ -112,7 +112,7 @@ app.use(router);
 
 针对问题1，解决方案是：
 
-1. 每当组件加载前，都判断相应的脚本<Script>是否存在，如果不存在，创建之。
+1. 每当组件加载前，都判断相应的脚本`Script`是否存在，如果不存在，创建之。
 2. 每当组件加载完，尝试获取编辑器`UE.getEditor()`，如果无法获取，则稍后再试，如此往复。
 
 针对问题2，解决方案是：
