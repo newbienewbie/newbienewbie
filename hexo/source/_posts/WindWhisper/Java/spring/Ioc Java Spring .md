@@ -2,8 +2,10 @@
 title: IoC ，以 Spring 为例
 date: 2015-05-31 12:39:54
 tags:
-- IoC
+- Java
+- Spring
 - Spring IoC
+- IoC
 - 依赖注入
 
 categories:
