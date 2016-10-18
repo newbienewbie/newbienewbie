@@ -13,7 +13,7 @@ fancybox: true
 sidebar: right
 widgets:
 - category
-- tag
+# - tag
 - tagcloud
 - archive
 - recent_posts
