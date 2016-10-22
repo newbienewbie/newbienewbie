@@ -50,20 +50,20 @@ http://esf.cz.fang.com/
 
 ### 爬虫逻辑
 
-0. 以种子路径为基础，指定条件，到一个种子URL，并将之作为目标URL
-1. 抓取目标URL的响应数据
-2. 从中解析房源列表中的每条信息
-3. 将解析结果持久化（暂时只写入数据库）
-4. 查看是否有下一页，如果有，将下一页作为目标URL，跳至步1；如果没有，停止抓取。
+1. 以种子路径为基础，指定区域、价格条件(可选)，得到一个种子URL，并将之作为目标URL
+2. 抓取目标URL的响应数据
+3. 从中解析房源列表中的每条信息
+4. 将解析结果持久化（暂时只写入数据库）
+5. 查看是否有下一页，如果有，将下一页作为目标URL，跳至步2；如果没有，停止抓取。
 
 ## 代码实现
 
 功能分隔：
 
-1. 步骤1：爬虫`Crawler`的`crawlPage(url)`
-2. 步骤2：解析器`Parser`的`parseHouseListItem(e)`
-3. 步骤3：持久化服务`persistence-service`的`persist(info)`方法
-4. 步骤4：爬虫`Crawler`的`crawl(seed)`方法
+1. 步骤2：爬虫`Crawler`的`crawlPage(url)`
+2. 步骤3：解析器`Parser`的`parseHouseListItem(e)`
+3. 步骤4：持久化服务`persistence-service`的`persist(info)`方法
+4. 步骤5：爬虫`Crawler`的`crawl(seed)`方法
 
 代码相对简单，核心部分如下（[完整代码见GitHub](https://github.com/newbienewbie/fangtianxia)）：
 
