@@ -1,5 +1,5 @@
 ---
-title: Java 代理模式
+title: Java代理模式
 date: 2016-10-23 18:02:57
 tags:
 - Java
