@@ -12,7 +12,7 @@ categories:
 - 设计模式
 ---
 
-代理模式和[AOP](http://www.itminus.com/tags/AOP/)是息息相关的，也是Java Spring AOP 的实现基础。要理解代理模式，必须先理解代理模式要解决的是什么问题。
+代理模式和 [AOP](http://www.itminus.com/tags/AOP/) 是息息相关的，比如Java Spring AOP 就是以 Java 代理的方式实现的。要理解代理模式，必须先理解代理模式要解决的是什么问题。
 
 ## 静态代理模式
 
