@@ -30,7 +30,10 @@ categories:
 
 ### 目标分析
 
-由于常州没有链家，只好选[房天下](http://fang.com)（[搜房网](http://soufun.com)）。优先从二手房入手，所以目标网站为：
+1. 由于常州没有链家，只好选[房天下](http://fang.com)（[搜房网](http://soufun.com)）。
+2. 优先从二手房入手
+
+所以目标网站为：
 
 ```
 # URL 构成:
@@ -58,7 +61,7 @@ http://esf.cz.fang.com/
 
 ## 代码实现
 
-功能分隔：
+功能分割：
 
 1. 步骤2：爬虫`Crawler`的`crawlPage(url)`
 2. 步骤3：解析器`Parser`的`parseHouseListItem(e)`
@@ -78,32 +81,27 @@ class Crawler{
 
 
     /**
-    * 根据某个URL对应的分页的中的房价信息
-    */
+     * 根据某个URL对应的分页的中的房价信息
+     */
     crawlPage(url) {
         console.log(`当前正直抓取: ${url}`);
         return fetch(url)
             .then(resp => resp.text())
             .then(text => {
                 let $ = cheerio.load(text);
-                const that=this;
-                // 依次解析每个house item
-                $('div[name="div_houselist"] >dl').each((i, e) => {
-                    let info = that.parser.parseHouseListItem(e);
-                    // todo: 队列化
+
+                // 获取house 信息列表
+                const infoList=this.parser.parseHouseList($);
+                // 持久化
+                infoList.forEach((info)=>{
                     persistenceService.persist(info);
                 });
 
                 // 获取下一页的地址
-                const nextPageElement = $('div[name="div_PageList"] a:contains("下一页")');
-                let nextUrl = null;
-                if (nextPageElement) {
-                    nextUrl = nextPageElement.attr("href");
-                }
+                const nextUrl=this.parser.parseNextPageUrl($);
                 return Promise.resolve(nextUrl);
             })
     }
-
 
     /**
      * 抓取各页的所有房价信息，直至完成最后一页为止。
