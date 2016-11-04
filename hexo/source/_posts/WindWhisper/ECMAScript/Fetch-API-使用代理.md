@@ -25,7 +25,7 @@ categories:
 }
 ```
 
-在`npm`上搜了下，貌似这个`http-proxy-agent`包还不错，提供了http.Agent的实现。恰好前两天有人问爬虫问题，顺手就找个免费的代理来测试下：
+在`npm`上搜了下，貌似这个`http-proxy-agent`包还不错，提供了`http.Agent`的实现。恰好前两天有人问爬虫问题，顺手就找个免费的代理来测试下：
 
 ```JavaScript
 const fetch=require('node-fetch');

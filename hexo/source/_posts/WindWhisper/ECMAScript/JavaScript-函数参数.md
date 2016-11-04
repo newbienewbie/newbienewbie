@@ -41,7 +41,7 @@ var slice=Array.prototype.slice;
 var arr=slice.apply(arrayLike); // ES5 以后才支持接受 array-like 参数。IE9 未实现。
 ```
 示例：
-```
+```JavaScript
 !function fn(){
     var args1=Array.prototype.slice.apply(arguments); 
     var args2=Array.prototype.slice.call(arguments);
@@ -139,5 +139,6 @@ arguments.length:       3
 
 ### caller
 
-`arguemnts.caller`属性已经被移除！早期主要用于提供调用当前执行函数的函数，这样就可以在执行函数的时候先调用自身。
-在 JavaScript1.1 曾有实现，然后由于潜在的不安全原因，就被移除。
+`arguemnts.caller`属性已经被移除！
+早期主要用于提供调用当前执行函数的函数，这样就可以在执行函数的时候先调用自身。在 JavaScript1.1 曾有实现，然后由于潜在的不安全原因，被移除。
+不要使用！
