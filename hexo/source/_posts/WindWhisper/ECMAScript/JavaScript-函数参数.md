@@ -107,7 +107,7 @@ arguments.length:       3
 ```
 
 
-## arguemnts 与函数的调用关系
+## arguements 与函数的调用关系
 
 有两个已经不推荐使用的属性，可以用来表示函数的调用关系：
 
