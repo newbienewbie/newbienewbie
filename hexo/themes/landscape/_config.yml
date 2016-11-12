@@ -2,6 +2,7 @@
 menu:
   Home: /
   Archives: /archives
+  代理: /agent-agency
   关于: /about
 rss: /atom.xml
 
