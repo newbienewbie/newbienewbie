@@ -9,6 +9,7 @@ tags:
 categories:
 - 风语
 - ECMAScript
+- Misc
 ---
 
 之前的域名[玄牝门](xuanpinmen.com)过期了，而且我也不打算再续。

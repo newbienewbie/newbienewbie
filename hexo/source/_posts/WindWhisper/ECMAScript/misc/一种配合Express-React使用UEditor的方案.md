@@ -8,6 +8,7 @@ tags:
 categories:
 - 风语
 - ECMAScript
+- Misc
 ---
 
 [UEditor](http://ueditor.baidu.com/website/index.html)是由百度推出的一款所见即所得富文本web编辑器，开源，基于MIT协议。

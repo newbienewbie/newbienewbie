@@ -7,6 +7,7 @@ tags:
 categories:
 - 风语
 - ECMAScript
+- 爬虫
 ---
 
 在知乎上有个关于[深圳房价暴跌](https://www.zhihu.com/question/51547046)的讨论，楼下有个答主回答说他[编写的爬虫监控到了深圳房价下跌](https://www.zhihu.com/question/51547046/answer/126838511)：

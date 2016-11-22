@@ -8,6 +8,7 @@ tags:
 categories:
 - 风语
 - ECMAScript
+- electron
 ---
 
 ## Electron 简介

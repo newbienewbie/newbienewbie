@@ -7,6 +7,7 @@ tags:
 categories:
 - 风语
 - ECMAScript
+- 爬虫
 ---
 
 关于`node-fetch`如何使用代理来发送请求，其官网文档只简单提示可以用`agent`进行代理：

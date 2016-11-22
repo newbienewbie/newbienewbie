@@ -7,6 +7,7 @@ tags:
 categories:
 - 风语
 - ECMAScript
+- build-in
 ---
 
 JavaScript 函数中，有一个本地变量，`arguments`，这是一个非常原始的货色，
