@@ -100,12 +100,12 @@ public class Main {
 
 输出为:
 ```
-before attack
+before class com.sun.proxy.$Proxy0::attack
 Launch an attack : I will bite you
-after attack
-before escape
+after class com.sun.proxy.$Proxy0::attack
+before class com.sun.proxy.$Proxy0::escape
 Wait a minute ! I will be back soon!
-after escape
-before hashCode
-after hashCode
+after class com.sun.proxy.$Proxy0::escape
+before class com.sun.proxy.$Proxy0::hashCode
+after class com.sun.proxy.$Proxy0::hashCode
 ```
