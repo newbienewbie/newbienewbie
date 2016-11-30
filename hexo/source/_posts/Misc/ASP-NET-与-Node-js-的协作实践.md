@@ -94,15 +94,14 @@ http {
     # ...其他配置省略
 
     upstream aspnet_upstream{
-        server localhost:4000;
+        server 10.16.160.14:4000;
     }
     upstream nodejs_upstream{
-        server localhost:5000;
+        server 10.16.160.14:5000;
     }
 
     server {
         listen       80;
-        server_name  localhost;
 
         location / {
             proxy_pass http://aspnet_upstream;
