@@ -2,6 +2,8 @@
 title: yeoman 基本原理
 date: 2016-11-22 20:43:32
 tags:
+- ECMAScript
+- Node.js
 - yeoman
 - 项目生成
 categories:

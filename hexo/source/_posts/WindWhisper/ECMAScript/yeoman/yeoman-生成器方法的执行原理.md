@@ -2,6 +2,8 @@
 title: yeoman 生成器方法的执行原理
 date: 2016-11-22 21:50:18
 tags:
+- ECMAScript
+- Node.js
 - yeoman
 - 项目生成
 categories:
