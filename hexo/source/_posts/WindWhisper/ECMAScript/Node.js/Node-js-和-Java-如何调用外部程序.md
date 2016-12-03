@@ -3,7 +3,8 @@ title: Node.js 和 Java 如何调用外部程序
 date: 2016-12-03 22:41:42
 tags:
 - ECMAScript
-- arguments
+- Node.js
+- child_process
 categories:
 - 风语
 - ECMAScript
