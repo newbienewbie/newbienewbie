@@ -203,21 +203,19 @@ const fetch=require('node-fetch');
 
 // loginChecker= ... 
 
-const checker=new security.AuthorizationChecker(
-    loginChecker
-);
+const interceptor=new security.AuthenticationInterceptor( loginChecker );
 
-module.exports=checker;
+module.exports=interceptor;
 ```
 
 然后即可以中间件的方式进行请求拦截：
 ```JavaScript
 const express=require('express');
-const checker=require('../service/auth/checker');
+const interceptor=require('../service/auth/interceptor');
 
 const router=express.Router();
 
-router.use('/secret',cookieParser(),checker.requireLogin("/SnpLogin.aspx"),(req,res)=>{
+router.use('/secret',cookieParser(),interceptor.requireLogin("/SnpLogin.aspx"),(req,res)=>{
     res.send(`您已经登陆，所以可以访问这里`);
 });
 
