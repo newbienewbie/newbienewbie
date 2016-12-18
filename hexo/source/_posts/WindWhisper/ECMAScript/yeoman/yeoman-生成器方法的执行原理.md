@@ -41,7 +41,7 @@ categories:
 
 比如
 ```JavaScript
-class MyGenerator extends generators.Base{
+class MyGenerator extends Base{
 
   constructor( ...args ) {
     super(...args);
@@ -73,7 +73,7 @@ holy shit
 
 当然，还可以人为指定优先级分组：
 ```JavaScript
-generators.Base.extend({
+Base.extend({
   priorityName: {
     method: function () {},
     method2: function () {}
@@ -83,7 +83,7 @@ generators.Base.extend({
 
 `ES6`并不支持在`class`内部书写属性，但是可以使用`get`定义：
 ```JavaScript
-class MyGenerator extends generators.Base{
+class MyGenerator extends Base{
 
   constructor( ...args ) {
     super(...args);

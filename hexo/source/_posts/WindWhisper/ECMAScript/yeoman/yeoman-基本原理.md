@@ -62,9 +62,9 @@ app/          # 默认模块
 借助于官方提供的`yeoman-generator`模块，我们可以很方便地创建自己的生成器，官方提供 demo 代码书写方式类似于：
 ```JavaScript
 // app/index.js 
-const generator=require('yeoman-generator');
+const Generator=require('yeoman-generator');
 
-const proj=generator.Base.extend({
+const proj=Generator.extend({
     info:function(){
         console.log('hello,world');
     },
@@ -78,9 +78,9 @@ module.exports=proj;
 
 当然，这种写法相当守旧，既然`ES6`已经普及，我们可以直接这样写：
 ```JavaScript
-const generators = require('yeoman-generator');
+const Generator = require('yeoman-generator');
 
-class MyGenerator extends generators.Base{
+class MyGenerator extends Generator{
   constructor( ...args ) {
     super(...args);
   }
@@ -91,6 +91,8 @@ class MyGenerator extends generators.Base{
 
 module.exports = MyGenerator;
 ```
+
+在版本`1.0.0`之后，官方已经推荐使用`ES6`的写法。
 
 ok，如果安装了这个生成器，搭配高版本`Node.js`，无需`babel`转换，即可完美运行。比如在一个叫`test-redis`的`npm`包下执行这个生成器，则会输出：
 ```
