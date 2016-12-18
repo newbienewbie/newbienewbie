@@ -14,7 +14,7 @@ categories:
 
 ## 输出信息
 
-在`yeoman`中，想要输出信息给用户非常简单，直接调用log方法即可：
+在`yeoman`中，想要输出信息给用户非常简单，直接调用`log`方法即可：
 
 ```JavaScript
 const Base=require('yeoman-generator');
@@ -55,7 +55,7 @@ module.exports=MyGenerator;
 
 ## 处理用户输入
 
-处理用户输入包括两类情况，一类是主动`Prompt`问询，一类是接收传递参数。
+处理用户输入包括两类情况，一类是主动进行`Prompt`问询，一类是接收传递来的参数。
 
 ### Prompts
 
@@ -98,7 +98,7 @@ class MyGenerator extends Base{
 yo yeo --email webbot@webbot.com --username webbot myarg
 ```
 
-比如这里的 --email、--username 即为`Options`，则 myarg 则为`Arguments`。 
+比如这里的 `--email`、`--username` 即为`Options`，则 `myarg` 则为`Arguments`。 
 
 * 为了告知`yeoman generarator`我们将来要接收一个`Argument`参数，应该在构造函数中调用`this.argument()`方法。
 * 为了告知`yeoman generarator`我们将来要接收这样一个`Option`选项，应该在构造函数中调用`this.option()`方法。
