@@ -123,6 +123,49 @@ The name is: test redis
 holy shit
 ```
 
+值得注意的是，`YeomanGenerator`会对每一个`task`函数的`this`进行劫持（绑定），从而使得在`task`中可以轻而易举拿到一些有用的信息，如果把上面例子改为：
+```JavaScript
+class MyGenerator extends Base{
+
+  constructor( ...args ) {
+    super(...args);
+  }
+
+  get prompting(){
+      return {
+          double:function(){
+              console.log(`${this.appname} double kill`);
+          },
+          triple:function(){
+              console.log(`${this.appname} triple kill`);
+          }
+      };
+  }
+
+  method1() {
+    console.log(`The name is: ${ this.appname }`);
+  }
+
+  default(){
+      console.log(`holy shit`);
+  }
+
+  initializing(){
+      console.log(`first blood`);
+  }
+
+} 
+```
+再在一个项目名为`activiti-client`中`npm`执行，则输出将变为：
+```
+first blood
+activiti client double kill
+activiti client triple kill
+The name is: activiti client
+holy shit
+```
+
+
 ## 异步任务
 
 想要暂停`run loop`，直到某个异步任务完成，最简单的方式是返回一个`Promise`对象。
