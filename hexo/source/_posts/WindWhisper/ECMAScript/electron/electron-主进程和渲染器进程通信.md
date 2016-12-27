@@ -1,5 +1,5 @@
 ---
-title: electron 主进程和渲染器进程通信
+title: Electron 主进程和渲染器进程通信
 date: 2016-12-27 23:47:16
 tags:
 - ECMAScript
@@ -13,7 +13,11 @@ categories:
 ---
 
 
-在`Electron`中，
+在使用`Electron`开发中，经常有这样一种需求场景：
+> 用户点击网页界面中的`button`，需要`Electron`执行一些系统操作，比如调用外部的系统命令、执行`Node.js`程序，执行完程序后再将结果反馈到网页中。
+为解决此类文件，需要使用`IPC`通讯。
+
+首先定义两种进程：
 * 把运行`package.json`的`main`脚本的进程称之为`Main Process`;
 * 每一个网页都运行在独立的进程里，称之为`Renderer Process`。
 
