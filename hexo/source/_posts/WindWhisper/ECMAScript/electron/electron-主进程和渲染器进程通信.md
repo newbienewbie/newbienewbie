@@ -35,7 +35,7 @@ categories:
 `ipcMain`会处理来自于`Renderer Process`的异步消息和同步消息。`Renderer Process`发来的消息会被提交到这个模块。
 `ipcRenderer`可以发送以同步或者异步的方式从渲染进程到主进程发送消息。也可以利用它从主进程接收消息。
 
-* 和`EventEmitter`那样，`ipcMain`和`ipcRender`进程都利用`.on(eventName,(event,arg)=>{})`方法响应事件(处理消息)。
+* 和`EventEmitter`那样，`ipcMain`和`ipcRenderer`进程都利用`.on(eventName,(event,arg)=>{})`方法响应事件(处理消息)。
 * `ipcRenderer`进程利用`.send(eventName,msgObj)`将消息发送给`ipcMain`进程。
 * 可以使用`event.sender.send(...)`异步的把消息回发给发送人
 
@@ -99,3 +99,28 @@ ipcRenderer.send('asynchronous-message', 'ping')
 
 {% asset_img "electron运行效果截图.jpg" "electron运行效果截图"%}
 
+## 使用`webpack`编译`Electron`网页部分的代码
+
+在使用`webpack`打包`Electron`网页部分的程序代码中，经常遇到这种情况:
+
+1. 需要在渲染器进程中通过`const {ipcRenderer}=require('electron')`引入`ipcRenderer`
+2. 然而`webpack`默认情况下会尝试把`electron`模块也编译来来，触发报错——找不到`fs`之类的模块。
+
+由于`webpack`默认的编译目标是浏览器环境，直接套用默认情况然然是不合理的。我们编译后的文件并非在浏览器中执行，而是在`Electron`的`Renderer Process`中进行，这里直接把`webpack`的编译`target`设置为`electron-renderer`即可解决问题:
+```JavaScript
+module.exports={
+
+    // for electron renderer process
+    target:'electron-renderer', 
+
+    entry:{
+        // ... 省略
+    },
+    output:{
+        // ... 省略 
+    },
+    module:{
+        // ... 省略 
+    },
+};
+```
