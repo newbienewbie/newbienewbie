@@ -2,7 +2,9 @@
 title: Activiti 极速入门1——基本概念与用法
 date: 2017-01-13 22:34:29
 tags:
+- Java
 - Activiti
+- BPMN2
 categories:
 - 风语
 - Java
