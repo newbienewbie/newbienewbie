@@ -97,3 +97,5 @@ public class ValidateService implements JavaDelegate {
 ```
 这里`sum`会被自动保存到流程变量中，如果要避免这种行为，应该使用`script-local variables`的方式——即使用`def`进行声明。
 
+
+
