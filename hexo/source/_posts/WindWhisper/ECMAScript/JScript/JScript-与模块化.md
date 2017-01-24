@@ -56,7 +56,10 @@ function GetFreeSpace(drvPath) {
   </script>
 </job>
 ```
-事实上，更多时候可以使用`package`，这样就能同时处理多个任务，比如要显示：
+
+事实上，更多时候可以使用`package`，这样就能同时处理多个任务——从另一个角度说，能提供更高级别的封装。
+
+比如要显示：
 * domain name 
 * computer name
 * user name 
