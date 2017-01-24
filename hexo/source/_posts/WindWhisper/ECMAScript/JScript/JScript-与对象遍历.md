@@ -32,7 +32,7 @@ book.Close();
 
 然而，还有某些`COM`集合，并不支持按索引访问元素。要使用`JScript`遍历这种集合，需要借助于`Enumerator`接口。枚举器(`Enumerator`)定义可以用`TypeScript`表示如下：
 
-```JavaScript
+```TypeScript
 /**
  * Allows enumerating over a COM collection, which may not have indexed item access.
  */
