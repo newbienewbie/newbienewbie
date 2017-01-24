@@ -74,7 +74,7 @@ for(var e=new Enumerator(f.SubFolders);!e.atEnd();e.moveNext()){
 WScript.Echo(list);
 ```
 
-甚至还可以用枚举器遍历之前那个支持按索引访问元素的`COM`集合：
+甚至还可以用枚举器遍历之前那个支持按索引访问元素的`COM`集合，对代码改写如下：
 ```JavaScript
 var app=new ActiveXObject("Excel.Application");
 var fso=new ActiveXObject('Scripting.FileSystemObject');
