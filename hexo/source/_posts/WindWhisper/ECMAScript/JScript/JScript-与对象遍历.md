@@ -62,9 +62,10 @@ interface Enumerator<T> {
 }
 ```
 
-我们可以使用这种枚举器来遍历`COM`接口，比如，使用枚举器来遍历目录：
+`Enumerator`并非是`ECMAScript`规范，而是`JScript`的私货。我们可以使用这种枚举器来遍历`COM`接口，比如，使用枚举器来遍历目录：
+
 ```JavaScript
-ar fs=new ActiveXObject('Scripting.FileSystemObject');
+var fs=new ActiveXObject('Scripting.FileSystemObject');
 var f=fs.GetFolder("C:\\Windows");
 
 var list=[];
