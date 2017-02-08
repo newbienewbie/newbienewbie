@@ -23,6 +23,7 @@ describe('测试wechat',function(){
     });
 
     it('test #createMenu()',function(){
+        this.timeout(5000);
         return wechat.createMenu()
             .then(
                 function(msg){
