@@ -6,3 +6,4 @@ node_modules/
 public/
 .deploy*/
 npm-debug.log
+lib/config/config.dev.js

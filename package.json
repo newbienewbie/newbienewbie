@@ -5,11 +5,18 @@
   "private": true,
   "main": "start.js",
   "scripts": {
-    "start": "node --use_strict start.js"
+    "start": "node --use_strict start.js",
+    "test": "mocha test --recursive"
   },
   "author": "webbot@sina.com",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.14.0"
+    "express": "^4.14.0",
+    "mysql": "^2.13.0",
+    "sequelize": "^3.30.2",
+    "wechat": "^2.0.3"
+  },
+  "devDependencies": {
+    "mocha": "^3.2.0"
   }
 }
