@@ -22,5 +22,21 @@ describe('测试wechat',function(){
         });
     });
 
+    it('test #createMenu()',function(){
+        return wechat.createMenu()
+            .then(
+                function(msg){
+                    console.log(msg);
+                },
+                function(reason){
+                    console.log(reason);
+                    assert.fail(reason);
+                }
+            ).catch(err=>{
+                console.log(err);
+                assert.fail(err);
+            });
+    })
+
 
 });
