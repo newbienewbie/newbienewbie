@@ -223,3 +223,35 @@ export const Contact=React.createClass({
 ```
 显示效果类似于：
 {% asset_img "baidu_map_demo.jpg" "百度地图 BMap 的 React 封装" %}
+
+## 封装好的组件
+
+在 `simple-react-ui` 中实现`BaiduMap`，使用`TypeScript`编写，编译后发布。
+
+* [GitHub地址](https://github.com/newbienewbie/simple-react-ui)
+* [npm地址](https://www.npmjs.com/package/simple-react-ui)
+
+使用：
+```
+import BaiduMap from 'simple-react-ui/dist/baidumap';
+
+
+export const Contact = React.createClass({
+
+    render: function () {
+        return (<div className="map">
+            <BaiduMap
+                ak={"马赛克"}
+                callback={(map) => {
+                    var point = new BMap.Point(116.404, 39.915);  // 创建点坐标  
+                    var bs = map.getBounds();   //获取可视区域
+                    var bssw = bs.getSouthWest();   //可视区域左下角
+                    var bsne = bs.getNorthEast();   //可视区域右上角
+                    map.centerAndZoom(point, 15);
+                }}
+            />
+        </div>);
+    }
+});
+```
+
