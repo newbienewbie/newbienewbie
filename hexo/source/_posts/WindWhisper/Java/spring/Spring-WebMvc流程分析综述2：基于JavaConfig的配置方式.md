@@ -8,6 +8,7 @@ tags:
 categories:
 - 风语
 - Java
+- Spring
 ---
 
 如[Spring-WebMvc流程分析综述1：基于XML的配置方式](/2016/10/18/WindWhisper/Java/spring/Spring-WebMvc流程分析综述1：基于XML的配置方式) 所述， Spring WebMvc提供了`DispatherServlet`作为MVC的`前端控制器`， 为了让相应的请求都被映射到这个Servlet来处理，需要对应用进行配置：
