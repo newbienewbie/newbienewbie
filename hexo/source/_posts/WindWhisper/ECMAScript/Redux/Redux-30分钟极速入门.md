@@ -16,7 +16,7 @@ categories:
 
 `Redux`遵从的是`Flux`模式，本质上就是一个 `event dispatcher`。
 
-由于`React` 提供了`数据`->`视图`的映射，如果改变`数据`，`React`就会自动渲染出相应的`视图`。为了处理复杂的情况，比如用户点击，传统的方式，可能是为组件添加各种事件监听器，一旦监听器被触发，就执行相关代码逻辑，最后通过`setState()`改变状态，从而自动渲染出新的视图。但是当应用复杂度增加到一定数量级时，代码会越来越不可控，也就是说，我们需要单独提炼出一个管理数据的功能，以让`React`根据数据自动渲染视图。
+由于`React` 提供了`数据->视图`的映射，如果改变`数据`，`React`就会自动渲染出相应的`视图`。为了处理复杂的情况，比如各种用户点击、各种远程加载，传统的方式，可能是为组件添加各种事件监听器，一旦监听器被触发，就执行相关代码逻辑，然后计算出相关数据，最后通过`setState()`改变状态，从而自动渲染出新的视图。但是当应用复杂度增加到一定数量级时，代码会越来越不可控，也就是说，我们需要单独提炼出一个管理数据的功能，以让`React`根据数据自动渲染视图。
 
 `Redux`的核心工作就是管理数据，具体而言就是:
 
@@ -24,31 +24,33 @@ categories:
 2. 根据当前状态、和所触发动作，生成新的状态 
 3. `React`根据新的状态渲染新的视图
 
-`Redux`和`React`是独立的、互不耦合的，其负责的工作就是管理数据，所以为了简单起见，以下我们不再讨论`React`，只使用纯`JavaScript`讨论怎么根据`Redux`管理状态。
+`Redux`和`React`是独立的、互不耦合的，其负责的工作就是管理数据，所以为了简单起见，以下我们不再讨论`React`，只根据纯`JavaScript`讨论怎么利用`Redux`管理状态。
 
 ## Store 、Action、和 Reducer
 
 既然`Redux`是用来管理数据的，那么就需要一个地方来存储数据、然后提供修改数据的机制。这个机制的核心在于`store`——用于存储`state`、调度`action`。
 
+`Store`的功能包括：
 1. 维持应用状态(state)； 提供 getState() 方法获取 state；
 2. 调度动作：提供 dispatch(action) 方法更新 state；
 3. 订阅管理：通过 var unsubscribe=subscribe(listener) 注册监听器、注销监听器。
 
 ### Action
 
-`action`就是用于改变状态的`payload`，或者说是一种事件——描述了想要发生的事。它和`Sysmfony`中的`Event`[Event](http://www.itminus.com/2015/04/10/WindWhisper/PHP/Symfony/Symfony-EventDispatcher/)作用是一致的。
+`action`就是用于改变状态的`payload`，或者说是一种事件——描述了想要发生的事。它和`Sysmfony`中的[Event](http://www.itminus.com/2015/04/10/WindWhisper/PHP/Symfony/Symfony-EventDispatcher/)作用是一致的。
+
 假设我们有一个任务系统，包括两种任务动作分类，一是探索、而是完成，则可以这样定义`action`:
 
 ```JavaScript
 // 定义各种 Action 分类字符串常量
 const ACTIONS={ QUEST:'task.quest', COMPLETE:'task.complete', };
 
-// 创建一个动作 quest
+// 用于创建动作: quest
 function quest(ebook){
     return { type:ACTIONS.QUEST, value:ebook, };
 }
 
-// 创建一个动作 complete
+// 用于创建动作: complete
 function complete(ebook){
     return { type:ACTIONS.COMPLETE, value:ebook, };
 }
@@ -58,7 +60,7 @@ module.exports={ ACTIONS, quest, complete, };
 
 ### Reducer
 
-上文已经规定了`action`，这里还要定义如何响应`action`。这部分工作便是`reducer()`函数的职责。本质上，`reducer`所做的就是实现:
+上文已经规定了`action`，但是只定义要发生什么还不够，我们还要定义当发生`action`的时候程序如何响应。这部分工作便是`reducer()`函数的职责。本质上，`reducer`所做的就是实现:
 ```JavaScript
 (当前状态,动作)=>新状态。
 ```
@@ -72,9 +74,11 @@ const taskActions=require('../actions/task');
 const reducer = function (state = {}, action) {
     switch (action.type) {
         case taskActions.ACTIONS.QUEST:
+            // 这里输出到控制台只是为了方便追踪代码，实际上由于最后返回新的 state，React会自动渲染出新的视图
             console.log(`test ${action.type}\t${action.value}`);
             return Object.assign({},state, {message: action.value})
         case taskActions.ACTIONS.COMPLETE:
+            // 这里输出到控制台只是为了方便追踪代码，实际上由于最后返回新的 state，React会自动渲染出新的视图
             console.log(`test ${action.type}\t${action.value}`);
             return Object.assign({},state, {message: action.value})
         default:
