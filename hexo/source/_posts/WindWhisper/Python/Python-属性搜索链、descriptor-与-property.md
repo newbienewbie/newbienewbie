@@ -113,13 +113,11 @@ B.__dict__['x']\
 3. and assigns lowest priority to __getattr__() if provided.
 
 
-### 新式类的属性查找：
-
 ### 属性设置和删除函数
 
-Attribute assignments and deletions update the instance’s dictionary, never a class’s dictionary. If the class has a __setattr__() or __delattr__() method, this is called instead of updating the instance dictionary directly.
+Attribute 赋值、删除更新的是实例字段，永远不会更新类的字典，如果类中定义了 `__setattr__()`、`__delattr__()`方法 ,则会被调用
 
-2. 属性设置
+1. 属性设置
 ```
 obj.__setattr__(self,name,value)
 ```
@@ -127,7 +125,7 @@ obj.__setattr__(self,name,value)
 当属性赋值的时候触发调用，通常的实现会调用 `self.__dict__[name]=value`
 
 
-3. 属性删除
+2. 属性删除
 
 等价于
 ```
@@ -156,22 +154,4 @@ descr.__delete__(self, obj) --> None
 
 然而，如果找到的值是一个定了描述符方法的对象，那么`Python`就会转而调用描述符方法。（只对新式类有效）
 
-The starting point for descriptor invocation is a binding, a.x. How the arguments are assembled depends on a:
-
-* 直接调用 : The simplest and least common call is when user code directly invokes a descriptor method: x.__get__(a).
-* 实例绑定  : 对于新式类, `a.x` 会转而调用 `type(a).__dict__['x'].__get__(a, type(a))`
-* 类绑定 : 对于新式类, `A.x` 会转而调用 `A.__dict__['x'].__get__(None, A)`
-* 超类绑定 : If a is an instance of super, then the binding `super(B, obj).m()` searches `obj.__class__.__mro__` for the base class A immediately preceding B and then invokes the descriptor with the call: A.__dict__['m'].__get__(obj, obj.__class__).
-
-For instance bindings, the precedence of descriptor invocation depends on the which descriptor methods are defined. 
-
-一个`descriptor`可以定义三种方法 `__get__()`, `__set__()` and `__delete__()` 的任意组合。
-倘若未曾定义`__get__()`, 那么访问该属性会返回`descriptor`对象本身，除非对象实例字典存在对应的值。
-如果`descriptor`定义了`__set__()` 或 `__delete__()`,那么它是一个 `data descriptor`;否则就是一个`non-data descriptor`. 
-通常而言，`data descriptor`同时定义 `__get__()` and `__set__()`,而`non-data descriptor`仅仅定义了`__get__()`方法. 
-`data descriptor`的`__set__()` and`__get__()` defined always override a redefinition in an instance dictionary. 
-In contrast, `non-data descriptor`s can be overridden by instances.
-
-Python methods (including staticmethod() and classmethod()) are implemented as non-data descriptors. Accordingly, instances can redefine and override methods. This allows individual instances to acquire behaviors that differ from other instances of the same class.
-
-The property() function is implemented as a data descriptor. Accordingly, instances cannot override the behavior of a property.
+`property()` 函数返回一个 `descriptor`。
