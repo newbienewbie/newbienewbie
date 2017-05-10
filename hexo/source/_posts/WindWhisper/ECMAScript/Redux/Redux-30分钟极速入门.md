@@ -36,7 +36,8 @@ categories:
 
 ### Action
 
-`action`是改变状态的`payload`，假设我们有一个任务系统，包括两种任务动作分类，一是探索、而是完成，则可以这样定义`action`:
+`action`就是用于改变状态的`payload`，或者说是一种事件——描述了想要发生的事。它和`Sysmfony`中的`Event`[Event](http://www.itminus.com/2015/04/10/WindWhisper/PHP/Symfony/Symfony-EventDispatcher/)作用是一致的。
+假设我们有一个任务系统，包括两种任务动作分类，一是探索、而是完成，则可以这样定义`action`:
 
 ```JavaScript
 // 定义各种 Action 分类字符串常量
@@ -57,12 +58,14 @@ module.exports={ ACTIONS, quest, complete, };
 
 ### Reducer
 
-规定了`action`，还要规定如何响应`action`。这部分工作是`reducer`的职责，本质上`reducer`所做的就是实现:
+上文已经规定了`action`，这里还要定义如何响应`action`。这部分工作便是`reducer()`函数的职责。本质上，`reducer`所做的就是实现:
 ```JavaScript
 (当前状态,动作)=>新状态。
 ```
 
-针对上文的`action`，编写如下`reducer`:
+完成这种转换的函数，即可称之为`reducer`。
+
+针对上文的`action`，编写如下`reducer`函数:
 ```JavaScript
 const taskActions=require('../actions/task');
 
@@ -83,25 +86,78 @@ module.exports=reducer;
 
 ### Store
 
+迄今为止，我们写的都是不涉及其他任何库的`plain JavaScript`代码(当然也无关于`redux`库)。从现在开始，我们要引入`redux`库的几个最核心的函数(每一个都非常简单，有源码说明)。
+
 #### 创建`store`
 
 `store` 是`Redux`的核心，`Redux`提供了`createStore()`函数来创建`store`
+
+`createStore()`函数核心源码非常简单：
+```JavaScript
+function createStore(reducer, preloadedState, enhancer) {
+    // ... 
+    
+    var currentReducer = reducer
+    var currentState = preloadedState
+    var currentListeners = []
+    var nextListeners = currentListeners
+    var isDispatching = false
+    
+    function getState() { return currentState ;} 
+
+    function subscribe(listener) {/**/ }
+    
+    function dispatch(action) {
+        
+        // ... 必要的检查
+        
+        // 调用 reducer() 
+        try {
+            isDispatching = true
+            currentState = currentReducer(currentState, action)
+        } finally {
+            isDispatching = false
+        }
+
+        // ... 逐一调用监听器
+        
+        return action
+    }
+        
+    function replaceReducer(nextReducer) { /**/ }
+    
+    function observable() {/**/}
+    
+    // 初始触发一次
+    dispatch({ type: ActionTypes.INIT })
+    
+    return { dispatch, subscribe, getState, replaceReducer, [$$observable]: observable }
+}
+```
+
+从这里的源码顺带可以知道，`store.dispath(action)`最核心的功能就是调用`reducer(currentState,action)`函数
+
+利用`createStore`创建`store`:
 ```JavaScript
 const {createStore}=require('redux');
 const reducer=require('./reducers');
+
 const store = createStore(reducer);
 ```
 
 #### 调度`action`
 
-调度动作这一步包括两小步：
+调度动作这一步实际上可以拆分为两小步：
 * 创建动作：由动作创建器创建动作
 * 派发动作：由`store.dispatch()`派发动作触发`reducer`
 
+对于上述的任务系统，对`action`进行调度：
 ```JavaScript
 let taskActions= require('./actions/task');
 
+// 创建动作
 const questAction=taskActions.quest('hello,world');
+// 派发动作
 store.dispatch(questAction);
 ```
 
