@@ -95,16 +95,18 @@ def __getattribute__(self, key):
 
 
 对于对象而言，b.x 类似于:
-```python
+
+```Python
 type(b).__dict__['x']\
        .__get__(b,type(b))    # 尝试调用 descriptor
-``` 
+```
+
 
 对于类调用，B.x 类似于:
-```python
+```Python
 B.__dict__['x']\
     .__get__(None, B)        # 尝试调用 descriptor
-``` 
+```
 
 默认优先级别链：
 1. `data descriptor` 
