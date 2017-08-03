@@ -18,7 +18,7 @@ categories:
 
 ## 工具
 
-* `IPython`是个非常有意思的工具，但是貌似不提供`VIM`的键盘模式，于是照例在`VSCode`中安装`Jupyter`插件，从而兼得编译器和`IPython`。
+* `IPython`是个非常有意思的工具，但是貌似不提供`VIM`的键盘模式，于是照例在`VSCode`中安装`Jupyter`插件，从而兼得编辑器和`IPython`。
 * 使用`xlwings`操作`Excel`
 
 ## Python 操作 Excel 的一个例子
