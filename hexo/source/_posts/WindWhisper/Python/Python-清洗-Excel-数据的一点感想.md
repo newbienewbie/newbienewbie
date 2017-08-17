@@ -97,9 +97,9 @@ for (idx,value) in enumerate(arr) :
     if(value=="T3h1"):
         currentRowNumber=idx+1
         # 检查下一行
-        if(arr[currentRowNumber+1]=="T2a"):
+        if(arr[idx+1]=="T2a"):
             pass
-        elif( arr[currentRowNumber+1]=="T2a4" and arr[currentRowNumber+2]=="T2a3"):
+        elif( arr[idx+1]=="T2a4" and arr[idx+2]=="T2a3"):
             pass
         else:
             print("!发现可疑错误：G",idx,"尝试修正后续4个层位...")
