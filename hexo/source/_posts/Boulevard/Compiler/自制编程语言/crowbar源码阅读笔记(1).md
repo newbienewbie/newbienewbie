@@ -110,8 +110,9 @@ struct CRB_Interpreter_tag {
     int                 current_line_number;
 };
 ```
+## 变量
 
-其中，`Varible`指的是全局变量链表，而非单个变量：
+其中，`Varible`实际上指的是全局变量链表：
 
 ```c
 typedef struct Variable_tag {
@@ -119,6 +120,30 @@ typedef struct Variable_tag {
     CRB_Value   value;
     struct Variable_tag *next;
 } Variable;
+```
+变量都很简单，自身拥有两个属性：
+* 变量名：即标识符。
+* 变量值：统一为`CRB_Value`类型。
+
+`crowbar`以链表的形式组织变量，依次取`next`指针即可遍历。
+
+在此变量基础上，就可以表示出全局变量变量链表和局部环境:
+```c
+typedef struct GlobalVariableRef_tag {
+    Variable    *variable;
+    struct GlobalVariableRef_tag *next;
+} GlobalVariableRef;
+
+typedef struct {
+    Variable    *variable;
+    GlobalVariableRef   *global_variable;
+} LocalEnvironment;
+```
+
+变量解析即是从相应环境（局部、全局）中寻找标识符的过程，由于`crowbar`采用了链表的组织方式，其的实现机理也是直接在相应环境中从头开始遍历`Varible`链表，检查链表相应节点的变量名是否和相应的标识符一致：
+```c
+Variable * crb_search_local_variable(LocalEnvironment *env, char *identifier);
+Variable * crb_search_global_variable(CRB_Interpreter *inter, char *identifier);
 ```
 
 ### 表达式
