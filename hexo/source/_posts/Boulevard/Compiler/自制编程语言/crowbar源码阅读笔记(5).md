@@ -129,7 +129,12 @@ static CRB_Value eval_identifier_expression(CRB_Interpreter *inter, LocalEnviron
 ```
 
 
-## 
+## 赋值表达式求值 
+
+赋值表达式求值非常简单：
+* 先求出等号右部的表达式的值
+* 尝试搜寻指定标识符对应的变量，找不到就在指定环境中创建一个变量。
+* 然后将等号左边的变量值修改为计算出来的值。
 
 ```c
 static CRB_Value eval_assign_expression(CRB_Interpreter *inter, LocalEnvironment *env, char *identifier, Expression *expression)
