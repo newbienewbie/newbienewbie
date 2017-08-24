@@ -11,7 +11,7 @@ categories:
 - 自制编程语言
 ---
 
-这是《自制编程语言》一书中的脚本语言`crowbar`的源码阅读笔记(6):语句求值。语句执行的实现代码主要存放于文件`execute.c`中。
+这是《自制编程语言》一书中的脚本语言`crowbar`的源码阅读笔记(6):语句执行。语句执行的实现代码主要存放于文件`execute.c`中。
 
 ## 语句执行总体框架
 
@@ -77,7 +77,7 @@ typedef struct {
 
 其中，`RETURN_STATEMENT_RESULT`、`BREAK_STATEMENT_RESULT`标识了将要中断循环；而`CONTINUE_STATEMENT_RESULT`则表示要循环体语句的执行`crb_execute_statement_list()`将要被中断。
 
-语句执行后的结果值用联合`u`表示，目前只有个表示返回值的`return_value`字段，这是一个`CRB_Value`型结构，可以统一表达各种类型的值。
+语句执行后的结果值用联合`u`表示，目前只有个表示返回值的`return_value`字段，这是一个`CRB_Value`型结构，可以统一表达各种类型的返回值。
 
 ### 语句链表的执行
 
