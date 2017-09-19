@@ -40,6 +40,16 @@
       tr.innerHTML=node.innerHTML;
     }
   }
+
+  // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  inlineMathNodes.forEach(n=>{
+    var result=re.exec(n.textContent);
+    if(result!==null){
+      katex.render(result[1], n);
+    }
+  });
 </script>
 
 <% if (theme.fancybox){ %>
