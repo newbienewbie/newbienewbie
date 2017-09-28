@@ -43,12 +43,12 @@
   // 处理形如 <code>$E=mc^2$</code> 形式的公式
   var inlineMathNodes=document.querySelectorAll('code');
   var re=/^\$(.*)\$$/;
-  inlineMathNodes.forEach(n=>{
-    var result=re.exec(n.textContent);
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).textContent);
     if(result!==null){
-      katex.render(result[1], n);
+      katex.render(result[1], inlineMathNodes.item(j));
     }
-  });
+  }
 </script>
 
 <% if (theme.fancybox){ %>
