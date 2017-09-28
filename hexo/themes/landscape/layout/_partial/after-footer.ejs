@@ -30,10 +30,11 @@
       // 移除魔术标记所在行
       first.remove();
       // 逐行渲染
-      var lines=node.querySelectorAll("div.line").forEach(l=>{
-          var f=l.textContent;
-          katex.render(f, l);
-      });
+      var lines=node.querySelectorAll("div.line");
+      for(var k=0;k<lines.length;k++){
+          var f=lines.item(k).textContent;
+          katex.render(f, lines.item(k));
+      }
       // 消除父级嵌套 
       var tr=node.parentNode.parentElement;
       tr.innerHTML=node.innerHTML;
