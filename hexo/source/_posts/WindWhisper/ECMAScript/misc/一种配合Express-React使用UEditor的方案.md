@@ -1,5 +1,5 @@
 ---
-title: 一种配合Express+React使用UEditor的方案
+title: 一种配合Express+React使用UEditor的方案(1)
 date: 2016-10-15 23:03:20
 tags:
 - ECMAScript
@@ -12,6 +12,8 @@ categories:
 - ECMAScript
 - Misc
 ---
+
+这是一种配合Express+React使用UEditor的方案的第(1)篇。
 
 [UEditor](http://ueditor.baidu.com/website/index.html)是由百度推出的一款所见即所得富文本web编辑器，开源，基于MIT协议。
 
@@ -153,8 +155,8 @@ const Add=React.createClass({
                 <input name='title'/>
                 <UEditor id="ueditorContainer" name="content" 
                     width={800} height={500} 
-                    uconfigSrc='/static/ueditor/ueditor.config.js',
-                    ueditorSrc='/static/ueditor/ueditor.all.min.js',
+                    uconfigSrc='/static/ueditor/ueditor.config.js'
+                    ueditorSrc='/static/ueditor/ueditor.all.min.js'
                 />
                 <input className="btn btn-warning" type='submit' name="提交" value='提交'/>
             </form>
