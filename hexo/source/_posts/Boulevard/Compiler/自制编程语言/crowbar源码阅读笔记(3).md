@@ -44,6 +44,7 @@ typedef enum {
 } ExpressionType;
 ```
 
+<!-- more -->
 
 为了表示表达式，将其类型统一定义为：
 ```c

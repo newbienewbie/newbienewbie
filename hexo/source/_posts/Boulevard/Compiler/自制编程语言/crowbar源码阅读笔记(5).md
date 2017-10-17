@@ -75,6 +75,7 @@ static CRB_Value eval_expression(CRB_Interpreter *inter, LocalEnvironment *env, 
 ```
 
 以整型表达式为例，创建一个`CRB_Value`变量，然后设置其`type`，填充`u`成员的`int_value`字段为指定值：
+<!-- more -->
 ```c
 static CRB_Value eval_int_expression(int int_value)
 {

@@ -58,6 +58,7 @@ static StatementResult execute_statement(CRB_Interpreter *inter, LocalEnvironmen
     return result;
 }
 ```
+<!-- more -->
 
 不同语句有不同的执行结果，语句执行结果抽象为一个结构体
 ```c

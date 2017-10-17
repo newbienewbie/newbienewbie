@@ -40,7 +40,7 @@ typedef struct {
     StatementList       *statement_list;
 } Block;
 ```
-
+<!-- more -->
 
 ## 语句、语句链表、与语句块的构建机理
 

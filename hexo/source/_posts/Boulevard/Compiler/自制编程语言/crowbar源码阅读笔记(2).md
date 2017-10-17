@@ -37,6 +37,8 @@ void crb_add_local_variable(LocalEnvironment *env, char *identifier, CRB_Value *
 ```
 
 注册全局变量也是类似的过程：
+
+<!-- more -->
 ```c
 void CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB_Value *value)
 {

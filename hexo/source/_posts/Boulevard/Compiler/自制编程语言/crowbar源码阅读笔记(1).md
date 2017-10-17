@@ -40,6 +40,8 @@ void CRB_dispose_interpreter(CRB_Interpreter *interpreter);
 
 为了扩展解释器，可以使用解释器的开发接口：`CRB_dev.h`。这个接口规定了`crowbar`这门语言的值类型和扩展接口。
 
+<!-- more -->
+
 ### 值类型 
 
 `crowbar`中可用的类型包括布尔型、整型、浮点型、字符串型、原生指针型、和空引用型：
