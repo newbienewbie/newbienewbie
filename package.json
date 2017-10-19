@@ -12,6 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.14.0",
+    "express-mysql-session": "^1.2.2",
+    "express-session": "^1.15.6",
     "mysql": "^2.13.0",
     "sequelize": "^3.30.2",
     "wechat": "^2.0.3",
