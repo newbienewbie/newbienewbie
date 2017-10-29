@@ -45,14 +45,14 @@ where not exists R
 
 也就是说，要找到这样一个课程子集`$C(c)$`，其中的元组课程`$c$`满足：对于学生集合里的每一个学生，都可以找到至少一条或者多条的选课记录。为了清晰，我们改用形式语言描述：
 1. “对于任意学生集合里的每一个学生，都...” => `$\color{green}\forall s \in S$`
-2. “至少可以找到一条或者多条选课记录” =>`$\color{orange}\exists SC(sc) \land sc[SNo]=s[SNo] \land sc[CNo]=c[CNo] $`
+2. “至少可以找到一条或者多条选课记录” =>`$\color{orange}(\exists sc \in SC) (sc[SNo]=s[SNo] \land sc[CNo]=c[CNo]) $`
 
 为了表达这样的全称意图，我们借助否定之否定，显然有:
 ```math
 %% KaTex
-\color{#c9c}( \forall s \in S)   \color{orange}( \exists SC(sc) \land sc[SNo]=s[SNo] \land sc[CNo]=c[CNo] )
+\color{#c9c}( \forall s \in S)   \color{orange}\Big( (\exists sc \in SC )(sc[SNo]=s[SNo] \land sc[CNo]=c[CNo] ) \Big)
 \iff
-\color{white}\lnot \Big( \color{#c9c} ( \exists s \in S ) \color{white}( \lnot \color{orange} \Big( \exists SC(sc) \land sc[SNo]=s[SNo] \land sc[CNo]=c[CNo]  \Big) \color{white} ) \Big)
+\color{white}\lnot \Big( \color{#c9c} ( \exists s \in S ) \color{white}( \lnot \color{orange} \Big( (\exists sc \in SC) (sc[SNo]=s[SNo] \land sc[CNo]=c[CNo])  \Big) \color{white} ) \Big)
 ```
 
 根据上式，很容易写出对应的`SQL`表述:
