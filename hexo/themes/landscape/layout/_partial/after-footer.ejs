@@ -20,6 +20,22 @@
 <script src="http://lib.baomitu.com/KaTeX/0.8.3/katex.min.js"></script>
 
 <script>
+  // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).textContent);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
   // 查找所有 figure pre 节点 以备筛出数据公式
   var nodes=document.querySelectorAll("figure.plain pre");
   for(var i=0;i<nodes.length;i++){
@@ -28,7 +44,7 @@
     var first=node.children[0];
     if(first.textContent.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
       // 移除魔术标记所在行
-      first.remove();
+      removeNode(first);
       // 逐行渲染
       var lines=node.querySelectorAll("div.line");
       for(var k=0;k<lines.length;k++){
@@ -36,18 +52,14 @@
           katex.render(f, lines.item(k));
       }
       // 消除父级嵌套 
-      var tr=node.parentNode.parentElement;
-      tr.innerHTML=node.innerHTML;
-    }
-  }
-
-  // 处理形如 <code>$E=mc^2$</code> 形式的公式
-  var inlineMathNodes=document.querySelectorAll('code');
-  var re=/^\$(.*)\$$/;
-  for(var j=0;j<inlineMathNodes.length;j++){
-    var result=re.exec(inlineMathNodes.item(j).textContent);
-    if(result!==null){
-      katex.render(result[1], inlineMathNodes.item(j));
+      var tr=node.parentNode.parentNode;
+      try{
+        tr.innerHTML=node.innerHTML;
+      }catch(e){
+        // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+        console.log('IE9 sucks',e);
+        $(tr).html(node.innerHTML);
+      }
     }
   }
 </script>
