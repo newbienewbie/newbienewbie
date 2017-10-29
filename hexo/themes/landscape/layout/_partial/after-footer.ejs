@@ -26,7 +26,7 @@
     var node=nodes.item(i);
     // 魔术标记所在行 
     var first=node.children[0];
-    if(first.textContent.trim().match(/%%(\s?)*KaTeX(\s?)*/i,)){
+    if(first.textContent.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
       // 移除魔术标记所在行
       first.remove();
       // 逐行渲染
