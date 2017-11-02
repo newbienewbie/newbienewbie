@@ -31,6 +31,7 @@ show_count: false
 
 # Miscellaneous
 google_analytics:
+google_ad_client: ca-pub-6193182060758164
 favicon: /favicon.png
 twitter:
 google_plus:
