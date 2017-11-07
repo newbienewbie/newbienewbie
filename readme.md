@@ -73,7 +73,7 @@ source .bash_profile
 
 在客户端执行以下命令，即可上传代码到服务器：
 ```
-tar -c --gzip --exclude=".git" --exclude='node_modules' --exclude='hexo/node_modules' --exclude='hexo/public' itminus | ssh user_name@remote_server -p port 'tar -x --gzip -v'
+tar -c --gzip --exclude=".git" --exclude='node_modules' --exclude='hexo/node_modules' --exclude='hexo/public' --exclude="lib/config/config.dev.js" itminus | ssh user_name@remote_server -p port 'tar -x --gzip -v'
 ```
 其中，`--exclude`参数分别忽略了这样的几个文件夹：
 
@@ -81,6 +81,7 @@ tar -c --gzip --exclude=".git" --exclude='node_modules' --exclude='hexo/node_mod
 * node_modules/
 * hexo/node_modules/
 * hexo/public/
+* lib/config/config.dev.js
 
 然后在服务端执行：
 ```bash
