@@ -30,8 +30,8 @@ archive_type: 'monthly'
 show_count: false
 
 # Miscellaneous
-google_analytics:
-google_ad_client: ca-pub-6193182060758164
+google_analytics: UA-109221704-1
+google_ad_client: 
 favicon: /favicon.png
 twitter:
 google_plus:
