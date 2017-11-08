@@ -1,0 +1,19 @@
+
+{% macro footerItem(header="© ${year} 大水",html="All rights reserved.")%}
+    <div class="col-md-3">
+        <h6>{{ header }}</h6>
+        <p>{{ html | safe}}</p>
+    </div>
+{% endmacro %}
+
+
+{% macro footer() %}
+    {# 由于 nunjucks 无法使用 new 构造Date()，故引入全局变量moment调用函数获取时间 #}
+    {% set str="© "+moment().year()+"大水"%} 
+    <div class="container">
+        {{ footerItem(str,"All rights reserved.") }} 
+        {{ footerItem("导演", "前朝大侠" ) }}
+        {{ footerItem("编剧", "<a href='mailto:itminus@<163>.com'> 关外行人 </a>" ) }}
+        {{ footerItem("主演", "<a href='mailto:itminus@<163>'> 似去如来 </a>" ) }}
+    </div>
+{% endmacro %}
