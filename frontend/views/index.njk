@@ -1,0 +1,20 @@
+{% extends 'base.njk' %}
+
+{% from './_components/header/index.njk' import header %}
+{% from './_components/footer/index.njk' import footer %}
+
+{% block userdefinedhead %}
+    <link rel="stylesheet"  href="/static/css/index.css"/>
+{% endblock %}
+
+{% block header %}
+    {{ header() }}
+{% endblock %}
+
+{% block footer %}
+    {{ footer() }}
+{% endblock %}
+
+{% block userdefinedfoot %}
+      {# <script type='text/javascript' src='/static/js/main.js'></script>  #}
+{% endblock %}

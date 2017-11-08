@@ -1,0 +1,36 @@
+
+{% macro header() %}
+    <div id="header">
+        <div>
+            <div class="logo">
+                <a to="/"> <img src="/static/img/logo.jpg" class="img-responsive" alt="" /> </a>
+            </div>
+            <span>itminus</span>
+            <div>
+                <input name="search" />
+            </div>
+        </div>
+        {{ navList() }}
+    </div>
+{% endmacro %}
+
+
+{% macro navList() %}
+    {% set list=[
+        {href:"/",text:"home"},
+        {href:"/post",text:"文章"},
+        {href:"/movie",text:"视频"},
+        {href:"/ebook",text:"书籍"},
+        {href:"/about",text:"about"},
+        {href:"/archives",text:"archives"},
+        {href:"/contact",text:"contact"} 
+        ]
+    %}
+    <ul class="nav nav-pills nav-fixed-top">
+        {% for item in list %}
+            <li class={{1}} >
+                <a href="{{item.href}}" > {{item.text}} </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro %} 

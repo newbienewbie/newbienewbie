@@ -18,7 +18,9 @@
     "mysql": "^2.13.0",
     "sequelize": "^3.30.2",
     "wechat": "^2.0.3",
-    "wechat-api": "^1.32.0"
+    "wechat-api": "^1.32.0",
+    "moment": "^2.19.1",
+    "nunjucks": "^3.0.1"
   },
   "devDependencies": {
     "mocha": "^3.2.0"

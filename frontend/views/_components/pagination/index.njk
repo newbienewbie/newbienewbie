@@ -1,0 +1,23 @@
+
+
+
+{% macro pagination(pagesInfo,convertPageToHref) %}
+    <nav>
+        <ul class="pagination">
+            {# 首数字 #}
+            {% if pagesInfo.shouldDisplay %}
+                <li>
+                    <a href="{{convertPageToHref(pagesInfo.firstDigit)}}"> << </a>
+                </li>
+                {% for p in pagesInfo.array %}
+                    <li><a href="{{convertPageToHref(p)}}">{{p}}</a></li>
+                {% endfor %}
+
+                {# 尾数字 #}
+                <li>
+                    <a href="{{convertPageToHref(pagesInfo.lastDigit)}}"> >> </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endmacro %}
