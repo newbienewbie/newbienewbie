@@ -8,13 +8,16 @@
 {% endblock %}
 
 {% block header %}
-    {{ header() }}
 {% endblock %}
 
 {% block footer %}
-    {{ footer() }}
 {% endblock %}
 
 {% block userdefinedfoot %}
       {# <script type='text/javascript' src='/static/js/main.js'></script>  #}
+      <script type='text/javascript' src="http://lib.baomitu.com/socket.io/2.0.4/socket.io.js"></script>
+      <script type='text/javascript'>
+            var socket=io();
+            socket.emit('chat message', 'hello,world');
+      </script>
 {% endblock %}
