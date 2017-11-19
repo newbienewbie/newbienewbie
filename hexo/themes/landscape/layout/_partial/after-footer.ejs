@@ -43,10 +43,15 @@
     // 魔术标记所在行 
     var first=node.children[0];
     if(first.textContent.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+      // 移除 <br>
+      let nextSibling=first.nextSibling;
+      if(nextSibling.nodeName.trim().toLowerCase()=='br'){
+        removeNode(nextSibling);
+      }
       // 移除魔术标记所在行
       removeNode(first);
       // 逐行渲染
-      var lines=node.querySelectorAll("div.line");
+      var lines=node.querySelectorAll(".line");
       for(var k=0;k<lines.length;k++){
           var f=lines.item(k).textContent;
           katex.render(f, lines.item(k));
