@@ -44,7 +44,7 @@
     var first=node.children[0];
     if(first.textContent.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
       // 移除 <br>
-      let nextSibling=first.nextSibling;
+      var nextSibling=first.nextSibling;
       if(nextSibling.nodeName.trim().toLowerCase()=='br'){
         removeNode(nextSibling);
       }
