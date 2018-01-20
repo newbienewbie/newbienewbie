@@ -1,8 +1,9 @@
 ---
-title: WASM基本原理1——世界观 
+title: WebAssembly基本原理1——世界观 
 date: 2018-1-17 20:17:50
 tags:
 - WASM
+- WebAssembly
 - JavaScript 
 categories:
 - 风语
