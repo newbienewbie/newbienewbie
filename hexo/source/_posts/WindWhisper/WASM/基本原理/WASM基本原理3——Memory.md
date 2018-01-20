@@ -21,7 +21,7 @@ categories:
 ```javascript
 var memory = new WebAssembly.Memory({initial:10, maximum:100})
 ```
-内存实例对象拥有一个`buffer`属性，也即`Memory.prototype.buffer`，它返回一个指向整个线性内存的`ArrayBuffer`对象。此外，内存实例对象还有一个`grow()`方法(每页`64KB`)，也即`Memory.prototype.grow()`，这意味着内存实例能够增长，但是由于`ArrayBuffer`不能改变大小，所以，当增长产生的时候，当前的`ArrayBuffer`会被移除，然后一个新的`ArrayBuffer`会被创建，并指向新的、更大的内存。
+内存实例对象拥有一个`buffer`属性，也即`Memory.prototype.buffer`，它返回一个指向整个线性内存的`ArrayBuffer`对象。此外，内存实例对象还有一个`grow()`方法(每页`64KB`)，也即`Memory.prototype.grow()`，这意味着内存实例能够增长，但是由于`ArrayBuffer`不能改变大小，所以，当增长产生的时候，当前的`ArrayBuffer`会被移除，然后一个新的`ArrayBuffer`会被创建，并指向新的、更大的内存。<!--more-->
 
 ### 导入`Memory`对象
 
