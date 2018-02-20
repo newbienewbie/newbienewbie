@@ -29,8 +29,12 @@ class AbstractComponent{
 }
 ```
 <!--more-->
+有了基本框架，我们还需要完成以下工作：
+1. 如何触发自动更新
+2. 如何实现视图更新
+3. 如何挂载到容器元素
 
-## 如何触发自动更新
+### 如何触发自动更新
 
 要实现当`state`改变即自动更新视图，除了可以使用`Java`风格的`setState(state)`，还可以使用`Object.defineProperty()`函数定义描述符，由于后者具有`JavaScript`特色，这里直接使用后者来实现：
 ```javascript
@@ -52,7 +56,7 @@ class AbstractComponent{
 ```
 这样，每次当对`state`属性赋值时，就会触发自动更新。
 
-## 如何实现视图更新
+### 如何实现视图更新
 
 现在的问题是，如何更新视图？浏览器提供了一系列`API`与`DOM`交互。为了更新`DOM`，我们可以在原来的位置插入新的`HTMLElement`，并且删掉原来的`HTMLElement`。显然，为了完成这种精准的操作，就需要组件实例记录其所对应的`HTMLElement`引用，一旦组件需要更新，即可根据引用原地插入新的、删除旧的，最后更新组件对其的引用即可：
 ```javascript
