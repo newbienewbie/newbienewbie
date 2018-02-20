@@ -28,6 +28,7 @@ class AbstractComponent{
     render(){ /* to be implemented by subclass */ }
 }
 ```
+<!--more-->
 
 ## 如何触发自动更新
 
