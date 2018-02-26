@@ -5,66 +5,80 @@
 
 global-reset()
 
-input, button
-  margin: 0
-  padding: 0
-  &::-moz-focus-inner
+input, button{
+  margin: 0;
+  padding: 0;
+  &::-moz-focus-inner{
     border: 0
-    padding: 0
+    padding: 1
+  }
+}
 
-@font-face
-  font-family: FontAwesome
-  font-style: normal
-  font-weight: normal
-  src: url(font-icon-path + ".eot?v=#" + font-icon-version)
+@font-face{
+  font-family: FontAwesome;
+  font-style: normal;
+  font-weight: normal;
+  src: url(font-icon-path + ".eot?v=#" + font-icon-version);
   src: url(font-icon-path + ".eot?#iefix&v=#" + font-icon-version) format("embedded-opentype"),
        url(font-icon-path + ".woff?v=#" + font-icon-version) format("woff"),
        url(font-icon-path + ".ttf?v=#" + font-icon-version) format("truetype"),
-       url(font-icon-path + ".svg#fontawesomeregular?v=#" + font-icon-version) format("svg")
+       url(font-icon-path + ".svg#fontawesomeregular?v=#" + font-icon-version) format("svg");
+}
 
-html, body, #container
-  height: 100%
+html, body, #container{
+  height: 100%;
+}
 
-body
-  background: color-background
-  font: font-size font-sans
-  -webkit-text-size-adjust: 100%
+body {
+  background: color-background;
+  font: font-size font-sans;
+  -webkit-text-size-adjust: 100%;
+}
 
-.outer
-  clearfix()
-  max-width: (column-width + gutter-width) * columns + gutter-width
-  margin: 0 auto
-  padding: 0 gutter-width
+.outer{
+  clearfix();
+  max-width: (column-width + gutter-width) * columns + gutter-width;
+  margin: 0 auto;
+  padding: 0 gutter-width;
+}
 
-.inner
-  column(columns)
+.inner{
+  column(columns);
+}
 
-.left, .alignleft
-  float: left
+.left, .alignleft{
+  float: left;
+}
 
-.right, .alignright
-  float: right
+.right, .alignright{
+  float: right;
+}
 
-.clear
-  clear: both
+.clear{
+  clear: both;
+}
 
-#container
-  position: relative
+#container{
+  position: relative;
+}
 
-.mobile-nav-on
-  overflow: hidden
+.mobile-nav-on{
+  overflow: hidden;
+}
 
-#wrap
-  height: 100%
-  width: 100%
-  position: absolute
-  top: 0
-  left: 0
-  transition: 0.2s ease-out
-  z-index: 1
-  background: color-background
-  .mobile-nav-on &
-    left: mobile-nav-width
+#wrap{
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: 0.2s ease-out;
+  z-index: 1;
+  background: color-background;
+  .mobile-nav-on &{
+    left: mobile-nav-width;
+  }
+}
 
 if sidebar and sidebar isnt bottom
   #main
