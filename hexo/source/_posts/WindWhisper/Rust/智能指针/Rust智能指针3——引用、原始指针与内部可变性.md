@@ -5,9 +5,8 @@ tags:
 - Rust
 - 智能指针
 - 引用计数
-- Rc
-- Arc
-- RefCell
+- Cell<T>
+- RefCell<T>
 categories:
 - 风语
 - Rust
