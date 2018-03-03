@@ -26,7 +26,7 @@ stdweb ="0.4"
 
 ## 如何控制浏览器
 
-第一步毫无疑问当然是要写个`Hello,world`。不过`WebAssembly`暂时没有操作浏览器的接口，所以直接嵌入`js`即可
+第一步毫无疑问当然是要写个`Hello,world`。不过`WebAssembly`暂时没有操作浏览器的接口，所以直接嵌入`js`即可：<!--more-->
 ```Rust
 #![recursion_limit="128"]
 #![feature(proc_macro)]
@@ -44,7 +44,7 @@ fn main() {
     stdweb::event_loop();
 }
 ```
-that's all. 调用命令`cargo+ nightly web start --target=wasm32-known-known`即可看到弹窗效果。根据上一篇笔记的分析，`Rust`的`main`函数会在初始化的某个时间点调用，这也是当我们打开浏览器就可以看到弹窗的原因。
+调用命令`cargo+ nightly web start --target=wasm32-known-known`即可看到弹窗效果。根据[上一篇笔记](http://www.itminus.com/blog/2018/03/02/WindWhisper/Rust/Rust-WASM/Rust%E4%B8%8EWebAssembly%201%E2%80%94%E2%80%94%E7%BC%96%E8%AF%91/)的分析，`Rust`的`main`函数会在初始化的某个时间点调用，这也是当我们打开浏览器就可以看到弹窗的原因。
 
 ## 嵌入`js!{}`宏的工作机理 
 
@@ -112,7 +112,7 @@ fn add( x: i32 , y :i32) -> i32{
     x+y
 }
 ```
-事实上，如果不用`#[js_export]`，也可以直接采用`pub extern "C"`声明函数，这样编译出的`wasm`文件同样是会`export`相关函数的。只不过配套的`js`导出代码需要自己写。这里我们并不想自己写`js`加载`wasm`代码，所以仍然采用`#[js_export]`的方式。
+事实上，如果不用`#[js_export]`，也可以直接采用`pub extern "C"`声明函数，这样编译出的`wasm`文件同样是会`export`相关函数的。只不过配套的`js`导出代码需要自己写(参见[上一篇笔记](http://www.itminus.com/blog/2018/03/02/WindWhisper/Rust/Rust-WASM/Rust%E4%B8%8EWebAssembly%201%E2%80%94%E2%80%94%E7%BC%96%E8%AF%91/))。这里我们并不想自己写`js`加载`wasm`代码，所以仍然采用`#[js_export]`的方式。
 
 随后，我们就可以在浏览器中拿到`Rust`暴露的`add()`函数：
 ```javascript
