@@ -60,7 +60,6 @@ cargo +nightly build --target wasm32-unknown-unknown --release
 使用上述两个办法有几个不足：
 1. 不能`watch`文件变化自动编译
 2. 缺乏一个Web服务器，目前`WebAssembly`还只能通过`JavaScript`动态载入，导致浏览器中无法加载`WASM`代码
-3. 不能自动清除垃圾代码、减小体积
 
 所以，`Rust`社区在上述方案的基础之上构建了一个更方便的办法，也即`cargo web`子命令。
 
@@ -68,7 +67,7 @@ cargo +nightly build --target wasm32-unknown-unknown --release
 ```
 cargo install -f cargo-web
 ```
-然后在相关路径下直接调用`cargo web`子命令即可(不需要修改`Cargo.toml`)。
+然后在相关路径下直接调用`cargo web`子命令即可。
 
 构建：
 ```
@@ -89,6 +88,8 @@ cargo web start
 ```
 cargo +nightly web start --target=wasm32-unknown-unknown
 ```
+
+#### 配置
 
 为了省去命令行那么长的传参，可以将诸多参数统统写到配置文件`Web.toml`里(挨着`Cargo.toml`放就行)，例如官方提供的一个：
 ```
@@ -120,6 +121,128 @@ link-args = ["-s", "USE_SDL=2"]
 [target.wasm32-unknown-unknown]
 prepend-js = "src/native_runtime.js"
 ```
+
+#### 工作原理分析
+
+我们可以写一个最简单的程序来分析它是如何工作的，新建一个项目：
+```
+cargo new --lib hello
+```
+指定其类型为`cdylib`，这个类型可以用于让编译出的动态库很方便地被其他语言载入：
+```toml
+[lib]
+crate-type=["cdylib"]
+```
+(后文会说`cargo new --bin hello`这种方式创建的项目是如何工作的，如果是`--bin`类型，无需指定`cdylib`。)
+随便编写一个`Rust`函数：
+```Rust
+#[no_mangle]
+pub extern "C" fn add(x: i32, y :i32) -> i32 {
+    x+y
+}
+```
+调用`cargo web`编译：
+```
+cargo +nightly web deploy --target=wasm32-unknown-unknown
+```
+获得 三个文件：
+* index.html
+* hello.js
+* hello.wasm
+
+其中，编译出的`wasm`代码经过精简后为：
+```wat
+(module
+  (type $t0 (func (param i32 i32) (result i32)))
+  ;; 下面就是我们用`Rust`编写的 add(x,y) 函数
+  (func $add (type $t0) (param $p0 i32) (param $p1 i32) (result i32)
+    get_local $p1
+    get_local $p0
+    i32.add)
+  (table $__web_table 0 anyfunc)
+  (memory $memory 17)
+  (export "add" (func $add))             ;; 导出add(x,y)函数
+  (export "__web_table" (table 0))
+  (export "memory" (memory 0))
+  (data (i32.const 4) "\10\00\10\00"))
+```
+而生成的`js`则是起到了胶水功能，代码主体非常简单，就是一个立即执行函数，负责编译、实例化`WASM`模块，然后将需要导出的部分以同步或者`promise`的方式挂载到外部环境上。
+```javascript
+if (typeof Rust === "undefined") { var Rust = {}; }
+
+(function (root, factory) {
+    // AMD
+    if (typeof define === "function" && define.amd) { define([], factory); } 
+    // node.js 
+    else if (typeof module === "object" && module.exports) { module.exports = factory(); } 
+    // plain browser
+    else { Rust.hello = factory(); }
+}(this, function () {
+    function __initialize(__wasm_module, __load_asynchronously) {
+        const Module = {};    // 注意返回的是这个`Module`的`exports`属性
+        // 以异步或者同步方式加载模块，
+        // 返回Module.exports或者Promise的返回
+    }
+
+    // 使用node.js api读取当前目录下的指定wasm文件
+    if (typeof window === "undefined") {
+        const fs = require("fs");
+        const path = require("path");
+        const wasm_path = path.join(__dirname, "hello.wasm");
+        const buffer = fs.readFileSync(wasm_path);
+        const mod = new WebAssembly.Module(buffer);
+
+        return __initialize(mod, false);
+    } 
+    // 使用浏览器API获取指定名称的wasm文件
+    else {
+        return fetch("hello.wasm")
+            .then(response => response.arrayBuffer())
+            .then(bytes => WebAssembly.compile(bytes))
+            .then(mod => __initialize(mod, true));
+    }
+}))
+```
+至于其中的`__initialize()`函数，主要是实例化模块、把相关结构存到内部变量`Module`上，注意，默认情况下，并非`pub extern "C" `标注的就会被这个引入到`js`。在其内部有个`__instantiate(instance)`函数，将根据编译出的实例对象，更改内部的`Module`对象。
+```javascript
+function __initialize(){
+    const Module={};
+    // ...
+
+    function __instantiate(instance) {
+        Object.defineProperty(Module, 'instance', {
+            value: instance
+        });
+        Object.defineProperty(Module, 'web_malloc', {
+            value: Module.instance.exports.__web_malloc
+        });
+        Object.defineProperty(Module, 'web_free', {
+            value: Module.instance.exports.__web_free
+        });
+        Object.defineProperty(Module, 'web_table', {
+            value: Module.instance.exports.__web_table
+        });
+
+
+        __imports.env.__web_on_grow();
+
+    }
+
+    // ...
+
+}
+```
+
+注意其中的
+```javascript
+
+        __imports.env.__web_on_grow();
+
+```
+前后有留白。
+            
+1. 前一行留白对应的是：尽管在生成的`wasm`文件中已经将相关`pub extern "C"`声明的函数导出，但是生成的`js`里并没有把`module.instance.exports`对象挂到`Module.exports`。如果需要，可以手工在`__instantiate()`添加；另一种情况是，配合使用`stdweb`使用时，可以自动`js_export`自动导出并挂载。
+2. 后一行留白对应的是：如果项目是`cargo new --bin`生成的运行程序而非一个库，则`cargo web`会在生成的`wasm`代码中导出`Rust`中的`main()`函数`(export "main" (func $main)`，然后再在生成的`js`代码中`__imports.env.__web_on_grow();`之后的位置调用`Module.instance.exports.main()`，也即是`Rust`中的`main()`函数。
 
 ## 小结
 
