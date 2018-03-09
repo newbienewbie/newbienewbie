@@ -258,17 +258,9 @@ print(mc.__dict__)          # 这里，输出的是 {'greeting1': '@@@ Fuck,worl
 
 ### 描述符与对象方法调用机制
 
-类字典中将方法作为函数来存储，所有的方法都是定义了`__get__()`的`non-data descriptor`。方法被实例以`obj.func()`的形式调用，其实可以分成两步：首先会进行属性查找，由于是个`descriptor`，这一步会利用`__get__()`返回绑定了`self`的函数；然后再对函数对象进行调用。最终从形式上看，`obj.f(*args)`的调用等同于`f(obj, *args)`。
+当方法被实例以`obj.func()`的形式调用，其实可以分成两步：首先会进行属性查找，由于是个`descriptor`，这一步会利用`__get__()`返回绑定了`self`的函数；然后再对函数对象进行调用。
 
-```python
-class Function(object):
-    . . .
-    def __get__(self, obj, objtype=None):
-        "Simulate func_descr_get() in Objects/funcobject.c"
-        if obj is None:
-            return self
-        return types.MethodType(self, obj)
-```
+最终从形式上看，`obj.f(*args)`的调用等同于`f(obj, *args)`。其内部机理在于类字典中将方法作为函数来存储，而所有的方法都是定义了`__get__()`的`non-data descriptor`。这样每次查找方法时，都会利用描述符的`__get__()`取到绑定了`self`对象的相应函数。
 
 类似的，对于`classmethod`(类方法)，也会进行绑定，不过绑定对象变成了类。而对于`staticmethod`(静态方法)，则无需绑定，直接返回原函数。
 
