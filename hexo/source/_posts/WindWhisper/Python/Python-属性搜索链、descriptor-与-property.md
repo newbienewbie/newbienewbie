@@ -192,15 +192,15 @@ mc.greeting2="Fuck,world"   # 这里，并不会去操作mc.__dict__属性
 print(mc.__dict__)          # 这里，输出的是 {'greeting1': 'Fuck,world'}
 ```
 
-### 描述符`__get__()`方法的调用机制
+### 描述符`__get__()`方法的调用优先级
 
-默认优先级别链：
+属性查找的默认优先级别链为：
 1. `data descriptor`优先级最高
 2. `instance variables` 优先级次之
 2. `non-data descriptor` 优先级再次之
 3. `__getattr__()` 优先级最低
 
-调用细节还得区分`obj`是类和普通对象。
+具体调用细节还得区分`obj`是类和普通对象。
 对于对象的`data descriptor`属性访问，根据`object.__getattribute__(self,name)`方法，会将`b.d`的调用转换为了`type(b).__dict__['d'].__get__(b,type(b))`，注意，这里先去类的`__dict__`找，然后再调用所找到的描述符的`__get__()`方法。
 对于类的`data descriptor`，根据`type.__getattribute()__`方法，会将`B.d`转换为了`B.__dict__['d'].__get___(None,B)`，根据[`Python`官方文档](https://docs.python.org/3/howto/descriptor.html)，基本上等同于：
 ```python
@@ -211,11 +211,11 @@ def __getattribute__(self, key):
         return v.__get__(None, self)
     return v
 ```
-不管怎么说，`descriptor`是用`__getattribute__()`方法调用的。如果覆盖`__getattribute__()`方法，
+不管怎么说，`descriptor`的`__get__()`方法是用`__getattribute__()`方法调用的。如果覆盖`__getattribute__()`方法，则默认的描述符方法调用行为也会被改写。
 
-### 描述符`__set__()`方法和`__setattr__()`
+### 描述符`__set__()`方法和`__setattr__()`的调用优先级
 
-需要注意的是，`__setattr__()`方法和`__getattr__()`相对于`descriptor`的优先级并不对称！`__getattr__()`相对于`descriptor`有最低的优先级；而相对于`__set__()`，`__setattr__()`的优先级却更高！
+实例的属性查找通常需要回溯到超类，而实例属性的设置、删除比然只会操作自身的`__dict__`字典，不会影响到父类。与这种不对称性相类似的还有`__setattr__()`方法和`__getattr__()`相对于`descriptor`的优先级不对称性！`__getattr__()`相对于`descriptor`有最低的优先级；而相对于`__set__()`，`__setattr__()`的优先级却更高！
 
 举个例子:
 ```python
