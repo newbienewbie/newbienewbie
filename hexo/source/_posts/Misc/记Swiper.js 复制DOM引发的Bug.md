@@ -8,7 +8,7 @@ categories:
 - Misc
 ---
 
-最近接手了有个小项目，大致是做个类似于易企秀之类的前端页面。对于指定模板：
+最近接手了有个小项目，大致是做个类似于易企秀之类的前端页面。核心功能是，对于指定模板：
 
 1. 在编辑模式下，可以对文字、图片进行在线编辑，点击保存后提交相应数据到服务器
 2. 在浏览模式下，向服务器请求数据，渲染生成个性页面
@@ -19,7 +19,7 @@ categories:
 
 本想用`HTML5`的`content-editable`做，不过这货在移动端的监听内容改变比较操蛋；而且对于图片无能为力。
 
-好在在编程中，没有什么纸老虎是不能用加一层抽象解决的；如果有，那就再加一层。为此，我写了一个叫做`ItminusEditor`的`JavaScript`库，提供三类常用的可编辑组件：`EditableInput`、`EditableTextarea`、`EditableImage`。在此基础上，实现了功能： 
+好在在编程中，没有什么纸老虎是不能用加一层抽象解决的；如果有，那就再加一层。为此，我写了一个叫做`ItminusEditor`的`JavaScript`库，提供三类常用的可编辑组件：`EditableInput`、`EditableTextarea`、`EditableImage`。在此基础上，实现了以下功能： <!--more--> 
 1. 根据`HTML`标记，自动创建可编辑组件，当组件内容变化，会同步到`JavaScript`对象`itEditor`中。也就是说，在特定的DOM对象和`itEditor`之间建立联系。
 2. `itEditor`对象提供了一系列方法，重点包括：
 	* 注册可编辑组件方法：`registerEditableItem(item)`
