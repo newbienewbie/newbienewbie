@@ -10,19 +10,22 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.5" />
   </ItemGroup>
 
-   <!-- static source -->
-  <ItemGroup>
-      <StaticVerficationFiles Include="../search-engine-verify/**/*" />
-      <StaticBlogFiles Include="../hexo/public/**/*" />
-  </ItemGroup>
-  <!-- static target folder -->
   <PropertyGroup>
+      <!-- root project path -->
+      <RootProjectPathName>$([System.IO.Path]::GetDirectoryName($(MSBuildProjectDirectory)))</RootProjectPathName>
+      <!-- static verification files target folder -->
       <StaticVerficationFilesFolderName>search-engine-verify</StaticVerficationFilesFolderName>
+      <!-- static blog files target folder -->
       <StaticBlogFilesFolderName>static-blog</StaticBlogFilesFolderName>
   </PropertyGroup>
 
+   <!-- static source -->
+  <ItemGroup>
+      <StaticVerficationFiles Include="$(RootProjectPathName)\search-engine-verify\**\*.*" />
+      <StaticBlogFiles Include="$(RootProjectPathName)\hexo\public\**\*.*" />
+  </ItemGroup>
+
   <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterBuild" AfterTargets="Build" >
-      <Message Importance="High" Text="[+] Copy : static blog files, search engine verification files ..." />  
       <Copy 
         SourceFiles="@(StaticVerficationFiles)" 
         DestinationFolder="$(OutDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
@@ -31,11 +34,9 @@
         SourceFiles="@(StaticBlogFiles)" 
         DestinationFolder="$(OutDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" 
       />
-      <Message Importance="High" Text="[-] .... Completed" />  
   </Target>
 
   <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterPublish" AfterTargets="Publish" >
-      <Message Importance="High" Text="[+] Copy : static blog files, search engine verification files ..." />  
       <Copy 
         SourceFiles="@(StaticVerficationFiles)" 
         DestinationFolder="$(PublishDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
@@ -44,7 +45,6 @@
         SourceFiles="@(StaticBlogFiles)" 
         DestinationFolder="$(PublishDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" 
       />
-      <Message Importance="High" Text="[-] .... Completed" />  
   </Target>
 
 </Project>
