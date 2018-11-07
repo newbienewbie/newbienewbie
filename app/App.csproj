@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.5" />
+  </ItemGroup>
+
+   <!-- static source -->
+  <ItemGroup>
+      <StaticVerficationFiles Include="../search-engine-verify/**/*" />
+      <StaticBlogFiles Include="../hexo/public/**/*" />
+  </ItemGroup>
+  <!-- static target folder -->
+  <PropertyGroup>
+      <StaticVerficationFilesFolderName>search-engine-verify</StaticVerficationFilesFolderName>
+      <StaticBlogFilesFolderName>static-blog</StaticBlogFilesFolderName>
+  </PropertyGroup>
+
+  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterBuild" AfterTargets="Build" >
+      <Message Importance="High" Text="[+] Copy : static blog files, search engine verification files ..." />  
+      <Copy 
+        SourceFiles="@(StaticVerficationFiles)" 
+        DestinationFolder="$(OutDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
+      />
+      <Copy 
+        SourceFiles="@(StaticBlogFiles)" 
+        DestinationFolder="$(OutDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" 
+      />
+      <Message Importance="High" Text="[-] .... Completed" />  
+  </Target>
+
+  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterPublish" AfterTargets="Publish" >
+      <Message Importance="High" Text="[+] Copy : static blog files, search engine verification files ..." />  
+      <Copy 
+        SourceFiles="@(StaticVerficationFiles)" 
+        DestinationFolder="$(PublishDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
+      />
+      <Copy 
+        SourceFiles="@(StaticBlogFiles)" 
+        DestinationFolder="$(PublishDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" 
+      />
+      <Message Importance="High" Text="[-] .... Completed" />  
+  </Target>
+
+</Project>
