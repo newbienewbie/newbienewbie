@@ -26,6 +26,8 @@
   </ItemGroup>
 
   <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterBuild" AfterTargets="Build" >
+      <RemoveDir Directories="$(OutDir)\$(StaticVerficationFilesFolderName)"/>
+      <RemoveDir Directories="$(OutDir)\$(StaticBlogFilesFolderName)"/>
       <Copy 
         SourceFiles="@(StaticVerficationFiles)" 
         DestinationFolder="$(OutDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
@@ -37,6 +39,8 @@
   </Target>
 
   <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterPublish" AfterTargets="Publish" >
+      <RemoveDir Directories="$(PublishDir)\$(StaticVerficationFilesFolderName)"/>
+      <RemoveDir Directories="$(PublishDir)\$(StaticBlogFilesFolderName)"/>
       <Copy 
         SourceFiles="@(StaticVerficationFiles)" 
         DestinationFolder="$(PublishDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
