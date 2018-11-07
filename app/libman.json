@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "KaTeX@0.10.0-rc.1",
+      "destination": "wwwroot\\lib\\KaTeX"
+    }
+  ]
+}
