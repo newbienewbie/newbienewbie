@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.5" />
+  </ItemGroup>
+
+  <PropertyGroup>
+      <!-- root project path -->
+      <RootProjectPathName>$([System.IO.Path]::GetDirectoryName($(MSBuildProjectDirectory)))</RootProjectPathName>
+      <!-- static verification files target folder -->
+      <StaticVerficationFilesFolderName>search-engine-verify</StaticVerficationFilesFolderName>
+      <!-- static blog files target folder -->
+      <StaticBlogFilesFolderName>static-blog</StaticBlogFilesFolderName>
+  </PropertyGroup>
+
+   <!-- static source -->
+  <ItemGroup>
+      <StaticVerficationFiles Include="$(RootProjectPathName)\search-engine-verify\**\*.*" />
+      <StaticBlogFiles Include="$(RootProjectPathName)\hexo\public\**\*.*" />
+  </ItemGroup>
+
+  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterBuild" AfterTargets="Build" >
+      <Copy 
+        SourceFiles="@(StaticVerficationFiles)" 
+        DestinationFolder="$(OutDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
+      />
+      <Copy 
+        SourceFiles="@(StaticBlogFiles)" 
+        DestinationFolder="$(OutDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" 
+      />
+  </Target>
+
+  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterPublish" AfterTargets="Publish" >
+      <Copy 
+        SourceFiles="@(StaticVerficationFiles)" 
+        DestinationFolder="$(PublishDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
+      />
+      <Copy 
+        SourceFiles="@(StaticBlogFiles)" 
+        DestinationFolder="$(PublishDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" 
+      />
+  </Target>
+
+</Project>
