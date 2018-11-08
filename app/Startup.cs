@@ -54,6 +54,16 @@ namespace App
                 o.RootPath = Path.Combine(binDir,"search-engine-verify");
             });
 
+            services.AddAuthentication()
+                .AddMicrosoftAccount(o =>{
+                    o.ClientId = Configuration["Authentication:Microsoft:ClientId"];
+                    o.ClientSecret = Configuration["Authentication:Microsoft:ClientSecret"];
+                })
+                .AddGoogle(o => {
+                    o.ClientId = Configuration["Authentication:Google:ClientId"];
+                    o.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+                })
+                ;
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
@@ -78,6 +88,7 @@ namespace App
             app.UseStaticFiles();
 
             app.UseCookiePolicy();
+            app.UseAuthentication();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
