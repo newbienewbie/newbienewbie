@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Pomelo.EntityFrameworkCore.MySql;
 
 [assembly: HostingStartup(typeof(App.Areas.Identity.IdentityHostingStartup))]
 namespace App.Areas.Identity
@@ -15,9 +16,9 @@ namespace App.Areas.Identity
         public void Configure(IWebHostBuilder builder)
         {
             builder.ConfigureServices((context, services) => {
-                services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlServer(
-                        context.Configuration.GetConnectionString("AppDbContextConnection")));
+                services.AddDbContext<AppDbContext>(options =>{
+                    options.UseMySql( context.Configuration.GetConnectionString("AppDbContextConnection"));
+                });
 
                 services.AddDefaultIdentity<IdentityUser>()
                     .AddEntityFrameworkStores<AppDbContext>();
