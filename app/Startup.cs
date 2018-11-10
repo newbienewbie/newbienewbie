@@ -17,6 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace App
 {
@@ -88,6 +89,9 @@ namespace App
             app.UseStaticFiles();
 
             app.UseCookiePolicy();
+            app.UseForwardedHeaders(new ForwardedHeadersOptions{
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
             app.UseAuthentication();
             app.UseMvc(routes =>
             {
