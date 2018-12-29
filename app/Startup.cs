@@ -17,6 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace App
 {
@@ -54,6 +55,16 @@ namespace App
                 o.RootPath = Path.Combine(binDir,"search-engine-verify");
             });
 
+            services.AddAuthentication()
+                .AddMicrosoftAccount(o =>{
+                    o.ClientId = Configuration["Authentication:Microsoft:ClientId"];
+                    o.ClientSecret = Configuration["Authentication:Microsoft:ClientSecret"];
+                })
+                .AddGoogle(o => {
+                    o.ClientId = Configuration["Authentication:Google:ClientId"];
+                    o.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+                })
+                ;
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
@@ -78,6 +89,10 @@ namespace App
             app.UseStaticFiles();
 
             app.UseCookiePolicy();
+            app.UseForwardedHeaders(new ForwardedHeadersOptions{
+                ForwardedHeaders = ForwardedHeaders.XForwardedHost| ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+            app.UseAuthentication();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(

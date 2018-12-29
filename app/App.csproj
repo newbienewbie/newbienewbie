@@ -2,12 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <UserSecretsId>5441aabf-c106-4f4d-b070-a4d2dae500b5</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.4" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.5" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="2.1.2" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -25,30 +27,18 @@
       <StaticBlogFiles Include="$(RootProjectPathName)\hexo\public\**\*.*" />
   </ItemGroup>
 
-  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterBuild" AfterTargets="Build" >
-      <RemoveDir Directories="$(OutDir)\$(StaticVerficationFilesFolderName)"/>
-      <RemoveDir Directories="$(OutDir)\$(StaticBlogFilesFolderName)"/>
-      <Copy 
-        SourceFiles="@(StaticVerficationFiles)" 
-        DestinationFolder="$(OutDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
-      />
-      <Copy 
-        SourceFiles="@(StaticBlogFiles)" 
-        DestinationFolder="$(OutDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" 
-      />
+  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterBuild" AfterTargets="Build">
+      <RemoveDir Directories="$(OutDir)\$(StaticVerficationFilesFolderName)" />
+      <RemoveDir Directories="$(OutDir)\$(StaticBlogFilesFolderName)" />
+      <Copy SourceFiles="@(StaticVerficationFiles)" DestinationFolder="$(OutDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" />
+      <Copy SourceFiles="@(StaticBlogFiles)" DestinationFolder="$(OutDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" />
   </Target>
 
-  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterPublish" AfterTargets="Publish" >
-      <RemoveDir Directories="$(PublishDir)\$(StaticVerficationFilesFolderName)"/>
-      <RemoveDir Directories="$(PublishDir)\$(StaticBlogFilesFolderName)"/>
-      <Copy 
-        SourceFiles="@(StaticVerficationFiles)" 
-        DestinationFolder="$(PublishDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" 
-      />
-      <Copy 
-        SourceFiles="@(StaticBlogFiles)" 
-        DestinationFolder="$(PublishDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" 
-      />
+  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterPublish" AfterTargets="Publish">
+      <RemoveDir Directories="$(PublishDir)\$(StaticVerficationFilesFolderName)" />
+      <RemoveDir Directories="$(PublishDir)\$(StaticBlogFilesFolderName)" />
+      <Copy SourceFiles="@(StaticVerficationFiles)" DestinationFolder="$(PublishDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" />
+      <Copy SourceFiles="@(StaticBlogFiles)" DestinationFolder="$(PublishDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" />
   </Target>
 
 </Project>
