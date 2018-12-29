@@ -22,14 +22,17 @@ namespace App.Services.EmailSender{
         private void InitializeSmtpClient(){
             this.smtp = new SmtpClient();
             smtp.Host = this.Options.Host;
+            smtp.Port = this.Options.Port;
+            smtp.EnableSsl= this.Options.EnableSsl;
+            smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
             smtp.Credentials = new System.Net.NetworkCredential(this.Options.User, this.Options.Key);
             smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
             smtp.SendCompleted += (s , e )=>{
                 if (e.Cancelled)
                     this._logger.LogWarning($"email sending task canceled");
-                else if (e.Error != null)
-                    this._logger.LogCritical($"email sending task error : {e.Error.Message}");
-                else 
+                else if (e.Error != null){
+                    this._logger.LogCritical($"email sending task error : {e.Error.Message}\r\n\t{e.Error.StackTrace}");
+                } else 
                 {
                     this._logger.LogInformation($"email sending task succeeded");
                 }
@@ -43,6 +46,7 @@ namespace App.Services.EmailSender{
 
         public Task SendEmailAsync(string email, string subject, string message)
         {
+            this._logger.LogInformation($"EmailSender is trying to send email to {email} : {subject} => {message}");
             return Execute(email,subject,message);
         }
 
