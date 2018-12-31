@@ -114,7 +114,9 @@ namespace App.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
-                var user = new IdentityUser { UserName = Input.Email, Email = Input.Email };
+                // since we have required all the emails should be confirmed for internal login
+                //     we should set the `EmailConfirmed=true` for external login users
+                var user = new IdentityUser { UserName = Input.Email, Email = Input.Email, EmailConfirmed = true, };
                 var result = await _userManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
