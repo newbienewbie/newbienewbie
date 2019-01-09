@@ -1,0 +1,72 @@
+@page
+@model App.Areas.Tools.Pages.Barcode.GenerateBarcodePageModel
+@using Itminus.Barcode.TagHelpers
+
+
+<div class="container" style="margin-top:1em;">
+    <form class="form-horizontal" method="post">
+        <div class="form-group">
+            <label asp-for="BarcodeOptions.Content" class="control-label col-sm-2"></label>
+            <div class="col-sm-10">
+                <input asp-for="BarcodeOptions.Content" class="form-control " />
+                <span asp-validation-for="BarcodeOptions.Content" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="BarcodeOptions.Width" class="control-label col-sm-2"></label>
+            <div class="col-sm-10">
+                <input asp-for="BarcodeOptions.Width" class="form-control" />
+                <span asp-validation-for="BarcodeOptions.Width" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="BarcodeOptions.Height" class="control-label col-sm-2"></label>
+            <div class="col-sm-10">
+                <input asp-for="BarcodeOptions.Height" class="form-control" />
+                <span asp-validation-for="BarcodeOptions.Height" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="BarcodeOptions.Margin" class="control-label col-sm-2"></label>
+            <div class="col-sm-10">
+                <input asp-for="BarcodeOptions.Margin" class="form-control" />
+                <span asp-validation-for="BarcodeOptions.Margin" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="BarcodeOptions.Mode" class="control-label col-sm-2"></label>
+            <div class="col-sm-10" style="height:34px;font-size:14px; padding: 6px 12px;">
+                <input type="radio" checked='@(Model.BarcodeOptions.Mode=="QR_CODE")' asp-for="BarcodeOptions.Mode" value="QR_CODE" /> 二维码
+                <input type="radio" checked='@(Model.BarcodeOptions.Mode=="CODE_128")' asp-for="BarcodeOptions.Mode" value="CODE_128" /> 条形码
+                <span asp-validation-for="BarcodeOptions.Mode" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-2 col-sm-offset-5"> <button type="submit" class="btn btn-primary">生成图片</button> </div>
+        </div>
+
+
+        @if (ModelState.ErrorCount==0 && null!=Model.BarcodeOptions &&!String.IsNullOrEmpty(Model.BarcodeOptions.Content)){
+            <div class="form-group wrapper">
+                <label class="control-label col-sm-2">图片</label>
+                <div class="col-sm-10">
+                    @if(Model.BarcodeOptions.Mode=="CODE_128"){
+                        <SvgBarCode content="@Model.BarcodeOptions.Content" alt="@Model.BarcodeOptions.Alt" 
+                            width="@Model.BarcodeOptions.Width" height="@Model.BarcodeOptions.Height" margin="@Model.BarcodeOptions.Margin" 
+                            barcode-format="CODE_128" pure-barcode="false" 
+                        >
+                        </SvgBarCode>
+                    }
+                    else if(Model.BarcodeOptions.Mode=="QR_CODE"){
+                        <SvgBarCode content="@Model.BarcodeOptions.Content" alt="@Model.BarcodeOptions.Alt" 
+                            width="@Model.BarcodeOptions.Width" height="@Model.BarcodeOptions.Height" margin="@Model.BarcodeOptions.Margin" 
+                            barcode-format="QR_CODE" pure-barcode="false" 
+                        >
+                        </SvgBarCode>
+                    }
+                </div>
+            </div>
+        }
+    </form>
+</div>
