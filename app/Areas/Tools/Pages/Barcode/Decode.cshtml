@@ -1,0 +1,49 @@
+@page
+@model App.Areas.Tools.Pages.Barcode.DecodePageModel
+
+<div>
+    <h2>二维码 - 解码</h2>
+</div>
+
+<div class="col-sm-12" style="margin-top:1em;">
+    <form method="post" id="barcode-decode">
+        <div class="form-group row">
+            <label class="control-label col-sm-2">二维码图片</label>
+            <div class="col-sm-10">
+                <input type="file" name="image" class="form-control-file" />
+            </div>
+        </div>
+        <div class="form-group row ">
+            <button type="submit" class="btn btn-primary col-sm-2">解码</button>
+            <div class="col-sm-10">
+                <div class="decode-result alert alert-success"></div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts{
+    <script type="text/javascript">
+        var resultElement = document.querySelector(".decode-result");
+        var form=document.querySelector("#barcode-decode")
+        var img =form.querySelector('image');
+        var file = form.querySelector("input[type='file']");
+        form.querySelector("button[type='submit']").onclick = e=>{
+            e.preventDefault();
+            var formdata = new FormData(form);
+            var xhr = new XMLHttpRequest();
+            xhr.open("post",document.location);
+            xhr.send(formdata);
+            xhr.onload = e =>{
+                var result = xhr.responseText;
+                try{
+                    result = JSON.parse(result);
+                    resultElement.textContent = result.text;
+                }catch(e){
+                    resultElement.textContent = "错误："+ e.toString();
+                }
+            }
+            return false;
+        };
+    </script>
+}
