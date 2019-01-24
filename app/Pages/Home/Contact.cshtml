@@ -1,0 +1,89 @@
+﻿@page
+@model App.Pages.Home.ContactModel
+
+<h2>Contact</h2>
+
+<div id="container">
+    <div class="contact">
+        <p>
+            The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections
+            1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact
+            original form, accompanied by English versions from the 1914 translation by H. Rackham.
+        </p>
+        <div id="baidumap" class="map" style="width:100%;height:400px;"></div>
+        <div class="feedback">
+            <div class="col-12 col-md-6 col-lg-6 feedback-form">
+                <h2>反馈您的意见</h2>
+                <form method="post">
+                    <div class="form-group">
+                        <label asp-for="InputModel.UserName" class="control-label"></label>
+                        <input asp-for="InputModel.UserName" class="form-control">
+                        <span asp-validation-for="InputModel.UserName" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="InputModel.Email" class="control-label"></label>
+                        <input asp-for="InputModel.Email" class="form-control">
+                        <span asp-validation-for="InputModel.Email" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="InputModel.Content" class="control-label"></label>
+                        <textarea asp-for="InputModel.Content" class="form-control"></textarea>
+                        <span asp-validation-for="InputModel.Content" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <button type="submit">提交</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-12 col-md-6 col-lg-6 feedback-info">
+                <h2>联系信息</h2>
+                <p>
+                    The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested.
+                    Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced
+                    in their exact original form, accompanied by English versions from the 1914 translation by
+                    H. Rackham.
+                </p>
+                <address>
+                    <strong>
+                        The Company Name Inc.<br />
+                        9870 St Vincent Place, Glasgow, DC 45 Fr 45.
+                    </strong><br />
+                    电话: +1 800 603 6035<br />
+                    传真: +1 800 889 9898<br />
+                    邮箱: <a href="mailto:info@example.com">mail@example.com </a><br />
+                </address>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts{
+
+    <script type="text/javascript">
+        //百度地图API功能
+        window.onload = function() {
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src = "https://api.map.baidu.com/api?v=2.0&ak=kdoHd3T6c9rQqdxSePGlydrAGAOyDGIv&callback=initializeBaiduMap";
+            document.body.appendChild(script);
+        };
+        function initializeBaiduMap() {
+            var map = new BMap.Map("baidumap");            // 创建Map实例
+            var point = new BMap.Point(120.379651,31.499135); // 创建点坐标
+            var bs = map.getBounds();   //获取可视区域
+            var bssw = bs.getSouthWest();   //可视区域左下角
+            var bsne = bs.getNorthEast();   //可视区域右上角
+            map.centerAndZoom(point, 15);
+            map.enableScrollWheelZoom();
+            map.addControl(new BMap.NavigationControl());
+            map.addControl(new BMap.ScaleControl());    
+            map.addControl(new BMap.OverviewMapControl());    
+            map.addControl(new BMap.MapTypeControl());    
+            map.setCurrentCity("无锡");
+            var marker = new BMap.Marker(point); 
+            map.addOverlay(marker);    
+        }
+    </script>
+}
