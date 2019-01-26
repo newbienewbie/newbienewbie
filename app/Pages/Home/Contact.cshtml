@@ -1,0 +1,90 @@
+﻿@page
+@model App.Pages.Home.ContactModel
+
+<h2>Contact</h2>
+
+<div id="container">
+    <div class="contact">
+        
+        <div class="feedback row">
+            <div class="col-12 col-md-12 col-lg-12">
+                <h2>面基</h2>
+                <p> 白雪飞天横舟渡,乌衣携剑踏巷来</p>
+                <div id="baidumap" class="map" style="width:100%;height:400px;"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 col-md-6 col-lg-6 feedback-form">
+                <h2>反馈您的意见</h2>
+                <form method="post">
+                    <div class="form-group">
+                        <label asp-for="InputModel.Title" class="control-label"></label>
+                        <input asp-for="InputModel.Title" class="form-control">
+                        <span asp-validation-for="InputModel.Title" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="InputModel.Content" class="control-label"></label>
+                        <textarea asp-for="InputModel.Content" class="form-control"></textarea>
+                        <span asp-validation-for="InputModel.Content" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">提交</button>
+                    </div>
+                </form>
+                @if(!string.IsNullOrEmpty(Model.Message)){
+                    <div class="alert alert-success">@Model.Message</div>
+                }
+            </div>
+            <div class="col-12 col-md-6 col-lg-6 feedback-info">
+                <h2>其他联系方式</h2>
+                <p>
+                    您还可以在其他<span>网站<span>/<span>论坛</span>/<span>社交媒体</span>上找到我
+                </p>
+                <address>
+                    <strong>
+                        <a href="https://github.com/newbienewbie">GitHub</a> <br/>
+                        <a href="https://stackoverflow.com/users/10091607/itminus">Stack Overflow</a></br>
+                    </strong><br />
+
+                    <div>
+                        邮箱: <a >chenfa[@@]itminus.com </a><br />
+                        微博: <a href="https://weibo.com/u/5453496401">网络机器人</a>(几乎不上)<br />
+                    </div>
+                </address>
+            </div>
+        </div>
+
+    </div>
+    <div class="clearfix" ></div>
+</div>
+
+
+
+@section Scripts{
+
+    <script type="text/javascript">
+        //百度地图API功能
+        window.onload = function() {
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src = "https://api.map.baidu.com/api?v=2.0&ak=kdoHd3T6c9rQqdxSePGlydrAGAOyDGIv&callback=initializeBaiduMap";
+            document.body.appendChild(script);
+        };
+        function initializeBaiduMap() {
+            var map = new BMap.Map("baidumap");            // 创建Map实例
+            var point = new BMap.Point(120.379651,31.499135); // 创建点坐标
+            var bs = map.getBounds();   //获取可视区域
+            var bssw = bs.getSouthWest();   //可视区域左下角
+            var bsne = bs.getNorthEast();   //可视区域右上角
+            map.centerAndZoom(point, 12);
+            map.enableScrollWheelZoom();
+            map.addControl(new BMap.NavigationControl());
+            map.addControl(new BMap.ScaleControl());    
+            map.addControl(new BMap.OverviewMapControl());    
+            map.addControl(new BMap.MapTypeControl());    
+            map.setCurrentCity("无锡");
+            var marker = new BMap.Marker(point); 
+            map.addOverlay(marker);    
+        }
+    </script>
+}
