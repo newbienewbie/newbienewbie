@@ -28,6 +28,7 @@ public interface IMiddleware
  public delegate Task NextDelegate(CancellationToken cancellationToken);
 ```
 含义是调用下一个中间件的`OnTurnAsync(ctx,next,ct)`方法。
+<!--more-->
 
 ## 中间件链式调用
 
