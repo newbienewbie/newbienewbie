@@ -18,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Rewrite;
 
 namespace App
 {
@@ -80,6 +81,9 @@ namespace App
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
+            app.UseRewriter(new Microsoft.AspNetCore.Rewrite.RewriteOptions()
+                .AddRewrite("^$","/blog",skipRemainingRules:true)
+            );
 
             app.UseHttpsRedirection();
 
