@@ -61,7 +61,7 @@ categories:
 
 ## 可变头和负载
 
-某些类型的报文包含了可变头，而且每种报文的可变头都不一样；而且，也并不是每种报文都有`Payload`部分:
+某些类型的报文包含了可变头，而且每种报文的可变头都不一样；此外，也并不是每种报文都有`Payload`部分:
 
 |连接管理类型报文| Payload    |
 |---------------|------------|
@@ -86,7 +86,7 @@ categories:
 
 ### 连接功能
 
-`Connect`报文的可变头和复杂相对简单。
+`Connect`报文的可变头和负载相对复杂一些。
 
 - `Variable header`: 协议名(6 Bytes)+协议级别(1 Byte)+连接标志(1 Byte)+保持连接(2 Bytes)
 - `Payload`: Client Identifier +  Will Topic + Will Message + User Name + Password 
@@ -115,7 +115,7 @@ categories:
 | `0x05`        | 连接拒绝（未授权）             |
 | `0x06`-`0xFF` | 预留                         |
 
-`CONNACK`报文无`Payload`部分。
+注意`CONNACK`报文无`Payload`部分。
 
 
 ### 发布消息及响应
