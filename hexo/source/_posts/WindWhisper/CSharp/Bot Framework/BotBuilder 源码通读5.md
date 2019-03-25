@@ -35,7 +35,7 @@ categories:
 ```
 
 从效果上讲，`Dialog`是对“对话”的抽象：一个`Dialog`便是一次对话；在一个对话进行期间，可以开启其他子对话，待子对话完成后会“恢复”父对话的处理。这个过程如同栈一样。
-可以把`Dialog`类比作一个函数：定义一个`Dialog`类似于定义某种函数；`Dialog`的执行过程类似于函数的调用过程，`Dialog`的嵌套执行也类似于函数的嵌套调用。
+可以把`Dialog`类比作一个函数：定义一个`Dialog`类似于定义某种函数；`Dialog`的执行过程类似于函数的调用过程，`Dialog`的嵌套执行也类似于函数的嵌套调用。<!-- more -->
 ```csharp
 public abstract class Dialog
 {
