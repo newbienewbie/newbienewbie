@@ -30,7 +30,7 @@ categories:
 3. 统计这`k`个样品的类别
 
 
-对于点`$\bold x^{(p)}$` 和点`$\bold x^{(q)}$`之间的**欧几里得距离**，其实就是各个**分量之差的平方和**。令:
+对于点`$\bold x^{(p)}$` 和点`$\bold x^{(q)}$`之间的**欧几里得距离**，其实就是各个**分量之差的平方和**再取平方根。令:
 
 `$\bold x^{(p)}=(x^{(p)}_1,x^{(p)}_2,x^{(p)}_3,...,x^{(p)}_n)$`，
 `$\bold x^{(q)}=(x^{(q)}_1,x^{(q)}_2,x^{(q)}_3,...,x^{(q)}_n)$`,
@@ -38,12 +38,12 @@ categories:
 则**欧几里得距离**可以表示为：
 ```math
 %% KaTex
-\text{Distance} =\displaystyle \sum_{t=1}^{n} (x^{(p)}_t - x^{(q)}_t)^{2}
+\text{Distance}^2 =\displaystyle \sum_{t=1}^{n} (x^{(p)}_t - x^{(q)}_t)^{2}
 ```
 
-用代码表示则是：
+不过，这里我们并不需要取平方根，因为二者呈正相关，我们只需要计算各个分量之差的平方和即可得到最近的`$k$`个样品点。用代码表示则是：
 ```fsharp
-/// Euclidean distance function
+/// Euclidean distance function 
 let distance (values1: float list) (values2: float list) = 
     List.sumBy 
         (fun it -> Math.Pow( float( (fst it) - (snd it)), 2.0)) 
