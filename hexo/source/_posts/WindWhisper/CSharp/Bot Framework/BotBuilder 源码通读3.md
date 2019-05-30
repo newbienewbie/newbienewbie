@@ -38,9 +38,16 @@ categories:
 +---------------------+    +-------------+    +----------------------------+
 ```
 
+本质上，`BotState`并不是状态，而是状态管理器。状态可以被抽象为一个`IDictionary<string,object>`型对象，而状态管理器是可以对某个状态进行存、取、删的管理器，更具体的，状态管理器还可以对某个状态的某个属性进行存、取、删操作。
+
+* 状态是`IDictionary<string,object>`型对象，一个程序可以包含有任意多种类型的状态，常见的状态分类**会话状态**、**用户状态**、和**私有会话状态**
+* 状态属性是某个状态下的一个属性，还是一个`IDictionary<string,object>`类型的对象，一个状态可以包含任意多的属性。
+* 类`BotState`及其实现`ConversationState`类、`UserState`类等均是**针对某种具体状态的管理器**。其中嵌入了一个`IStorage`对象，在此基础之上，状态管理器可以从持久层加载特定的状态、可以删除特定的状态，还可以保存特定的状态到持久层。比如`ConversationState`是针对会话状态的管理器，负责对会话状态及会话状态的属性进行存、取、删；而`UserState`则是针对用户状态的管理器，负责对用户状态及用户状态的属性进行存、取、删；
+* 状态属性访问器是隐含了
+
 <!-- more -->
 
-## 状态实现
+## 状态管理器的实现
 
 从实现上说，状态有两层：缓存和持久层。
 
@@ -56,7 +63,6 @@ TurnContext.TurnState["<cache-key>"]
 - `UserState`: `TurnState.Get<CachedBotState><nameof(UserState)>()`
 - `ConversationState`: `TurnState.Get<CachedBotState><nameof(ConversationState)>()`
 - `PrivateConversationState`: `TurnState.Get<CachedBotState><nameof(PrivateConversationState)>()`
-
 
 
 这里的缓存状态对象`CachedBotState`并没有什么复杂的代码，只是对一个字典进行简单地包装：
@@ -85,7 +91,7 @@ private class CachedBotState
 }
 ```
 
-其实，准确的说，状态对象是`CachedBotState.State`而非缓存状态对象`CachedBotState`。缓存状态对象`CachedBotState`只不过再在状态对象之上提供了一点简单包装，令其可以检测`IsChagned`、`Hash`等信息，仅此而已。
+其实，准确的说，状态对象是`CachedBotState.State`(类型是`IDictionary<string,object>`)而非缓存状态对象`CachedBotState`。缓存状态对象`CachedBotState`只不过再在状态对象之上提供了一点简单包装，令其可以检测`IsChagned`、`Hash`等信息，仅此而已。
 
 另一方面，对于外部使用用者而言，他们并不知道缓存状态对象类型`CachedBotState`的存在，他们只意识到状态对象(`CachedBotState.State`)。从理解的角度上讲，可以把缓存状态对象当作状态对象(`CachedBotState.State`)。
 

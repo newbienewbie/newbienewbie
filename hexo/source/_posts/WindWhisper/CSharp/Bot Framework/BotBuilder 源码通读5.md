@@ -191,6 +191,16 @@ public class DialogSet
         return new DialogContext(this, context, state);
     }
 ```
+在`4.2`之后，`Bot Framework`让`DialogSet`的构造函数接受一个`IStatePropertyAccessor<DialogState>`对象。这样一来，`CreateContext(turnContext,dialogState)`方法就可以少传入一个参数，因为可以通过该访问器拿到`DialogState`。也就是说，在`4.2`之后，可以用如下方式构建`DialogContext`：
+
+```csharp
+var dialogStatePropertyAccessor = this.conversationState.CreateProperty<DialogState>("DialogState");
+
+var dialogSet = new DialogSet(dialogStatePropertyAccessor);
+dialogSet.Add(mainDialog);
+
+var dialogContext = await dialogSet.CreateContextAsync(turnContext,cancellationToken);
+```
 
 ## 对话执行控制与`DialogContext`
 
