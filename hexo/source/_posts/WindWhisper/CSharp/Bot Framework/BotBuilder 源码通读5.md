@@ -96,7 +96,14 @@ public abstract class Dialog
 }
 ```
 
-需要说明的是，就跟函数定义一样，`Dialog`只是定义了处理逻辑，处理逻辑本身并无状态。在程序中，我们通常需要反复、或者并行执行某个函数，在运行时，这会在栈上保存数据，函数多次的反复执行，并不会影响函数的定义本身。
+`Dialog`类几个最关键的方法的作用为:
+* `BeginDialogAsync(dc, options, ct)`：启动对话框，负责对话框的初始化工作。比如新建`DialogState`、向客户端发送询问消息等。
+* `ContinueDialogAsync(dc, ct)`：当收到消息后，需要继续执行的工作。比如获取当前`DialogState`，根据具体逻辑继续执行甚至结束对话框调用等
+* `ResumeDialogAsync(dc,dialogReason,result,ct)`：通常表示当从子对话调用返回时，需要做的工作，这里的`result`参数就是子对话输出的结果。但是此方法并非只能用于子对话返回调用，用户可以根据自己需要，把当对话恢复执行时要做的操作放到这里。有时候，`ContinueDialogAsync()`和`ResumeDialogAsync()`在语义上比较难以分开。比如有一个瀑布流的对话，每次只执行其中一小步(如此递增，直至结束），每一小步的执行都可以看作`ResumeDialogAsync()`，而`ContinueDialogAsync()`甚至也是无脑`ResumeDialogAsync()`而已。
+* `EndDialogAsync(tc, dialogInstance, dialogReason, ct)`：结束对话框时需要做的清理工作。
+
+
+需要说明的是，就跟函数定义一样，`Dialog`类只是定义了处理逻辑，处理逻辑本身并无状态。在程序中，我们通常需要反复、或者并行执行某个函数，在运行时，这会在栈上保存数据，函数多次的反复执行，并不会影响函数的定义本身。
 
 ## `DialogInstance` 和 `DialogState`
 
@@ -239,13 +246,15 @@ public class DialogTurnResult
     }
 ```
 
-此外，还有以下用于控制流程的属性和方法：
+最后，`DialogContext`还提供有以下属性及方法用于控制流程：
 
 1. `ActiveDialog`属性用于返回当前栈顶`DialogInstance`
 2. `BeginDialogAsync(dialogId, opts, ct)`方法用于调用一个新的`Dialog`：也即把一个新的`DialogInstance`压入栈中，然后通过`Dialog::BeginDialogAsync()`方法“激活”该`Dialog`的执行。此方法返回一个`Task<DialogTurnResult>` 。
-3. `ContinueDialogAsync(DialogContext dc, ct)`方法用于对话栈的无脑继续继续执行。也即找到栈顶`Dialog`，通过`Dialog::ContinueDialogAsync(this, ct)`方法继续执行`Dialog`；如果当前栈为空，则直接返回一个`new DialogTurnResult(DialogTurnStatus.Empty)`
+3. `ContinueDialogAsync(dc, ct)`方法用于对话栈的无脑继续继续执行。也即**找到栈顶`Dialog`，通过`Dialog::ContinueDialogAsync(this, ct)`方法继续执行`Dialog`**；如果当前栈为空，则直接返回一个`new DialogTurnResult(DialogTurnStatus.Empty)`
 4. `EndDialogAsync(result,ct)`: 先弹出当前栈顶`Dialog`；要是栈中还有`Dialog`，则说明存在上一级调用，此时再通过`Dialog::ResumeDialogAsync(this, DialogReason.EndCalled, result, ct)`恢复执行`Dialog`；要是栈为空，则直接返回`new DialogTurnResult(DialogTurnStatus.Complete, result);`
 5. `CancelAllDialogsAsync(ct)`：要是栈不为空，则逐一调用各`Dialog::EndDialogAsync(Context,instance,reason,ct)`方法；否则返回直接返回一个`new DialogTurnResult(DialogTurnStatus.Empty);`
 6. `ReplaceDialogAsync(dialogId, opts = null, ct)`：用一个全新的`Dialog`替换当前栈顶`Dialog`。
 7. `PromptAsync(dialogId, opts, ct)`: 强类型版本的`BeginDialogAsync(dialogId,opts,ct)`，仅此而已。
 8. `RepromptDialogAsync(ct)`: 调用当前栈顶`Dialog`的`RepromptDialogAsync(Context, ActiveDialog, ct)`。
+
+这其中最重要的方法无疑是`ContinueDialogAsync(dc,ct)`，如前文所述，这个方法用于对话栈的无脑执行：每次处理消息，其实都是在调用的这个方法；倘若调用后发现这个此方法返回的结果指示当前是一个空栈，则意味着可能需要`BeginDialogAsync(dialogId)`来开始一个新的对话。
