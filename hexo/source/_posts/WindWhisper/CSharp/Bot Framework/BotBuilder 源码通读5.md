@@ -99,7 +99,7 @@ public abstract class Dialog
 `Dialog`类几个最关键的方法的作用为:
 * `BeginDialogAsync(dc, options, ct)`：启动对话框，负责对话框的初始化工作。比如新建`DialogState`、向客户端发送询问消息等。
 * `ContinueDialogAsync(dc, ct)`：当收到消息后，需要继续执行的工作。比如获取当前`DialogState`，根据具体逻辑继续执行甚至结束对话框调用等
-* `ResumeDialogAsync(dc,dialogReason,result,ct)`：通常表示当从子对话调用返回时，需要做的工作，这里的`result`参数就是子对话输出的结果。但是此方法并非只能用于子对话返回调用，用户可以根据自己需要，把当对话恢复执行时要做的操作放到这里。有时候，`ContinueDialogAsync()`和`ResumeDialogAsync()`在语义上比较难以分开。比如有一个瀑布流的对话，每次只执行其中一小步(如此递增，直至结束），每一小步的执行都可以看作`ResumeDialogAsync()`，而`ContinueDialogAsync()`甚至也是无脑`ResumeDialogAsync()`而已。
+* `ResumeDialogAsync(dc,dialogReason,result,ct)`：通常表示当从子对话调用返回时，需要做的工作，这里的`result`参数就是子对话输出的结果。
 * `EndDialogAsync(tc, dialogInstance, dialogReason, ct)`：结束对话框时需要做的清理工作。
 
 
@@ -257,4 +257,23 @@ public class DialogTurnResult
 7. `PromptAsync(dialogId, opts, ct)`: 强类型版本的`BeginDialogAsync(dialogId,opts,ct)`，仅此而已。
 8. `RepromptDialogAsync(ct)`: 调用当前栈顶`Dialog`的`RepromptDialogAsync(Context, ActiveDialog, ct)`。
 
-这其中最重要的方法无疑是`ContinueDialogAsync(dc,ct)`，如前文所述，这个方法用于对话栈的无脑执行：每次处理消息，其实都是在调用的这个方法；倘若调用后发现这个此方法返回的结果指示当前是一个空栈，则意味着可能需要`BeginDialogAsync(dialogId)`来开始一个新的对话。
+这其中最重要的方法是以下三个方法：
+1. `BeginDialogAsync(dialogId,opts,ct)`: 把新的对话压入栈中，调用一个新对话
+2. `ContinueDialogAsync(dc,ct)`：如前文所述，这个方法用于对话栈的无脑执行：每次处理消息，其实都是在调用的这个方法；倘若调用后发现这个此方法返回的结果指示当前是一个空栈，则意味着可能需要`BeginDialogAsync(dialogId)`来开始一个新的对话。
+3. `EndDialogAsync(result,ct)`：这个方法实际上做了两件事，一是结束当前栈顶对话并弹出，也即执行当前栈顶对话的`dialog.EndDialogAsync(ctx,instance,reason,ct)`方法后移除当前栈顶对话；二是在栈顶会话结束并弹出后，恢复上一级父会话的执行 `dialog.ResumeDialogAsync(this,DialogReason.EndCalled,result,ct)`。
+
+这三个方法是如此的重要，以至于官方的`Sample`中添加如下的扩展方法来让我们的对话执行更加无脑:
+```csharp
+public static async Task Run(this Dialog dialog, ITurnContext turnContext, IStatePropertyAccessor<DialogState> accessor, CancellationToken cancellationToken = default(CancellationToken))
+{
+    var dialogSet = new DialogSet(accessor);
+    dialogSet.Add(dialog);
+
+    var dialogContext = await dialogSet.CreateContextAsync(turnContext, cancellationToken);
+    var results = await dialogContext.ContinueDialogAsync(cancellationToken);
+    if (results.Status == DialogTurnStatus.Empty)
+    {
+        await dialogContext.BeginDialogAsync(dialog.Id, null, cancellationToken);
+    }
+}
+```
