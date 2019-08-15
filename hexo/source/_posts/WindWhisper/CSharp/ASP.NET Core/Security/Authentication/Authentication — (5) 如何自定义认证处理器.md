@@ -36,7 +36,7 @@ public class SubsKeyAuthNSchemeOptions : AuthenticationSchemeOptions
 
 认证处理器需要首先从报头中提取`Token`（也即订阅的`Key`）；然后判断当前Key是否为试用的订阅，然后从数据库中检索该Key是否有效；如果有效，则生成认证成功凭证、认证票据，最后返回认证成功结果。
 
-下面给出认证处理器的完整实现：
+下面给出认证处理器的完整实现：<!-- more -->
 ```csharp
 public class SubsKeyAuthNHandler : AuthenticationHandler<SubsKeyAuthNSchemeOptions>
 {
