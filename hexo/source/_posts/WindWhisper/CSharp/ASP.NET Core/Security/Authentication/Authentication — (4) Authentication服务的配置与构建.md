@@ -17,8 +17,8 @@ categories:
 ## 世界观
 
 `ASP.NET Core`可以配置多种认证，让各个认证模式协同工作。这种配置主要体现在两个方面:
-1. 需要对`DI`容器中的 **`AuthenticationOptions`** 进行设置: 其中包含了每一种认证模式对应的`<scheme>-<handler>`的映射关系、以及默认的相关scheme名等信息。
-2. 需要把各个`scheme`对应的 **`handler`** **作为服务**注册 到`DI`容器中。
+1. 需要对`DI`容器中的 **`AuthenticationOptions`** 进行设置: 其中包含了每一种认证模式对应的`<scheme>-<handlerType>`的映射关系、以及默认的相关scheme名等信息。
+2. 需要把各个`scheme`对应的 **`handler`类** **作为服务**注册 到`DI`容器中。
 
 ### `AuthenticationBuilder`
 
