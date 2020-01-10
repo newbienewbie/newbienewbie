@@ -4,6 +4,8 @@ date: 2019-12-31 14:47:03
 tags:
 - IoC
 - DI
+- 依赖注入
+- 控制反转
 - ASP.NET Core
 - CSharp
 categories:
