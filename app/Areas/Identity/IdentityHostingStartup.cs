@@ -21,7 +21,7 @@ namespace App.Areas.Identity
             builder.ConfigureServices((context, services) => {
                 var config = context.Configuration;
                 services.AddDbContext<AppDbContext>(options =>{
-                    options.UseMySql( config.GetConnectionString("AppDbContextConnection"));
+                    options.UseSqlite( config.GetConnectionString("AppDbContextConnection"));
                 });
 
                 services.AddDefaultIdentity<IdentityUser>(c=>{

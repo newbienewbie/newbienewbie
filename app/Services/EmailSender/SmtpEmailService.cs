@@ -22,7 +22,9 @@ namespace App.Services.EmailSender{
         private void InitializeSmtpClient(){
             this.smtp = new SmtpClient();
             smtp.Host = this.Options.Host;
-            smtp.Port = this.Options.Port;
+            if(this.Options.Port != default){
+                smtp.Port = this.Options.Port;
+            }
             smtp.EnableSsl= this.Options.EnableSsl;
             smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
             smtp.Credentials = new System.Net.NetworkCredential(this.Options.User, this.Options.Key);

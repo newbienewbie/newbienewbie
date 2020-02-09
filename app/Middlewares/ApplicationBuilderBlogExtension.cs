@@ -28,10 +28,8 @@ namespace App.Middlewares{
             };
             fileOptions.RequestPath=bo.RequestPath;
             fileOptions.FileProvider=fileProvider;
-            var option = Microsoft.Extensions.Options.Options.Create(fileOptions);
 
-            // there's a bug in default staticFiles 
-            app.UseMiddleware<MyDefaultFilesMiddleware>(option);
+            app.UseDefaultFiles(fileOptions);
 
             var staticFileOptions = new StaticFileOptions() {
                 RequestPath = bo.RequestPath,
