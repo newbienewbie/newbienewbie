@@ -19,6 +19,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Rewrite;
+using Microsoft.Extensions.Hosting;
 
 namespace App
 {
@@ -41,20 +42,19 @@ namespace App
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
+            services.AddOptions<StaticBlogOption>()
+                .Configure<IWebHostEnvironment>((o,env)=>{
+                    var binDir= env.ContentRootPath;
+                    o.RequestPath="/blog";
+                    o.RootPath=Path.Combine(binDir,"static-blog");
+                });
 
-            services.Configure<StaticBlogOption>(o=>{
-                var location = Assembly.GetEntryAssembly().Location;
-                var binDir= Path.GetDirectoryName(location);
-                o.RequestPath="/blog";
-                o.RootPath=Path.Combine(binDir,"static-blog");
-            });
-
-            services.Configure<StaticVerificationOption>(o=>{
-                var location = Assembly.GetEntryAssembly().Location;
-                var binDir= Path.GetDirectoryName(location);
-                o.RequestPath = "";
-                o.RootPath = Path.Combine(binDir,"search-engine-verify");
-            });
+            services.AddOptions<StaticVerificationOption>()
+                .Configure<IWebHostEnvironment>((o,env)=>{
+                    var binDir= env.ContentRootPath;
+                    o.RequestPath = "";
+                    o.RootPath = Path.Combine(binDir,"search-engine-verify");
+                });
 
             services.AddAuthentication()
                 .AddMicrosoftAccount(o =>{
@@ -66,11 +66,17 @@ namespace App
                     o.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
                 })
                 ;
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddControllersWithViews();
+            services.AddRazorPages();
+            services.Configure<ForwardedHeadersOptions>(opts =>{
+                opts.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+                opts.KnownNetworks.Clear();
+                opts.KnownProxies.Clear();
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider sp)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider sp)
         {
             if (env.IsDevelopment())
             {
@@ -81,6 +87,7 @@ namespace App
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
+            app.UseRouting();
             app.UseRewriter(new Microsoft.AspNetCore.Rewrite.RewriteOptions()
                 .AddRewrite("^$","/blog",skipRemainingRules:true)
             );
@@ -93,15 +100,12 @@ namespace App
             app.UseStaticFiles();
 
             app.UseCookiePolicy();
-            app.UseForwardedHeaders(new ForwardedHeadersOptions{
-                ForwardedHeaders = ForwardedHeaders.XForwardedHost| ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-            });
+            app.UseForwardedHeaders();
             app.UseAuthentication();
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+            app.UseAuthorization();
+            app.UseEndpoints(routes =>{
+                routes.MapControllerRoute("default","{controller}/{action}/{id?}");
+                routes.MapRazorPages();
             });
         }
     }
