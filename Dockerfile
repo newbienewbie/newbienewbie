@@ -10,7 +10,7 @@ COPY app/*.csproj ./
 ## build static blogs
 FROM node:10 as hexo
 WORKDIR /hexo
-COPY app/hexo/. ./
+COPY hexo/. ./
 WORKDIR /hexo
 RUN npm install
 RUN npm run hexo:g
