@@ -34,5 +34,5 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish/. .
 
-ENTRYPOINT ["dotnet", "app.dll"]
+ENTRYPOINT ["dotnet", "App.dll"]
 CMD [ "--urls", "http://0.0.0.0:5000" ]
