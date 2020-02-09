@@ -18,33 +18,16 @@
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="3.1.*" />
   </ItemGroup>
 
-  <PropertyGroup>
-      <!-- root project path -->
-      <RootProjectPathName>$([System.IO.Path]::GetDirectoryName($(MSBuildProjectDirectory)))</RootProjectPathName>
-      <!-- static verification files target folder -->
-      <StaticVerficationFilesFolderName>search-engine-verify</StaticVerficationFilesFolderName>
-      <!-- static blog files target folder -->
-      <StaticBlogFilesFolderName>static-blog</StaticBlogFilesFolderName>
-  </PropertyGroup>
-
-   <!-- static source -->
+  <!-- copy static files -->
   <ItemGroup>
-      <StaticVerficationFiles Include="$(RootProjectPathName)\search-engine-verify\**\*.*" />
-      <StaticBlogFiles Include="$(RootProjectPathName)\hexo\public\**\*.*" />
+      <None Update="search-engine-verify\**\*.*" 
+        LinkBase="search-engine-verify"
+        CopyToPublishDirectory="Always" 
+      />
+      <None Update="static-blog\**\*.*" 
+        LinkBase="search-engine-verify"
+        CopyToPublishDirectory="Always" 
+      />
   </ItemGroup>
-
-  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterBuild" AfterTargets="Build">
-      <RemoveDir Directories="$(OutDir)\$(StaticVerficationFilesFolderName)" />
-      <RemoveDir Directories="$(OutDir)\$(StaticBlogFilesFolderName)" />
-      <Copy SourceFiles="@(StaticVerficationFiles)" DestinationFolder="$(OutDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" />
-      <Copy SourceFiles="@(StaticBlogFiles)" DestinationFolder="$(OutDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" />
-  </Target>
-
-  <Target Name="CopyStaticBlogAndStaticVerficationFilesAfterPublish" AfterTargets="Publish">
-      <RemoveDir Directories="$(PublishDir)\$(StaticVerficationFilesFolderName)" />
-      <RemoveDir Directories="$(PublishDir)\$(StaticBlogFilesFolderName)" />
-      <Copy SourceFiles="@(StaticVerficationFiles)" DestinationFolder="$(PublishDir)\$(StaticVerficationFilesFolderName)\%(RecursiveDir)" />
-      <Copy SourceFiles="@(StaticBlogFiles)" DestinationFolder="$(PublishDir)\$(StaticBlogFilesFolderName)\%(RecursiveDir)" />
-  </Target>
 
 </Project>

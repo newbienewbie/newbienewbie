@@ -44,15 +44,15 @@ namespace App
 
             services.AddOptions<StaticBlogOption>()
                 .Configure<IWebHostEnvironment>((o,env)=>{
-                    var binDir= env.ContentRootPath;
                     o.RequestPath="/blog";
+                    var binDir= env.ContentRootPath;
                     o.RootPath=Path.Combine(binDir,"static-blog");
                 });
 
             services.AddOptions<StaticVerificationOption>()
                 .Configure<IWebHostEnvironment>((o,env)=>{
-                    var binDir= env.ContentRootPath;
                     o.RequestPath = "";
+                    var binDir= env.ContentRootPath;
                     o.RootPath = Path.Combine(binDir,"search-engine-verify");
                 });
 
