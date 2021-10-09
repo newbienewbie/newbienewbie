@@ -30,6 +30,59 @@ let injectWebsocketCode (webpage:string) =
     let index = webpage.IndexOf head
     webpage.Insert ( (index + head.Length + 1),websocketScript)
 
+let createKatexFormulaScript () = 
+  """
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).textContent);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+  // 查找所有 figure pre 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("figure.plain pre");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    var first=node.children[0];
+    if(first.textContent.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+      // 移除 <br>
+      var nextSibling=first.nextSibling;
+      if(nextSibling.nodeName.trim().toLowerCase()=='br'){
+        removeNode(nextSibling);
+      }
+      // 移除魔术标记所在行
+      removeNode(first);
+      // 逐行渲染
+      var lines=node.querySelectorAll(".line");
+      for(var k=0;k<lines.length;k++){
+          var f=lines.item(k).textContent;
+          katex.render(f, lines.item(k));
+      }
+      // 消除父级嵌套 
+      var tr=node.parentNode.parentNode;
+      try{
+        tr.innerHTML=node.innerHTML;
+      }catch(e){
+        // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+        console.log('IE9 sucks',e);
+        $(tr).html(node.innerHTML);
+      }
+    }
+  }
+    """
+
+let katexFormulaScript = createKatexFormulaScript ()
+
 let layout (ctx : SiteContents) active bodyCnt =
     let pages = ctx.TryGetValues<Pageloader.Page> () |> Option.defaultValue Seq.empty
     let siteInfo = ctx.TryGetValue<Globalloader.SiteInfo> ()
@@ -74,6 +127,13 @@ let layout (ctx : SiteContents) active bodyCnt =
             ]
           ]
           yield! bodyCnt
+
+          link [Href "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css";  Rel "stylesheet"] 
+          script [Src "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"] []
+          script [Src "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"] []
+          script [] [
+            !! katexFormulaScript
+          ]
         ]
     ]
 
