@@ -1,0 +1,688 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/MVC执行概貌/3. ControllerActionInvker与模型绑定、模型校验.html">
+                    ASP.NET Core MVC — MVC执行概貌(3) ControllerActionInvker与模型绑定、模型校验
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>ControllerActionInvker</code>中有一个字段<code>_arguments</code>，类型为<code>Dictionary&lt;string, object&gt;</code>，用于存放参数绑定的结构。该类提供了<code>BinArgumentsAsync()</code>方法用于绑定参数：</p>
+<pre><code class="language-csharp">private Task BindArgumentsAsync()
+{
+    var actionDescriptor = _controllerContext.ActionDescriptor;
+    if (actionDescriptor.BoundProperties.Count == 0 &amp;&amp; actionDescriptor.Parameters.Count == 0) {
+        return Task.CompletedTask;
+    }
+
+    Debug.Assert(_cacheEntry.ControllerBinderDelegate != null);
+    return _cacheEntry.ControllerBinderDelegate(_controllerContext, _instance, _arguments);
+}
+</code></pre>
+<p>该方法执行后，会为字段<code>_arguments</code>逐一添加以参数名为键名的键值。这里的<code>ControllerBinderDelegate</code>是一个委托类型，负责绑定参数：</p>
+<pre><code class="language-csharp">internal delegate Task ControllerBinderDelegate(ControllerContext controllerContext, object controller, Dictionary&lt;string, object&gt; arguments);
+</code></pre>
+<p>该委托的实例由<code>ControllerBinderDelegateProvider</code>的静态方法<code> CreateBinderDelegate()</code>提供:<!-- more --></p>
+<pre><code class="language-csharp">internal static class ControllerBinderDelegateProvider
+{
+    public static ControllerBinderDelegate CreateBinderDelegate(ParameterBinder parameterBinder, IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor, MvcOptions mvcOptions)
+    {
+        // ... check null
+        
+        var parameterBindingInfo = GetParameterBindingInfo(modelBinderFactory, modelMetadataProvider, actionDescriptor, mvcOptions);
+        var propertyBindingInfo = GetPropertyBindingInfo(modelBinderFactory, modelMetadataProvider, actionDescriptor);
+        if (parameterBindingInfo == null &amp;&amp; propertyBindingInfo == null)
+        {
+            return null;
+        }
+
+        return Bind;
+    }
+}
+</code></pre>
+<p>可以看到，这里的有两个重要的方法调用：<code>GetParameterBindingInfo()</code>和<code>GetPropertyBindingInfo()</code>，分别用于生成参数绑定信息和属性绑定信息:</p>
+<pre><code class="language-csharp">private static BinderItem[] GetParameterBindingInfo( IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor, MvcOptions mvcOptions)
+{
+    var parameters = actionDescriptor.Parameters;
+    if (parameters.Count == 0) { return null; }
+
+    var parameterBindingInfo = new BinderItem[parameters.Count];
+    for (var i = 0; i &lt; parameters.Count; i++)
+    {
+        var parameter = parameters[i];
+
+        ModelMetadata metadata;
+        if (mvcOptions.AllowValidatingTopLevelNodes &amp;&amp;
+            modelMetadataProvider is ModelMetadataProvider modelMetadataProviderBase &amp;&amp;
+            parameter is ControllerParameterDescriptor controllerParameterDescriptor)
+        {
+            // The default model metadata provider derives from ModelMetadataProvider
+            // and can therefore supply information about attributes applied to parameters.
+            metadata = modelMetadataProviderBase.GetMetadataForParameter(controllerParameterDescriptor.ParameterInfo);
+        }
+        else
+        {
+            // For backward compatibility, if there's a custom model metadata provider that
+            // only implements the older IModelMetadataProvider interface, access the more
+            // limited metadata information it supplies. In this scenario, validation attributes
+            // are not supported on parameters.
+            metadata = modelMetadataProvider.GetMetadataForType(parameter.ParameterType);
+        }
+
+        var binder = modelBinderFactory.CreateBinder(new ModelBinderFactoryContext
+        {
+            BindingInfo = parameter.BindingInfo,
+            Metadata = metadata,
+            CacheToken = parameter,
+        });
+
+        parameterBindingInfo[i] = new BinderItem(binder, metadata);
+    }
+
+    return parameterBindingInfo;
+}
+
+private static BinderItem[] GetPropertyBindingInfo( IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor)
+{
+    var properties = actionDescriptor.BoundProperties;
+    if (properties.Count == 0) { return null; }
+
+    var propertyBindingInfo = new BinderItem[properties.Count];
+    var controllerType = actionDescriptor.ControllerTypeInfo.AsType();
+    for (var i = 0; i &lt; properties.Count; i++)
+    {
+        var property = properties[i];
+        var metadata = modelMetadataProvider.GetMetadataForProperty(controllerType, property.Name);
+        var binder = modelBinderFactory.CreateBinder(new ModelBinderFactoryContext
+        {
+            BindingInfo = property.BindingInfo,
+            Metadata = metadata,
+            CacheToken = property,
+        });
+
+        propertyBindingInfo[i] = new BinderItem(binder, metadata);
+    }
+
+    return propertyBindingInfo;
+}
+</code></pre>
+<p><code>CreateBinderDelegate</code>方法调用的最后返回了一个<code>Bind</code>函数，这个<code>Bind</code>的实现是：</p>
+<pre><code class="language-csharp">async Task Bind(ControllerContext controllerContext, object controller, Dictionary&lt;string, object&gt; arguments)
+{
+    var valueProvider = await CompositeValueProvider.CreateAsync(controllerContext);
+    var parameters = actionDescriptor.Parameters;
+
+    for (var i = 0; i &lt; parameters.Count; i++)
+    {
+        var parameter = parameters[i];
+        var bindingInfo = parameterBindingInfo[i];
+        var modelMetadata = bindingInfo.ModelMetadata;
+
+        if (!modelMetadata.IsBindingAllowed) { continue; }
+
+        var result = await parameterBinder.BindModelAsync(controllerContext, bindingInfo.ModelBinder, valueProvider, parameter, modelMetadata, value: null);
+
+        if (result.IsModelSet)
+        {
+            arguments[parameter.Name] = result.Model;
+        }
+    }
+
+    var properties = actionDescriptor.BoundProperties;
+    for (var i = 0; i &lt; properties.Count; i++)
+    {
+        var property = properties[i];
+        var bindingInfo = propertyBindingInfo[i];
+        var modelMetadata = bindingInfo.ModelMetadata;
+
+        if (!modelMetadata.IsBindingAllowed) { continue; }
+
+        var result = await parameterBinder.BindModelAsync(controllerContext, bindingInfo.ModelBinder, valueProvider, property, modelMetadata, value: null);
+
+        if (result.IsModelSet)
+        {
+            PropertyValueSetter.SetValue(bindingInfo.ModelMetadata, controller, result.Model);
+        }
+    }
+}
+}
+</code></pre>
+<p>内部调用的是<code>ParameterBinder</code>类，故名思义，该类负责绑定参数。其<code>BindModelAsync()</code>有两部分工作：</p>
+<ol>
+<li>模型绑定：<code>ParameterBinder</code>类通过依赖注入传入一个<code> IModelMetadataProvider</code>和<code>IModelBinderFactory</code>，然后由<code> IModelMetadataProvider</code>创建<code>metadata</code>，再由<code>BinderFactory</code>生成<code>binder</code>，最后调用<code>binder</code>绑定参数，</li>
+<li>模型校验：<code>ParameterBinder</code>类通过依赖注入传入一个<code>IObjectModelValidator</code>实例，在<code>modelBinder.BindModelAsync()</code>完成之后，通过该<code>IObjectModelValidator</code>实例来完成模型校验：</li>
+</ol>
+<pre><code class="language-csharp">public virtual async Task&lt;ModelBindingResult&gt; BindModelAsync( ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, object value)
+{
+    ... check null
+                if (parameter.BindingInfo?.RequestPredicate?.Invoke(actionContext) == false)
+    {
+        Logger.ParameterBinderRequestPredicateShortCircuit(parameter, metadata);
+        return ModelBindingResult.Failed();
+    }
+
+    var modelBindingContext = DefaultModelBindingContext.CreateBindingContext( actionContext, valueProvider, metadata, parameter.BindingInfo, parameter.Name);
+    modelBindingContext.Model = value;
+
+    var parameterModelName = parameter.BindingInfo?.BinderModelName ?? metadata.BinderModelName;
+    if (parameterModelName != null)
+    {
+        // The name was set explicitly, always use that as the prefix.
+        modelBindingContext.ModelName = parameterModelName;
+    }
+    else if (modelBindingContext.ValueProvider.ContainsPrefix(parameter.Name))
+    {
+        // We have a match for the parameter name, use that as that prefix.
+        modelBindingContext.ModelName = parameter.Name;
+    }
+    else
+    {
+        // No match, fallback to empty string as the prefix.
+        modelBindingContext.ModelName = string.Empty;
+    }
+
+    await modelBinder.BindModelAsync(modelBindingContext);
+
+    Logger.DoneAttemptingToBindParameterOrProperty(parameter, metadata);
+
+    var modelBindingResult = modelBindingContext.Result;
+
+    if (_objectModelValidator is ObjectModelValidator baseObjectValidator)
+    {
+        Logger.AttemptingToValidateParameterOrProperty(parameter, metadata);
+
+        EnforceBindRequiredAndValidate( baseObjectValidator, actionContext, parameter, metadata, modelBindingContext, modelBindingResult);
+
+        Logger.DoneAttemptingToValidateParameterOrProperty(parameter, metadata);
+    }
+    else
+    {
+        // For legacy implementations (which directly implemented IObjectModelValidator), fall back to the
+        // back-compatibility logic. In this scenario, top-level validation attributes will be ignored like
+        // they were historically.
+        if (modelBindingResult.IsModelSet)
+        {
+            _objectModelValidator.Validate( actionContext, modelBindingContext.ValidationState, modelBindingContext.ModelName, modelBindingResult.Model);
+        }
+    }
+
+    return modelBindingResult;
+}
+</code></pre>
+<p>这里的<code>EnforceBindRequiredAndValidate</code>：</p>
+<pre><code class="language-csharp">private void EnforceBindRequiredAndValidate( ObjectModelValidator baseObjectValidator, ActionContext actionContext, ParameterDescriptor parameter, ModelMetadata metadata, ModelBindingContext modelBindingContext, ModelBindingResult modelBindingResult) 
+{
+    RecalculateModelMetadata(parameter, modelBindingResult, ref metadata);
+
+    if (!modelBindingResult.IsModelSet &amp;&amp; metadata.IsBindingRequired)
+    {
+        // Enforce BindingBehavior.Required (e.g., [BindRequired])
+        var modelName = modelBindingContext.FieldName;
+        var message = metadata.ModelBindingMessageProvider.MissingBindRequiredValueAccessor(modelName);
+        actionContext.ModelState.TryAddModelError(modelName, message);
+    }
+    else if (modelBindingResult.IsModelSet)
+    {
+        // Enforce any other validation rules
+        baseObjectValidator.Validate( actionContext, modelBindingContext.ValidationState, modelBindingContext.ModelName, modelBindingResult.Model, metadata); 
+    }
+    else if (metadata.IsRequired)
+    {
+        // We need to special case the model name for cases where a 'fallback' to empty
+        // prefix occurred but binding wasn't successful. For these cases there will be no
+        // entry in validation state to match and determine the correct key.
+        //
+        // See https://github.com/aspnet/Mvc/issues/7503
+        //
+        // This is to avoid adding validation errors for an 'empty' prefix when a simple
+        // type fails to bind. The fix for #7503 uncovered this issue, and was likely the
+        // original problem being worked around that regressed #7503.
+        var modelName = modelBindingContext.ModelName;
+
+        if (string.IsNullOrEmpty(modelBindingContext.ModelName) &amp;&amp;
+            parameter.BindingInfo?.BinderModelName == null)
+        {
+            // If we get here then this is a fallback case. The model name wasn't explicitly set
+            // and we ended up with an empty prefix.
+            modelName = modelBindingContext.FieldName;
+        }
+
+        // Run validation, we expect this to validate [Required].
+        baseObjectValidator.Validate( actionContext, modelBindingContext.ValidationState, modelName, modelBindingResult.Model, metadata);
+    }
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/MVC执行概貌/0. 路由与MVC的执行流程.html">
+                    ASP.NET Core MVC — MVC执行概貌(0) 路由与MVC的执行流程
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>许多中间件都会为<code>IApplicationBuilder</code>添加一个扩展方法以简化调用，比如在<code>2.x</code>中常见的<code>UseRoute()</code>之类，其实就是简单调用<code>UseMiddleware&lt;Xxx&gt;()</code>。在<code>ASP.NET Core</code>的<code>MVC</code>也同样提供了一个<code>UseMvc()</code>扩展方法，但是和会转换为<code>UseMiddleware&lt;XMiddleware&gt;()</code>的那些方法不同，并没有一个与<code>UseMvc()</code>对应的、名称为<code>MvcMiddleware</code>的中间件存在。</p>
+<p>其实，所谓的<code>UseMvc()</code>其实不过是对<code>UseRouter()</code>的封装：</p>
+<pre><code class="language-csharp">// project: 
+//      aspnet/Mvc
+// file:
+//      src/Microsoft.AspNetCore.Mvc.Core/Builder/MvcApplicationBuilderExtensions.cs
+
+public static IApplicationBuilder UseMvc( this IApplicationBuilder app, Action&lt;IRouteBuilder&gt; configureRoutes)
+{
+    if (app == null){ throw new ArgumentNullException(nameof(app)); }
+    if (configureRoutes == null){ throw new ArgumentNullException(nameof(configureRoutes)); }
+
+    // throw an exception if there's no MvcMarkerService 
+    VerifyMvcIsRegistered(app);   
+
+    var routes = new RouteBuilder(app)
+    {
+        DefaultHandler = app.ApplicationServices.GetRequiredService&lt;MvcRouteHandler&gt;(),
+    };
+
+    configureRoutes(routes);
+
+    routes.Routes.Insert(0, AttributeRouting.CreateAttributeMegaRoute(app.ApplicationServices));
+
+    return app.UseRouter(routes.Build());
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/MVC执行概貌/2. ControllerActionInvoker与Filters管道.html">
+                    ASP.NET Core MVC — MVC执行概貌(2) ControllerActionInvoker与Filters管道
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>从实现上说，<code>ControllerActionInvoker</code>其实是<code>ResourceInvoker</code>的子类。其<code>InvokeAsync()</code>方法的主要流程就是调用<code>InvokeFilterPipelineAsync()</code>。</p>
+<h2><code>ResourceInvoker</code></h2>
+<p><code>ResourceInvoker</code>中的<code>Resource</code>含义和<code>Resource filters</code>中的含义相同。但是这里的<code>ResourceInvoker</code>会负责调用整个<code>Filter</code>管道，主要包括<code>Authorization Filters</code>(<code>2.x</code>)、<code>Exception Filters</code>、<code>Model Binding</code>、<code>Action Filters</code>、及<code>Result Filters</code>的全部过程：</p>
+<pre><code class="language-csharp">public virtual async Task InvokeAsync()
+{
+    try{
+        //.. diagnose;
+
+        using (_logger.ActionScope(_actionContext.ActionDescriptor)){
+           // ... log
+            try {
+                await InvokeFilterPipelineAsync();
+            } finally{
+                ReleaseResources();
+                // ... log
+            }
+        }
+    } finally {
+        //.. diagnose;
+    }
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (5) 与Authentication实现的对比.html">
+                    Authorization — (5) 授权与认证的实现对比
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-12
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>概念对比</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Authentication</th>
+<th>Authorization</th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全局选项</td>
+<td><code>AuthenticationOptions</code></td>
+<td><code>AuthorizationOptions</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>模式/策略</td>
+<td><code>AuthenticationScheme</code>:  <br>    - <code>Name</code>,<br>    - <code>HandlerType</code><br></td>
+<td><code>AuthorizationPolicy</code>: <br>    - <code>AuthenticationSchemes</code>,<br>     - <code>Requirements</code><br></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>模式/策略Provider</td>
+<td><code>IAuthenticationSchemeProvider</code> <br> <code>AuthenticationSchemeProvider</code></td>
+<td><code>IAuthorizationPolicyProvider</code> <br> <code>DefaultAuthorizationPolicyProvider</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>具体模式/策略细节</td>
+<td><code>AuthenticationSchemeOptions</code></td>
+<td><code>IRequirement</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>具体模式/策略Handler</td>
+<td><code>IAuthenticationHandler</code> <br> <code>AuthenticationHandler&lt;SomeSchemeOptions&gt;</code></td>
+<td><code>IAuthorizationHandler</code> <br><code>Authorization&lt;SomeRequirement&gt;</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>HandlerProvider</td>
+<td><code>IAuthenticationHandlerProvider</code><br> <code>AuthenticationHandlerProvider</code></td>
+<td><code>IAuthorizationHandlerProvider</code> <br> <code>DefaultAuthorizationHandlerProvider</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>服务</td>
+<td><code>IAuthenticationService</code><br> <code>AuthenticationService</code></td>
+<td><code>IAuthorizationService</code><br> <code>DefaultAuthorizationService</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<!-- more -->
+<h3>配置过程对比</h3>
+<p>针对<code>Authentication</code>的配置过程，如：</p>
+<pre><code class="language-csharp">services.AddAuthentication(options =&gt;{
+    ...
+}) // 返回一个AuthenticationBuilder
+    .AddScheme&lt;SomeSchemeOptions,SomeAuthenticationHandler&gt;(name,opts=&gt;{ ... })
+    .AddCookie(name, opts =&gt;{ ... })
+    .AddJwtBearer(name, opts =&gt;{ ... }
+    ...
+;
+</code></pre>
+<p>其实是在配置全局的<code>AuthenticationOptions</code>。他们都会在内部调用<code>AddSchemeHelper&lt;TOptions,THandler&gt;(name,configurer)</code> 会配置全局的AuthenticationOptions，向其中添加<code>&lt;schemeName&gt;-&lt;handlerType&gt;</code>的映射关系。</p>
+<p>类似的，<code>Authorization</code>的配置过程其实就是配置<code>AuthorizationOptions</code>的过程，如：</p>
+<pre><code class="language-csharp">services.AddAuthorization(options =&gt;
+{
+    options.AddPolicy(&quot;policy1&quot;, policyBuilder =&gt; { 
+        policyBuilder.Requirements.Add(new MyRequirement());
+        // ...
+    } );
+    options.AddPolicy(&quot;policy2&quot;, policyBuilder =&gt; { 
+        policyBuilder.RequireAssertion(ctx =&gt;{
+            ... return true;
+            ... return false;
+        });
+    });
+    ... // other policies
+});
+</code></pre>
+<p>和可以添加多种<code>AuthenticationScheme</code>一样，我们可以为<code>AuthorizationOptions</code>添加多个<code>Policy</code>。不过这里每个<code>Policy</code>中可以有多个<code>Requirements</code>和<code>AuthenticationSchemes</code>。此外，和<code>Authentication.AddScheme&lt;TOptions,THandler&gt;(...)</code>不同，可以观察到这里的配置过程对某个<code>Requirement</code>对应的<code>AuthorizationHandler</code>一无所知，所以也无法把特定的<code>AuthorizationHandler</code>自动注册为服务——这也是开发者需要手工注册<code>AuthorizationHandler</code>服务的根本原因。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/写在2019的年末.html">
+                    写在2019的年末
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-11
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>还记得我在去年年末感慨，2018年过得飞快，如同飞鸟一般，时间就倏忽飞走了。而2019年，这鸟飞得更快，连影子没留下。</p>
+<p>今年最重大的事件莫过于儿子出生，几乎每个周末都在围着老婆和宝宝转。用于学习的空闲时间自然是没挤出来。我以前并不觉得那些能在带娃期间备考的有多厉害，如今才体会到其中的不易。如果从外部来观察我的活动记录，最直观的表现是博客停更了，这一点非常不好。我的个人博客大多是笔记性质的文字，用于对所见所学进行记录与总结。子曰，吾日三省吾身。我今年动辄连续数月没有总结，虽说在有道云经常还有些学习笔记，但是总归没有放到博客，形成总结性的正式记录。难怪要到年末总结的时候才意识到好多计划没有落实。</p>
+<h3>年初目标与惨淡的2019</h3>
+<p>总结来说，2019年立的众多Flag里，只有寥寥数个是完成了的：</p>
+<ol>
+<li>编程语言学习：我之前说，要每年尝试接触新的编程语言。2019年学了点<code>F#</code>皮毛，虽说没有深入研究，但在用<code>F#</code>写了个斗地主引擎的过程中，让我真正感受到了<code>F#</code>语言的超强表现力。以前老听人说<code>F#</code>函数式编程有多优越，当时我并未理解，甚至对模式匹配的过人之处也不屑一顾。如今自己动手实践了，才体会到模式匹配、<code>Options</code>、主动模式等特性的精妙之处。学了一门语言，总不免要和其他语言对比。由于都采用缩进语法，我在学习<code>F#</code>的过程中，经常不由自主地对<code>Python</code>产生鄙夷：大家都说<code>Python</code>简洁优雅：优雅问题不大，然而没有<code>|&gt;</code>、<code>&gt;&gt;</code>的编程语言，如何能称简洁？这种思想非常不好，为了矫正我的这个观念，我不停地跟自己讲：不宜过多评判编程语言本身，编程语言本身设计的优劣与否并不重要——<code>Python</code>远比<code>F#</code>流行，放弃<code>Python</code>就是自绝于生态。面对技术，不可有虚假的优越感。</li>
+</ol>
+<!-- more -->
+<ol start="2">
+<li>取证：取证要趁早是我前年才体会到的道理。我去年跟媳妇说，要争取每年拿一个证，可惜早些年并不懂这个道理，总觉得那些资质和证书并无什么了不起，也没有什么实际用处——很惭愧，我在这方面的眼界和见识总是跟不上形势的发展，已经吃了次很多这种亏了。无奈的是今年的时间实在太过短缺，并没有准备什么认证考试。由于我之前工作的特殊性，甚至大家都学的驾照也没有尝试去考。2019年唯一跟取证沾边的是，虽然很晚，我终于拿到了驾照，好在迟到好过没有。再次提醒自己：任何时候，千万不要小瞧资质与证书，切记！。</li>
+<li>源码与标准的研究：
+<ul>
+<li>我通读了<code>ASP.NET Core</code>大部分子项目的源码，同时在有道云记录了一系列源码分析笔记，并把认证、授权相关的笔记放到了博客上，后续要陆续把其他部分的源码分析整理出来；</li>
+<li>通读<code>BotBuilder</code>源码实现，记录了一系列源码分析笔记，同时做了个无<code>Azure</code>的<code>InDirectLine</code>项目，可以让<code>Bot</code>运行在无<code>Azure</code>/<code>Internet</code>的内网环境；</li>
+<li><code>EF Core</code>源码：去年立下的目标，今年并未有空去实现。</li>
+<li>掌握<code>XAML</code>：学习了<code>XAML</code>语法，但是并未去做个<code>Demo</code>来巩固所学。</li>
+<li>理解<code>MQTT</code>协议：上半年花了些时间学习了下，可惜隔了大半年，如今感觉细节又都记不清楚了。</li>
+</ul>
+</li>
+<li>读书与刷题:
+<ul>
+<li>去年曾想今年要重温GoF 的《设计模式》 、Andrew S. Tanenbaum 《现代操作系统》、和Ian Sommerville 《软件工程》，可惜今年未曾付诸实践。</li>
+<li>去年还想每周至少一次<code>LeetCode</code>，今天想想真是害臊。</li>
+</ul>
+</li>
+</ol>
+<h3>2020年的个人提升计划</h3>
+<ul>
+<li><p>读书</p>
+<ol>
+<li>重读《数据结构(Java语言描述)》，并开始刷<code>LeetCode</code></li>
+<li>重温 GoF《设计模式》</li>
+<li>读完《The Language of SQL》，并把其中例子都亲自跑一遍(如果还有富裕时间，选择性读一点《SQL 权威指南》)</li>
+<li>读完《Concurrency in C# Cookbook》(如果有富裕时间，有选择的读一点《Pro .NET Performance》)</li>
+<li>读完《RabbitMQ in Depth》</li>
+</ol>
+</li>
+<li><p>OpenCV &amp; Machine Learning</p>
+<ol>
+<li>学习<code>OpenCV</code>：读完《OpenCV Computer Vision with Python》</li>
+<li>正式开始学习Machine Learning，阅读《Data Science from Scratch- First Principles with Python》</li>
+</ol>
+</li>
+<li><p>Practice</p>
+<ol>
+<li>熟悉<code>Moq</code>库</li>
+<li>如何为SignalR Core编写单元测试/集成测试</li>
+<li>理解并掌握eShopOnContainer架构</li>
+<li>上线一个电子书分享网站(受限于存储空间，暂时只专注于小部分计算机方面的电子书)</li>
+</ol>
+</li>
+<li><p>源码</p>
+<ul>
+<li>通读 EFCore 源码</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/index.html">
+          Previous
+        </a>
+        2 of 32
+        <a href="/posts/page2.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

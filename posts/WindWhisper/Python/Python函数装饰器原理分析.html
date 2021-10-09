@@ -1,0 +1,368 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Python/Python函数装饰器原理分析.html">
+                    Python函数装饰器原理分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>函数装饰其实类比为游戏里装备强化的概念。比如将一个具有附加火性伤害的宝石，镶嵌到了一个主武器上，那么武器就能在原有功能的基础之上附带有火伤效果。具体到Python函数装饰就是，一个装饰器函数dec，装饰到了一个函数foo上，就能让foo具有dec功效，可以形象得说成是dec装饰到了foo上。</p>
+<h2>基本原理</h2>
+<h3>从扩展功能说起</h3>
+<p>先抛开游戏程序的概念不谈，假如我们有一个函数foo()</p>
+<pre><code class="language-Python">def foo():
+     print(&quot;calling foo():\thave fun with Brz&quot;)
+</code></pre>
+<p>出于某种原因，有一天我希望在函数原有功能之上追加一点工作量——在函数执行之前和之后实现一些和 foo 函数完全可以分离的工作，我们当然不想直接改动已经写好的 foo ,所以自然而然想去定义一个新函数，在这个函数内部调用 foo 函数：</p>
+<pre><code class="language-Python">def foo_appended(func):
+     print(&quot;before calling:\tmiss Brz&quot;)
+     func()
+     print(&quot;after calling:\tsay good bye&quot;)
+
+foo_appended(foo)
+</code></pre>
+<p>输出为：</p>
+<pre><code>before calling:    miss Brz
+calling foo():    have fun with Brz
+after calling:    say good bye
+</code></pre>
+<p>这种做法，对于一些小程序当然没有问题，但是对于稍微大的项目或者涉及到接口的时候情况就明显不同了：假如用户（可以是其他程序员，也可以是自己）使用了 foo() ，就得把之前所有的 foo() 全部改成 foo_appended(foo) ; 随着要附加的事情（权限检查、其他检查、日志记录、触发某个接口等）越来越多，最后的函数名可能是 foo_f1_f2_f3_f4_f5_appended 这种，这很显然是个很蠢的做法。
+更关键的，这样一点都不 <a href="http://www.itminus.com/tags/AOP/">AOP</a> ！一个有追求的人绝不会容忍这种代码！</p>
+<h3>装饰器实现</h3>
+<p>理论基础是<code>Python一切皆对象，包括函数</code>。所以可以对函数进行普通对象一样的操作：接收作为参数、传递为返回值、赋值（引用新对象）。
+为了方便起见，我们不妨把原函数称之为&quot;目标函数&quot;,在不改动目标函数内部实现的情况下，想在目标函数原有工作前后追加工作量(甚至完全替换掉目标函数的工作)，这需要一个偷梁换柱的方法来实现：</p>
+<ul>
+<li>定义一个装饰器函数，此函数会接受函数对象作为输入参数，以确保能执行其功能</li>
+<li>在装饰器函数内定义一个和目标函数参数列表一致的包装函数，同时添加欲追加的工作量(甚至彻底替换掉目标函数)</li>
+<li>装饰器函数返回值设置为包装函数</li>
+<li>把目标函数对象传递给装饰器函数去执行，返回值(包装函数)赋值到目标函数名上。</li>
+<li>用户以目标函数之名调用包装函数。</li>
+</ul>
+<pre><code class="language-Python">def foo(): #目标函数
+     print(&quot;while calling :\thave fun with Brz&quot;)
+
+def foo_appended(func): #定义一个新函数（装饰函数），装饰函数接受一个函数对象作为参数
+     def wrap(): #包装函数
+         print(&quot;before calling :\tmiss Brz&quot;) 
+         func() #执行目标函数
+         print(&quot;after calling :\tsay good bye to Brz&quot;)
+     return wrap #返回包装函数
+
+foo = foo_appended(foo) # foo不再指向原始的目标函数，而是指向包装函数
+
+#用户调用其熟悉的foo()
+foo()
+</code></pre>
+<p>输出结果为：</p>
+<pre><code class="language-Python">before calling :    miss Brz
+while calling :    have fun with Brz
+after calling :    say good bye to Brz
+</code></pre>
+<p>这就是函数装饰的基本原理与实现。</p>
+<h3>核心思想</h3>
+<p>Python装饰器能扩展原函数，核心在于动态生成了一个包装函数，该包装函数负责扩展目标函数(甚至完全替换掉目标函数的所有工作)。最后把该包装函数当目标函数一样使用。</p>
+<p>对诸如<code>PHP</code>、<code>JavaScript</code>这类动态语言，甚至对于<code>C</code>/<code>C++</code>，由于函数指针的存在，可以很容易写出类似的装饰器。
+那么，对于<code>Java</code>,如何实现？装饰器模式、代理模式便是解决方案。思路是类似的，当然也是生成一个包装对象（代理），通过包装对象（代理）来扩展原始对象！</p>
+<h2>语法糖</h2>
+<p>为了把装饰函数和被装饰函数的脉络在代码形式上表现的更清晰、简介，我们可以使用函数装饰符<code>@</code>这个语法糖</p>
+<pre><code class="language-Python">def dec_foo(func):
+     def wrap(p):
+        #do something
+         pass #func and sth
+     return wrap
+
+@dec_foo
+def foo(p):
+    #do something
+     pass
+</code></pre>
+<p>阅读别人的代码，更多的是看到</p>
+<pre><code class="language-Python">@dec
+def foo(para):
+     pass 
+</code></pre>
+<p>的形式，从这个形式，我们可以得出结论，</p>
+<p><code>dec接收一个func参数，内部会一个参数列表和原foo函数的参数列表保持兼容的包装函数。原foo经过装饰后（重新赋值后），就有了装饰器函数的功能。</code></p>
+<p>总结来说，装饰器函数只做三件事：</p>
+<ol>
+<li>接收一个函数作为参数，</li>
+<li>然后嵌套一个包装函数（包装函数的参数列表与目标函数参数列表兼容），</li>
+<li>再返回嵌套函数对象。</li>
+</ol>
+<p>可以把第2步、第3步合并为一步，但是根本要旨是要返回一个函数对象（对目标函数进行包装，不妨称之为包装函数）。</p>
+<p>这个包装函数会做三件事</p>
+<ol>
+<li>接受参数：能兼容目标函数参数列表</li>
+<li>执行目标函数</li>
+<li>执行附加功能</li>
+</ol>
+<h2>装饰器的应用</h2>
+<p>装饰器的应用非常多，比如：</p>
+<ul>
+<li><code>Python</code>本身内置了和面向对象相关的装饰器：类属性<code>@property</code>、类静态方法<code>@staticmethod</code>、类方法<code>@classmethod</code>装饰器。</li>
+<li>在<code>Django</code>中随处可见诸如<code>@require_login</code>检查登陆之类的功能。</li>
+</ul>
+<p>不管咋说，它始终都是用来做<code>功能解耦、代码分离</code>的。在 Java Spring 中，我们也经常需要做类似的事情，比如为某些组件添加权限检查、日机功能，一个好的思路就是采用 <a href="http://www.itminus.com/tags/AOP/">AOP</a> ,就是为相应组件建立切面(<code>Aspect</code>)，然后针对相应的连接点(<code>JointPoint</code>)进行增强(<code>Advice</code>)。</p>
+<p>回到本文开头提到的游戏装备强化的概念上来，假如现在我们想为某款游戏开发一个辅助工具——装备模拟器，要模拟宝石强化后附伤效果。</p>
+<p>首先定义一个伤害数据类型:</p>
+<pre><code class="language-Python">
+class Damage:
+    '''
+    damage data structure
+    '''
+
+    def __init__(self):
+        self._damage={ 'fire':0, 'ice':0, 'poison':0, 'wind':0 }
+
+    def add(self,key,value):
+        self._damage[key]=self._damage[key]+value
+    
+    def minus(self,key,value):
+        self._damage[key]=self._damage[key]-value
+        if(self._damage[key]&lt;0):
+            self._damage[key]=0
+
+    def __getattr__(self,key):
+        return self._damage[key]
+
+</code></pre>
+<p>现有一个白板武器伤害计算公式(根据武器等级计算)，返回<code>Damage</code>对象。其中某个实现可能是长这样：</p>
+<pre><code class="language-Python">def weapon_damage(weapon_level):
+    '''
+    calculate the damage according to weapon_level
+    '''
+
+    damage=Damage()
+    damage.add('fire',weapon_level*2.1)
+    damage.add('poison',weapon_level*1.7)
+    return damage 
+</code></pre>
+<p>许多游戏都有武器强化系统，经过某种宝石镶嵌，会为之添加附伤效果。为了扩展 <code>weapon_damage</code> 的功能，使得可以计算经过宝石镶嵌后的武器伤害，我们需要为之编写装饰器：</p>
+<pre><code class="language-Python">def perled_damage(weapon_damage,perl_level): 
+    '''
+    decorator:return a new weapon_damage function
+    '''
+    def wrap_weapon_damage(weapon_level):
+        damage=weapon_damage(weapon_level)
+        damage.add('fire',perl_level*0.5)
+        damage.add('ice',perl_level*1.0)
+        return damage 
+    return wrap_weapon_damage
+</code></pre>
+<p>然后把这个装饰函数装饰到原有的武器伤害函数<code>weapon_damage</code>上，即可得到扩展后的伤害计算函数:</p>
+<pre><code class="language-Python">
+weapon_damage=perled_damage(weapon_damage,10)
+
+damage=weapon_damage(2)
+print damage.__dict__
+</code></pre>
+<p>输出：</p>
+<pre><code>{'_damage': {'fire': 9.2, 'wind': 0, 'poison': 3.4, 'ice': 10.0}}
+</code></pre>
+<p>当然，为了灵活起见，我们完全可以把装饰、调用在一个语句里完成：</p>
+<pre><code class="language-Python">damage=perled_damage(weapon_damage,10)(2)
+print damage.__dict__
+</code></pre>
+<p>这样即可得到一个通用的方法，变量只有<code>weapon_level</code>、<code>weapon_damage</code>！也即是拿到这两个数据就能计算出相应的伤害！</p>
+<h2>其他语言</h2>
+<p>为了理解真正理解装饰器的核心原理，可以写下其它语言的实现：</p>
+<h3>PHP版</h3>
+<pre><code class="language-PHP">
+//执行某功能的函数
+$have_fun_with_brz=function (){
+    echo &quot;have fun with brz\r\n&quot;;
+};
+
+//装饰器
+$dec=function ($func) {
+    $wrap=function ()use ($func) {
+        echo &quot;before calling\r\n&quot;;
+        $func();
+        echo &quot;after calling\r\n &quot;;
+    };
+    return $wrap;
+};
+
+//装饰
+$have_fun_with_brz=$dec($have_fun_with_brz);
+
+//调用经过装饰的目标函数
+$have_fun_with_brz();
+</code></pre>
+<p>输出为：</p>
+<pre><code>before calling
+have fun with brz
+after calling
+</code></pre>
+<h3>JavaScript版</h3>
+<pre><code class="language-JavaScript">
+// 某功能
+function haveFunWithBrz(){
+  console.log(&quot;have fun with brz\r\n&quot;);
+}
+
+// 装饰器
+var dec=function (func) {
+    return function (){
+         console.log(&quot;before calling\r\n&quot;);
+        func();
+         console.log(&quot;after calling\r\n &quot;);
+    };
+};
+
+// 装饰
+haveFunWithBrz=dec(haveFunWithBrz);
+
+// 调用
+haveFunWithBrz();
+</code></pre>
+<p>输出为:</p>
+<pre><code>before calling
+have fun with brz
+after calling
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

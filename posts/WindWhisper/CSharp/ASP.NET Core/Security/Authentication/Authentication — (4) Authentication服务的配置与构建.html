@@ -1,0 +1,313 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (4) Authentication服务的配置与构建.html">
+                    Authentication — (4) Authentication服务的配置与构建
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>世界观</h2>
+<p><code>ASP.NET Core</code>可以配置多种认证，让各个认证模式协同工作。这种配置主要体现在两个方面:</p>
+<ol>
+<li>需要对<code>DI</code>容器中的 <strong><code>AuthenticationOptions</code></strong> 进行设置: 其中包含了每一种认证模式对应的<code>&lt;scheme&gt;-&lt;handlerType&gt;</code>的映射关系、以及默认的相关scheme名等信息。</li>
+<li>需要把各个<code>scheme</code>对应的 <strong><code>handler</code>类</strong> <strong>作为服务</strong>注册 到<code>DI</code>容器中。</li>
+</ol>
+<h3><code>AuthenticationBuilder</code></h3>
+<p>事实上，<code>ASP.NET Core</code>暴露了一个<code>AuthenticationBuilder</code>来帮助开发者对认证进行设置。由于认证除了简单地<code>new</code>一个<code>AuthenticationBuilder</code>实例之外，还需要注册一些其他服务（比如编码解码功能等），<code>ASP.NET Core</code>为<code>IServiceCollection</code>提供了一个<code>AddAuthentication()</code>扩展方法，封装了上述过程，调用后返回一个<code>AuthenticationBuilder</code>实例：</p>
+<pre><code class="language-csharp">public static AuthenticationBuilder AddAuthentication(this IServiceCollection services)
+{
+    if (services == null)
+    {
+        throw new ArgumentNullException(nameof(services));
+    }
+
+    services.AddAuthenticationCore();
+    services.AddDataProtection();
+    services.AddWebEncoders();
+    services.TryAddSingleton&lt;ISystemClock, SystemClock&gt;();
+    return new AuthenticationBuilder(services);
+}
+</code></pre>
+<p>除了<code>.AddAuthentication()</code>这种核心方式，还有两种重载形式：<!-- more --></p>
+<pre><code class="language-csharp">public static AuthenticationBuilder AddAuthentication(this IServiceCollection services, Action&lt;AuthenticationOptions&gt; configureOptions) {
+    if (services == null) { throw ...; }
+    if (configureOptions == null){ throw ...; }
+
+    var builder = services.AddAuthentication();
+    services.Configure(configureOptions);
+    return builder;
+}
+
+public static AuthenticationBuilder AddAuthentication(this IServiceCollection services, string defaultScheme)
+    =&gt; services.AddAuthentication(o =&gt; o.DefaultScheme = defaultScheme);
+</code></pre>
+<p>可以看到，这两种重载只是在<code>.AddAuthentication()</code>这个方法基础之上再添加一点配置功能，仅此而已。最终<code>.AddAuthentication()</code>都返回一个<code>AuthenticationBuilder</code>实例，用于后续的链式配置。</p>
+<h4><code>AuthenticationBuilder</code>的核心方法</h4>
+<p><code>AuthenticationBuilder</code>是用于配置认证服务的一个类，该类暴露一个核心方法 <strong><code>AddScheme&lt;TOptions, THandler&gt;(schemeName, displayName, configureAction)</code></strong> 。在内部，该方法会调用一个私有方法<code>AddSchemeHelper&lt;TOptions, THandler&gt;(schemeName, displayName, configureOptionsAction)</code>来完成前文所述的两个工作细节：</p>
+<ol>
+<li>配置全局的<code>AuthenticationOptions</code>（向其中添加<code>&lt;schemeName&gt;-&lt;handlerType&gt;</code>的映射关系，调用传入的委托配置选项），</li>
+<li>然后再把相应的<code>Handler</code>注册到<code>DI</code>容器。</li>
+</ol>
+<p><code>AddSchemeHelper&lt;TOptions, THandler&gt;(schemeName, displayName, configureOptionsAction)</code>的实现为：</p>
+<pre><code class="language-csharp">private AuthenticationBuilder AddSchemeHelper&lt;TOptions, THandler&gt;(string authenticationScheme, string displayName, Action&lt;TOptions&gt; configureOptions)
+    where TOptions : AuthenticationSchemeOptions, new()
+    where THandler : class, IAuthenticationHandler
+{
+    // 设置AuthenticationOptions中的 scheme-handler 映射关系
+    Services.Configure&lt;AuthenticationOptions&gt;(o =&gt;
+    {
+        o.AddScheme(authenticationScheme, scheme =&gt; {
+            scheme.HandlerType = typeof(THandler);
+            scheme.DisplayName = displayName;
+        });
+    });
+    // 配置TOptions钩子
+    if (configureOptions != null)
+    {
+        Services.Configure(authenticationScheme, configureOptions);
+    }
+    // 添加TOptions 
+    Services.AddOptions&lt;TOptions&gt;(authenticationScheme).Validate(o =&gt; {
+        o.Validate(authenticationScheme);
+        return true;
+    });
+    // 注册handler服务
+    Services.AddTransient&lt;THandler&gt;();
+    return this;
+}
+</code></pre>
+<p>这里的<code>TOptions</code>是特定的某种认证模式下的配置，如<code>JwtBearerOptions</code>、<code>CookieAuthenticationOptions</code>等。这个具体的<code>TOptions</code>会在认证时被对应的<code>THanlder</code>使用。</p>
+<p>在此基础上，<code>AuthenticationBuilder</code>又提供了一系列<code>AddScheme&lt;TOptions, THandler&gt;(...)</code>方法供开发者注册相应认证<code>scheme</code>及<code>handler</code>。<code>AddScheme&lt;TOptions, THandler&gt;(...)</code>最简单的形式是对<code>AddSchemeHelper</code>的转发调用:</p>
+<pre><code class="language-csharp">public virtual AuthenticationBuilder AddScheme&lt;TOptions, THandler&gt;(string authenticationScheme, string displayName, Action&lt;TOptions&gt; configureOptions)
+    where TOptions : AuthenticationSchemeOptions, new()
+    where THandler : AuthenticationHandler&lt;TOptions&gt;
+    =&gt; AddSchemeHelper&lt;TOptions, THandler&gt;(authenticationScheme, displayName, configureOptions);
+</code></pre>
+<h4>特定认证模式的配置</h4>
+<p>各个不同的认证模式往往会<strong>提供一些具体的扩展方法来简化特定的认证模式配置</strong>，比如 <strong><code>AddCookie()</code></strong> 的源码实现为：</p>
+<pre><code class="language-csharp">public static AuthenticationBuilder AddCookie(this AuthenticationBuilder builder, string authenticationScheme, string displayName, Action&lt;CookieAuthenticationOptions&gt; configureOptions)
+{
+    builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton&lt;IPostConfigureOptions&lt;CookieAuthenticationOptions&gt;, PostConfigureCookieAuthenticationOptions&gt;());
+    builder.Services.AddOptions&lt;CookieAuthenticationOptions&gt;(authenticationScheme).Validate(o =&gt; o.Cookie.Expiration == null, &quot;Cookie.Expiration is ignored, use ExpireTimeSpan instead.&quot;);
+    return builder.AddScheme&lt;CookieAuthenticationOptions, CookieAuthenticationHandler&gt;(authenticationScheme, displayName, configureOptions);
+}
+</code></pre>
+<p>这使得开发者可以通过以下方式配置<code>Cookie</code>认证：</p>
+<pre><code class="language-csharp">services.AddAuthentication(options =&gt;{
+    ...
+})
+.AddCookie(IdentityConstants.ApplicationScheme, o =&gt;
+{
+    o.LoginPath = new PathString(&quot;/Account/Login&quot;);
+    o.Events = new CookieAuthenticationEvents
+    {
+        OnValidatePrincipal = SecurityStampValidator.ValidatePrincipalAsync
+    };
+})
+.AddCookie(IdentityConstants.ExternalScheme, o =&gt;
+{
+    o.Cookie.Name = IdentityConstants.ExternalScheme;
+    o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+})
+.AddCookie(IdentityConstants.TwoFactorRememberMeScheme, o =&gt;
+{
+    o.Cookie.Name = IdentityConstants.TwoFactorRememberMeScheme;
+    o.Events = new CookieAuthenticationEvents
+    {
+        OnValidatePrincipal = SecurityStampValidator.ValidateAsync&lt;ITwoFactorSecurityStampValidator&gt;
+    };
+})
+.AddCookie(IdentityConstants.TwoFactorUserIdScheme, o =&gt;
+{
+    o.Cookie.Name = IdentityConstants.TwoFactorUserIdScheme;
+    o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+});
+</code></pre>
+<p>（其实，这段代码摘自官方<code>AddIdentity&lt;TUser, TRole&gt;(setupAction)</code>项目）</p>
+<p>再比如<code>JwtBearer</code>模式提供了<code>AddJwtBearer()</code>扩展方法来简化其认证服务的配置：</p>
+<pre><code class="language-csharp">public static AuthenticationBuilder AddJwtBearer(this AuthenticationBuilder builder, string authenticationScheme, string displayName, Action&lt;JwtBearerOptions&gt; configureOptions)
+{
+    builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton&lt;IPostConfigureOptions&lt;JwtBearerOptions&gt;, JwtBearerPostConfigureOptions&gt;());
+    return builder.AddScheme&lt;JwtBearerOptions, JwtBearerHandler&gt;(authenticationScheme, displayName, configureOptions);
+}
+</code></pre>
+<h3>如何使用:</h3>
+<pre><code class="language-csharp">services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt;
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            // validate the server that created that token
+            ValidateIssuer = true,
+            // ensure that the recipient of the token is authorized to receive it
+            ValidateAudience = true,
+            // check that the token is not expired and that the signing key of the issuer is valid
+            ValidateLifetime = true,
+            // verify that the key used to sign the incoming token is part of a list of trusted keys
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = issuer,
+            ValidAudience = issuer,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+        };
+    });
+</code></pre>
+<pre><code class="language-csharp">service.AddAuthentication(...)
+    .AddJwtBearer(options =&gt;
+        // ...
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =&gt;
+            {
+                // replace &quot;token&quot; with whatever your param name is
+                if (ctx.Request.Method.Equals(&quot;GET&quot;) &amp;&amp; ctx.Request.Query.ContainsKey(&quot;token&quot;))
+                    ctx.Token = ctx.Request.Query[&quot;token&quot;];
+                return Task.CompletedTask;
+            }
+        };
+    });
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

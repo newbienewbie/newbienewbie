@@ -1,0 +1,841 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Compiler/自制编程语言/crowbar源码阅读笔记(3).html">
+                    crowbar源码阅读笔记(3):表达式构建
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这是《自制编程语言》一书中的脚本语言<code>crowbar</code>的源码阅读笔记(3):表达式构建</p>
+<h2>表达式的分类与表示</h2>
+<p>表达式分为布尔表达式、整型表达式、标识符表达式、赋值表达式、函数调用表达式等：</p>
+<pre><code class="language-c">typedef enum {
+    BOOLEAN_EXPRESSION = 1,
+    INT_EXPRESSION,
+    DOUBLE_EXPRESSION,
+    STRING_EXPRESSION,
+    IDENTIFIER_EXPRESSION,
+    ASSIGN_EXPRESSION,
+    ADD_EXPRESSION,
+    SUB_EXPRESSION,
+    MUL_EXPRESSION,
+    DIV_EXPRESSION,
+    MOD_EXPRESSION,
+    EQ_EXPRESSION,
+    NE_EXPRESSION,
+    GT_EXPRESSION,
+    GE_EXPRESSION,
+    LT_EXPRESSION,
+    LE_EXPRESSION,
+    LOGICAL_AND_EXPRESSION,
+    LOGICAL_OR_EXPRESSION,
+    MINUS_EXPRESSION,
+    FUNCTION_CALL_EXPRESSION,
+    NULL_EXPRESSION,
+    EXPRESSION_TYPE_COUNT_PLUS_1
+} ExpressionType;
+</code></pre>
+<!-- more -->
+<p>为了表示表达式，将其类型统一定义为：</p>
+<pre><code class="language-c">struct Expression_tag {
+    ExpressionType type;
+    int line_number;
+    union {
+        CRB_Boolean             boolean_value;
+        int                     int_value;
+        double                  double_value;
+        char                    *string_value;
+        char                    *identifier;
+        AssignExpression        assign_expression;
+        BinaryExpression        binary_expression;
+        Expression              *minus_expression;
+        FunctionCallExpression  function_call_expression;
+    } u;
+};
+</code></pre>
+<p>对于具体类型的表达式，则再具体定义，如：</p>
+<pre><code class="language-c">typedef struct { 
+    Expression *left; 
+    Expression *right; 
+} BinaryExpression;
+
+typedef struct {
+    char *identifier; 
+    ArgumentList *argument;
+} FunctionCallExpression;
+</code></pre>
+<h2>表达式的构建</h2>
+<p>表达式的创建过程都是先申请一块内存，然后再填充具体的字段，最后返回所创建表达式的指针。</p>
+<p>比如创建一个赋值表达式：</p>
+<pre><code class="language-c">Expression * crb_create_assign_expression(char *variable, Expression *operand)
+{
+    Expression *exp;
+    exp = crb_alloc_expression(ASSIGN_EXPRESSION);
+
+    /* 变量 */
+    exp-&gt;u.assign_expression.variable = variable;
+    /* 操作数 */
+    exp-&gt;u.assign_expression.operand = operand;
+    return exp;
+}
+</code></pre>
+<p>这里，<code>crb_alloc_expression()</code>函数是一个辅助函数，负责根据<code>Expression</code>这个结构体开辟一块内存空间，然后设置好表达式类型、行号信息，而具体的联合字段<code>u</code>则留待后续填充：</p>
+<pre><code class="language-c">Expression * crb_alloc_expression(ExpressionType type)
+{
+    Expression  *exp;
+    exp = crb_malloc(sizeof(Expression));
+    exp-&gt;type = type;
+    exp-&gt;line_number = crb_get_current_interpreter()-&gt;current_line_number;
+    return exp;
+}
+</code></pre>
+<p>再比如，创建一个<code>BINARY_EXPRESSION</code>:</p>
+<pre><code class="language-c">Expression * crb_create_binary_expression(ExpressionType operator, Expression *left, Expression *right)
+{
+    /* 如果左右表达式都是整型或者浮点型表达式这种极其简单情况，则直接进行求值——可用于常量折叠 */
+    if ((left-&gt;type == INT_EXPRESSION || left-&gt;type == DOUBLE_EXPRESSION)
+        &amp;&amp; (right-&gt;type == INT_EXPRESSION || right-&gt;type == DOUBLE_EXPRESSION)) 
+    {
+        CRB_Value v;
+        v = crb_eval_binary_expression(crb_get_current_interpreter(), NULL, operator, left, right);
+        /* 覆写左表达式 */
+        *left = convert_value_to_expression(&amp;v);
+        return left;
+    }
+    /* 一般情况下，需要先开辟内存，然后再填充`u`的左表达式字段和右表达式字段  */
+    else {
+        Expression *exp;
+        exp = crb_alloc_expression(operator);
+        exp-&gt;u.binary_expression.left = left;
+        exp-&gt;u.binary_expression.right = right;
+        return exp;
+    }
+}
+</code></pre>
+<p>与之类似的还有<code>MINUS_EXPRESSION</code>:</p>
+<pre><code class="language-c">Expression * crb_create_minus_expression(Expression *operand)
+{
+    /* 可直接求值的情况 */
+    if (operand-&gt;type == INT_EXPRESSION || operand-&gt;type == DOUBLE_EXPRESSION)
+    {
+        CRB_Value v;
+        v = crb_eval_minus_expression(crb_get_current_interpreter(), NULL, operand);
+        *operand = convert_value_to_expression(&amp;v);
+        return operand;
+    } 
+    /* 一般情况下，需要先开辟内存，然后再填充`u.`的`minus_expression`字段  */
+    else {
+        Expression *exp;
+        exp = crb_alloc_expression(MINUS_EXPRESSION);
+        exp-&gt;u.minus_expression = operand;
+        return exp;
+    }
+}
+</code></pre>
+<p>其他诸如<code>IDENTIFIER_EXPRESSION</code>、<code>FUNCTION_CALL_EXPRESSION</code>、<code>BOOLEAN_EXPRESSION</code>等表达式的创建函数，其实现也是先申请内存，然后填充相应字段，不再赘述。</p>
+<p>唯一比较特殊的是<code>NULL_EXPRESSION</code>，开辟内存后，并不填充<code>u</code>字段：</p>
+<pre><code class="language-c">Expression * crb_create_null_expression(void)
+{
+    Expression  *exp;
+    exp = crb_alloc_expression(NULL_EXPRESSION);
+    return exp;
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Compiler/自制编程语言/crowbar源码阅读笔记(2).html">
+                    crowbar源码阅读笔记(2):变量管理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这是《自制编程语言》一书中的脚本语言<code>crowbar</code>的源码阅读笔记(2):变量管理</p>
+<h2>变量管理</h2>
+<p>在第一篇《crowbar源码阅读笔记(1):基本的数据结构》中提到，变量有两个基本属性：变量名、变量值。变量之间采用链表的形式组织。相应环境(局部、全局)下有各自的一批变量。</p>
+<h3>注册变量</h3>
+<p>在一个局部环境中注册变量，需要告知该环境对象需要登记的 <strong>标识符</strong> 和 <strong>变量值</strong>，然后<code>crowbar</code>会在内存中创建一个变量对象，填好<code>name</code>和<code>value</code>，然后把它作为环境变量链表的第一个节点 ：</p>
+<pre><code class="language-c">void crb_add_local_variable(LocalEnvironment *env, char *identifier, CRB_Value *value)
+{
+    /* 分配内存，创建新的变量 */
+    Variable    *new_variable;
+    new_variable = MEM_malloc(sizeof(Variable));
+    new_variable-&gt;name = identifier;
+    new_variable-&gt;value = *value;
+
+    /* 把原链表第一个节点作为新增变量的下一个节点 */
+    new_variable-&gt;next = env-&gt;variable;
+    /* 修改环境变量链表：设置新增变量为环境变量链表的第一个节点 */
+    env-&gt;variable = new_variable;
+}
+</code></pre>
+<p>注册全局变量也是类似的过程：</p>
+<!-- more -->
+<pre><code class="language-c">void CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB_Value *value)
+{
+    Variable    *new_variable;
+
+    new_variable = crb_execute_malloc(inter, sizeof(Variable));
+
+    /* 设置新增变量的name */
+    new_variable-&gt;name = crb_execute_malloc(inter, strlen(identifier) + 1);
+    strcpy(new_variable-&gt;name, identifier);
+
+    /* 把原链表第一个节点作为新增变量的下一个节点 */
+    new_variable-&gt;next = inter-&gt;variable;
+    /* 修改环境变量链表：设置新变量为环境变量链表的第一个节点 */
+    inter-&gt;variable = new_variable;
+
+    /* 设置新增变量的value */
+    new_variable-&gt;value = *value;
+}
+</code></pre>
+<p>从上文可以看出，每次想向相应的环境(局部或者全局)新增变量，<code>crowbar</code>都会把新增的变量放到变量链表的首位。</p>
+<h3>变量解析</h3>
+<p>上文说到，<code>crowbar</code>以链表的方式组织相应环境中的变量，故变量解析也是直接从头开始遍历<code>Varible</code>链表，检查链表相应节点的变量名是否和相应的标识符一致，其实现非常简单：</p>
+<pre><code class="language-c">
+/* 在局部环境中搜索标识符 */
+Variable * crb_search_local_variable(LocalEnvironment *env, char *identifier) {
+    Variable    *pos;
+    if (env == NULL) return NULL;
+    for (pos = env-&gt;variable; pos; pos = pos-&gt;next) {
+        if (!strcmp(pos-&gt;name, identifier))
+            break;
+    }
+    if (pos == NULL) { return NULL; } 
+    else { return pos; }
+}
+
+/* 在全局环境中搜索标识符 */
+Variable * crb_search_global_variable(CRB_Interpreter *inter, char *identifier)
+{
+    Variable    *pos;
+
+    for (pos = inter-&gt;variable; pos; pos = pos-&gt;next) {
+        if (!strcmp(pos-&gt;name, identifier))
+            return pos;
+    }
+
+    return NULL;
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Compiler/自制编程语言/crowbar源码阅读笔记(1).html">
+                    crowbar源码阅读笔记(1):基本的数据结构
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-18
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这是《自制编程语言》一书中的脚本语言<code>crowbar</code>的源码阅读笔记(1):基本的数据结构。</p>
+<p><code>crowbar</code>语言由<code>C</code>语言编写，分为以下三个独立模块:</p>
+<ul>
+<li><code>CRB</code>：<code>crowbar</code> 主程序</li>
+<li><code>MEM</code>: 通用内存管理模块，源码位于<code>memory/</code>目录下</li>
+<li><code>DBG</code>: 通用<code>Debug</code>模块，源码位于<code>debug/</code>目录下</li>
+</ul>
+<h2><code>CRB</code>解释器接口</h2>
+<p><code>CRB.h</code>是解释器的接口文件：</p>
+<pre><code class="language-c">/* 创建解释器 */
+CRB_Interpreter *CRB_create_interpreter(void);
+
+/* 使用解释器编译文件 */
+void CRB_compile(CRB_Interpreter *interpreter, FILE *fp);
+
+/* 使用解释器解释 */
+void CRB_interpret(CRB_Interpreter *interpreter);
+
+/* 回收解释器 */
+void CRB_dispose_interpreter(CRB_Interpreter *interpreter);
+</code></pre>
+<h2><code>CRB</code>解释器扩展接口</h2>
+<p>为了扩展解释器，可以使用解释器的开发接口：<code>CRB_dev.h</code>。这个接口规定了<code>crowbar</code>这门语言的值类型和扩展接口。</p>
+<!-- more -->
+<h3>值类型</h3>
+<p><code>crowbar</code>中可用的类型包括布尔型、整型、浮点型、字符串型、原生指针型、和空引用型：</p>
+<pre><code class="language-c">typedef enum {
+    CRB_BOOLEAN_VALUE = 1,
+    CRB_INT_VALUE,
+    CRB_DOUBLE_VALUE,
+    CRB_STRING_VALUE,
+    CRB_NATIVE_POINTER_VALUE,
+    CRB_NULL_VALUE
+} CRB_ValueType;
+</code></pre>
+<p><code>crowbar</code>中变量可以是其中任意一种类型，为了表示变量的值，可以把“值”定义为:</p>
+<pre><code class="language-c">typedef struct {
+    CRB_ValueType       type;
+    union {
+        CRB_Boolean     boolean_value;
+        int             int_value;
+        double          double_value;
+        CRB_String      *string_value;
+        CRB_NativePointer       native_pointer;
+    } u;
+} CRB_Value;
+</code></pre>
+<h3>扩展接口</h3>
+<p>要为这门语言开发功能，需要使用扩展接口，<code>CRB</code>提供了以下三个函数：</p>
+<pre><code class="language-c">/* 代表能返回 CRB_Value 的函数 */
+typedef CRB_Value CRB_NativeFunctionProc(CRB_Interpreter *interpreter, int arg_count, CRB_Value *args);
+
+/* 注册函数到解释器 */
+void CRB_add_native_function(CRB_Interpreter *interpreter, char *name, CRB_NativeFunctionProc *proc);
+/* 注册全局变量到解释器*/
+void CRB_add_global_variable(CRB_Interpreter *inter, char *identifier, CRB_Value *value);
+</code></pre>
+<h2><code>CRB</code> 解释器</h2>
+<p><code>CRB</code>解释器相关定义位于<code>crowbar.h</code>中，规定了一些列语言相关的数据结构：</p>
+<ul>
+<li>解释器、编译错误、运行时错误、消息参数类型、消息格式、</li>
+<li>变量、标识符列表、局部环境、全局变量引用</li>
+<li>表达式类型、表达式、赋值表达式、二叉表达式、函数调用表达式、</li>
+<li>语句类型、语句、语句列表、块、语句结果类型、语句结果、if语句、while语句、for语句、return语句、全局语句</li>
+<li>函数定义、参数列表(链表)</li>
+<li>String、String Pool</li>
+</ul>
+<p>其中最重要的是解释器<code>CRB_Interpreter</code>：</p>
+<pre><code class="language-c">struct CRB_Interpreter_tag {
+    /* 在解释器生成时生成，解释器废弃时释放 */
+    MEM_Storage         interpreter_storage;
+    /* 运行时的存储  */
+    MEM_Storage         execute_storage;
+    /* 全局变量 链表 */
+    Variable            *variable;
+    /* 函数定义 链表 */
+    FunctionDefinition  *function_list;
+    /* 语句 链表 */
+    StatementList       *statement_list;
+    /* 当前行号 */
+    int                 current_line_number;
+};
+</code></pre>
+<h2>变量</h2>
+<p>其中，<code>Varible</code>实际上指的是全局变量链表：</p>
+<pre><code class="language-c">typedef struct Variable_tag {
+    char        *name;
+    CRB_Value   value;
+    struct Variable_tag *next;
+} Variable;
+</code></pre>
+<p>变量都很简单，自身拥有两个属性：</p>
+<ul>
+<li>变量名：即标识符。</li>
+<li>变量值：统一为<code>CRB_Value</code>类型。</li>
+</ul>
+<p><code>crowbar</code>以链表的形式组织变量，依次取<code>next</code>指针即可遍历。</p>
+<p>在此变量基础上，就可以表示出全局变量变量链表和局部环境:</p>
+<pre><code class="language-c">typedef struct GlobalVariableRef_tag {
+    Variable    *variable;
+    struct GlobalVariableRef_tag *next;
+} GlobalVariableRef;
+
+typedef struct {
+    Variable    *variable;
+    GlobalVariableRef   *global_variable;
+} LocalEnvironment;
+</code></pre>
+<p>变量解析即是从相应环境（局部、全局）中寻找标识符的过程，由于<code>crowbar</code>采用了链表的组织方式，其的实现机理也是直接在相应环境中从头开始遍历<code>Varible</code>链表，检查链表相应节点的变量名是否和相应的标识符一致：</p>
+<pre><code class="language-c">Variable * crb_search_local_variable(LocalEnvironment *env, char *identifier);
+Variable * crb_search_global_variable(CRB_Interpreter *inter, char *identifier);
+</code></pre>
+<h3>表达式</h3>
+<p>表达式的数据结构为：</p>
+<pre><code class="language-c">struct Expression_tag {
+    ExpressionType type;
+    int line_number;
+    union {
+        CRB_Boolean             boolean_value;
+        int                     int_value;
+        double                  double_value;
+        char                    *string_value;
+        char                    *identifier;
+        AssignExpression        assign_expression;
+        BinaryExpression        binary_expression;
+        Expression              *minus_expression;
+        FunctionCallExpression  function_call_expression;
+    } u;
+};
+</code></pre>
+<p>表达式有多种，比如赋值表达式：</p>
+<pre><code class="language-c">typedef struct {
+    char        *variable;
+    Expression  *operand;
+} AssignExpression;
+</code></pre>
+<p>二叉表达式：</p>
+<pre><code class="language-c">typedef struct {
+    Expression  *left;
+    Expression  *right;
+} BinaryExpression;
+</code></pre>
+<p>函数调用表达式:</p>
+<pre><code class="language-c">typedef struct {
+    char                *identifier;
+    ArgumentList        *argument;
+} FunctionCallExpression;
+</code></pre>
+<h3>语句、语句列表、及块</h3>
+<h4>对语句、语句列表及块的抽象表示</h4>
+<p>一个语句可能是表达式语句、全局语句、<code>if</code>语句、<code>while</code>语句、<code>for</code>语句、<code>return</code>语句。故可以把语句抽象为：</p>
+<pre><code class="language-c">struct Statement_tag {
+    StatementType       type;
+    int                 line_number;
+    union {
+        Expression      *expression_s;
+        GlobalStatement global_s;
+        IfStatement     if_s;
+        WhileStatement  while_s;
+        ForStatement    for_s;
+        ReturnStatement return_s;
+    } u;
+};
+</code></pre>
+<p>在此基础上，可以抽象出语句链表：</p>
+<pre><code class="language-c">typedef struct StatementList_tag {
+    Statement   *statement;
+    struct StatementList_tag    *next;
+} StatementList;
+</code></pre>
+<p>而一系列语句列表可以构成块：</p>
+<pre><code class="language-c">typedef struct {
+    StatementList       *statement_list;
+} Block;
+</code></pre>
+<h4>具体分类的语句的定义</h4>
+<p>不同的语句有不同的特征，需要为具体类型的语句定义特定的成员。比如<code>if</code>语句为：</p>
+<pre><code class="language-c">typedef struct {
+    Expression  *condition;
+    Block       *then_block;
+    Elsif       *elsif_list;
+    Block       *else_block;
+} IfStatement;
+</code></pre>
+<p>而用于循环的<code>while</code>语句：</p>
+<pre><code class="language-c">typedef struct {
+    Expression  *condition;
+    Block       *block;
+} WhileStatement;
+</code></pre>
+<p><code>for</code>语句：</p>
+<pre><code class="language-c">typedef struct {
+    Expression  *init;
+    Expression  *condition;
+    Expression  *post;
+    Block       *block;
+} ForStatement;
+</code></pre>
+<p><code>return</code>用于返回一个表达式的值：</p>
+<pre><code class="language-c">typedef struct {
+    Expression *return_value;
+} ReturnStatement;
+</code></pre>
+<h3>函数定义构成的链表</h3>
+<p>在定义函数之前，先要抽象出参数链表:</p>
+<pre><code class="language-c">typedef struct ArgumentList_tag {
+    Expression *expression;
+    struct ArgumentList_tag *next;
+} ArgumentList;
+</code></pre>
+<p>函数分为<code>CROWBAR_FUNCTION</code>和<code>NATIVE_FUNCTION</code>两种。对于前者，函数定义由参数链表和<code>block</code>构成。对于后者，实际上由<code>C</code>语言写就，故可以用一个函数指针来表示。</p>
+<pre><code class="language-c">typedef struct FunctionDefinition_tag {
+    char                       *name;
+    FunctionDefinitionType      type;
+    union {
+        struct {
+            ParameterList       *parameter;
+            Block               *block;
+        } crowbar_f;
+        struct {
+            CRB_NativeFunctionProc      *proc;
+        } native_f;
+    } u;
+    struct FunctionDefinition_tag       *next;
+} FunctionDefinition;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Python/Python-清洗-Excel-数据的一点感想.html">
+                    Python 清洗 Excel 数据的一点感想
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-03
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这两年我是不大碰<code>Python</code>的，原因是我觉得搞网站、写爬虫、干自动化任务，用<code>Node.Js</code>编写速度更快、运行效率更高。但是最近在成都集中办公，作为数据组，主要工作就是要清洗数据，需要大量处理<code>Excel</code>，由于不太喜欢<code>VB</code>那啰嗦的语法，用<code>JScript</code>操作<code>Excel</code>又非常不得劲，于是不得不捡起<code>Python</code>：无他，简单，会得人多，库也就多。这两年<code>Python</code>在数据处理领域占据了绝对优势。</p>
+<p>吐槽一句，这么多年来，<code>Python</code>一直以优雅自居。但是缩进语法并非表面上那样优雅，起码面对多行匿名函数的时候，始终优雅不起来。</p>
+<h2>工具</h2>
+<ul>
+<li><code>IPython</code>是个非常有意思的工具，但是貌似不提供<code>VIM</code>的键盘模式，于是照例在<code>VSCode</code>中安装<code>Jupyter</code>插件，从而兼得编辑器和<code>IPython</code>。</li>
+<li>使用<code>xlwings</code>操作<code>Excel</code></li>
+</ul>
+<h2>Python 操作 Excel 的一个例子</h2>
+<p>需求：有一个<code>Excel</code>表，其中某个<code>Sheet</code>的结构为：</p>
+<ul>
+<li>井号</li>
+<li>分层单位</li>
+<li>层位</li>
+<li>...</li>
+</ul>
+<p>同一个井，不同的分层单位又不通的分层方案。总记录行数约为11万，其中有大量数据的层位数据有误，但是对于同一个分层单位对同一个井的分层方案，有目前以下规律：</p>
+<ol>
+<li>由于<code>T3h1</code>跟下层是整合关系，故其下伏层必定是应该<code>T3a4</code>或者<code>T3a</code>。</li>
+<li>如果<code>T3h1</code>之后是<code>T3a4</code>地层，且再之下的下伏层是<code>T3a</code>组内的，必定只能是<code>T3a3</code>，也就是说不能是<code>T3a1</code>或<code>T3a2</code>。</li>
+<li>类似的，<code>T3a3</code>下伏层出现的<code>T3a</code>组的地层，只能是<code>T3a2</code>；<code>T3a2</code>下伏层出现的<code>T3a</code>组的地层，只能是<code>T3a1</code>。</li>
+<li>任何一个层位<code>T3a${i}</code>（i=1,2,3）,都可以缺失掉，然后直接跳到其他组的层位.</li>
+</ol>
+<p>起初我觉得要修改的数据量不大，直接在<code>Excel</code>中手工修改，后来才发现严重低估了这个工作量，大约耗费了我20分钟，我才意识到要修改的记录量可能要到数万，于是采用编程解决。</p>
+<p>编程有两种思路：一、通过相关接口直接操作<code>Excel</code>表；二、读取<code>Excel</code>内容到内存或者数据库，然后修改后存回。由于其他字段有许多<code>Excel</code>样式，故直接采用思路一。</p>
+<h3>使用<code>Python</code>编写脚本</h3>
+<p>尽管层位出现的各类情况很多，但是经过思考就可以发现，只要按照分层单位、深度排序，层位<code>T3a${i}</code>只能出现在<code>T3h1</code>的后四个记录里。所以基本思路是找到层位字段值是<code>T3h1</code>的记录，然后向下搜寻四个，如果是<code>T3a</code>组的层段，则根据情况修改为对应的层位记录即可。</p>
+<p>起手式必然是应该打开<code>Excel</code>，读入数据：</p>
+<pre><code class="language-Python">import xlwings as xw
+
+
+book= xw.Book(r&quot;./地质研究_07地层分层信息 合表 201708.03.01-P2.xlsx&quot;)
+sht=book.sheets[&quot;合表&quot;]
+</code></pre>
+<p>顺带封装下获取相应列字段的函数：</p>
+<pre><code class="language-Python">def getWell(rowNumber):
+    return sht.range(&quot;B&quot;+str(rowNumber)).value
+
+def getLayerDept(rowNumber):
+    return sht.range(&quot;E&quot;+str(rowNumber)).value
+
+def getLayer(rowNumber):
+    return sht.range(&quot;G&quot;+str(rowNumber)).value
+
+
+</code></pre>
+<p>然后是对修改后续某偏移行的层位的帮助方法：</p>
+<pre><code class="language-Python">def modifyNext(well,layer_dept,currentRowNumber,offset=1,layer=&quot;T2a4&quot;):
+
+    # 偏移行的井名
+    _well= getWell(currentRowNumber+offset)
+    # 偏移行的分层单位
+    _layer_dept=getLayerDept(currentRowNumber+offset)
+    # 偏移行的层位
+    _layer=getLayer(currentRowNumber+offset)
+
+    # 如果偏移行的井名或分层单位和给定的井位及分层单位不匹配，则什么也不做
+    if(not well==_well or not layer_dept==_layer_dept):
+        return
+
+    if(_layer.startswith(&quot;T2a&quot;)):
+        sht.range(&quot;G&quot;+str(currentRowNumber+offset)).value=layer
+        sht.range(&quot;G&quot;+str(currentRowNumber+offset)).color=(254,226,239)
+</code></pre>
+<p>然后就是迭代搜查修改的主程序了：</p>
+<pre><code class="language-Python">arr=sht.range(&quot;G1&quot;).expand('down').value
+for (idx,value) in enumerate(arr) :
+    if(value==&quot;T3h1&quot;):
+        currentRowNumber=idx+1
+        # 检查下一行
+        if(arr[idx+1]==&quot;T2a&quot;):
+            pass
+        elif( arr[idx+1]==&quot;T2a4&quot; and arr[idx+2]==&quot;T2a3&quot;):
+            pass
+        else:
+            print(&quot;!发现可疑错误：G&quot;,idx,&quot;尝试修正后续4个层位...&quot;)
+            xw.Range(&quot;G&quot;+str(currentRowNumber)).color=(0,255,0)
+            well=getWell(currentRowNumber)
+            layer_dept=getLayerDept(currentRowNumber)
+            modifyNext(well,layer_dept,currentRowNumber,1,&quot;T2a4&quot;)
+            modifyNext(well,layer_dept,currentRowNumber,2,&quot;T2a3&quot;)
+            modifyNext(well,layer_dept,currentRowNumber,3,&quot;T2a2&quot;)
+            modifyNext(well,layer_dept,currentRowNumber,4,&quot;T2a1&quot;)
+
+print(&quot;done&quot;)
+</code></pre>
+<h2>一句话总结</h2>
+<p>库多真好。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Instrument/VSCode/使用-VSCode-TDM-GCC-学习CPP.html">
+                    笔记：使用 VSCode + TDM-GCC 学习CPP
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>由于一些原因，打算捡起<code>C/C++</code>来做些习题。虽说个人电脑上装了大慈善家微软的<code>Visual Studio 2017</code>（社区版），但是对于简单的习题而言，VS 这个大杀器还是稍重了些。考虑到最近一年来，我已经用<code>VSCode</code>替换<code>Vim</code>作为主力编辑器，故而我开始在网上搜寻<code>VSCode</code>编写<code>C/C++</code>的相关资料。</p>
+<p><a href="https://code.visualstudio.com/docs/languages/cpp">微软官方对使用 VSCode 编写 C/C++ 的文档描述</a>并不给力，显然远远没有更上<code>VSCode</code>的发展速度。然后我在知乎上搜到微软员工 <a href="https://www.zhihu.com/people/be5invis">Belleve</a>写的<a href="https://www.zhihu.com/question/40929777/answer/90015056">使用 VSCode + TDM-GCC</a> 的回答，读后受益匪浅。相比较而言，微软官方的VSCode C/CPP文档简直完全没有帮助——如今其<code>C/C++</code>插件已经提供了代码高亮、调试等功能，设置默认的引擎后，已经无需再单独配置<code>c_cpp_properties.json</code>文件即可使用了。</p>
+<p>特此记录备忘。</p>
+<h2>基本思路：</h2>
+<ol>
+<li>使用<code>TDM-GCC</code>提供的<code>gcc</code>、<code>g++</code>、<code>gdb</code>等工具链编译、调试</li>
+<li>使用<code>VSCode</code>编辑代码，安装微软官方插件<a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools">C/C++</a>来提供语言服务（代码格式化、自动补全、符号搜索等)和Debugging</li>
+</ol>
+<h2>安装与配置</h2>
+<h3>安装</h3>
+<ul>
+<li>安装<code>TDM-GCC</code>，配置<code>PATH</code>方便以后使用</li>
+<li>安装<code>VSCode</code>+ 官方<code>C/C++</code>插件，在首选项中配置智能提示引擎为默认:</li>
+</ul>
+<pre><code class="language-JavaScript">&quot;C_Cpp.intelliSenseEngine&quot;: &quot;Default&quot;
+</code></pre>
+<h3>项目相关配置</h3>
+<p>调试的基本过程：</p>
+<ol>
+<li>每次调试之前使用<code>g++</code>以<code>-g</code>参数编译源程序</li>
+<li><code>VSCode</code>调用<code>gdb</code>对编译好的文件进行调试</li>
+</ol>
+<p>第1步可以通过配置<code>Task</code>完成，假定我们要编译的源文件为<code>main.cpp</code>。可以在目录中<code>.vscode/</code>下建立<code>tasks.json</code>文件:</p>
+<pre><code class="language-JSON">{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    &quot;version&quot;: &quot;2.0.0&quot;,
+    &quot;tasks&quot;: [
+        {
+            &quot;taskName&quot;: &quot;g++-g&quot;,
+            &quot;command&quot;: &quot;g++&quot;,
+            &quot;args&quot;: [
+                &quot;-g&quot;,
+                &quot;main.cpp&quot;,
+                &quot;-o&quot;,
+                &quot;debug/main.exe&quot;
+            ]
+        }
+    ]
+}
+</code></pre>
+<p>我们在该<code>JSON</code>文件中配置了一个任务，起名为<code>g++-g</code>，每次执行后都会编译输出为<code>debug/main.exe</code>。</p>
+<p>至于使用<code>VSCode</code>发起调试，需要在<code>.vscode/</code>下创建<code>launch.json</code>配置：</p>
+<pre><code>{
+    &quot;version&quot;: &quot;0.2.0&quot;,
+    &quot;configurations&quot;: [
+        {
+            &quot;name&quot;: &quot;(gdb) Launch&quot;,
+            &quot;type&quot;: &quot;cppdbg&quot;,
+            &quot;request&quot;: &quot;launch&quot;,
+            &quot;program&quot;: &quot;${workspaceRoot}/debug/main.exe&quot;,
+            &quot;args&quot;: [],
+            &quot;stopAtEntry&quot;: false,
+            &quot;cwd&quot;: &quot;${workspaceRoot}&quot;,
+            &quot;environment&quot;: [],
+            &quot;externalConsole&quot;: true,
+            &quot;preLaunchTask&quot;: &quot;g++-g&quot;,
+            &quot;MIMode&quot;: &quot;gdb&quot;,
+            &quot;miDebuggerPath&quot;: &quot;gdb.exe&quot;,
+            &quot;setupCommands&quot;: [
+                {
+                    &quot;description&quot;: &quot;Enable pretty-printing for gdb&quot;,
+                    &quot;text&quot;: &quot;-enable-pretty-printing&quot;,
+                    &quot;ignoreFailures&quot;: true
+                }
+            ]
+        }
+    ]
+}
+</code></pre>
+<p>这里我们配置了一个<code>launch</code>请求:</p>
+<ul>
+<li><code>type</code>为<code>cppdbg</code>，</li>
+<li><code>MIMode</code>为<code>gdb</code>，</li>
+<li><code>miDebuggerPath</code>为<code>gdb</code>的路径，</li>
+<li>目标程序为我们用<code>Task</code>编译好的<code>debug/main.exe</code>，</li>
+</ul>
+<p>此外，还需注意<code>preLaunchTash</code>这个属性值我们设置为<code>g++-g</code>，保证了我们按下<code>F5</code>启动<code>Launch</code>后先执行对应的<code>Task</code>完成编译。</p>
+<h2>demo</h2>
+<p>{% asset_img &quot;demo.gif&quot; &quot;demo&quot; %}</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page15.html">
+          Previous
+        </a>
+        17 of 32
+        <a href="/posts/page17.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

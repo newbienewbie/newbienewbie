@@ -1,0 +1,333 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony-Translation.html">
+                    Symfony Translation
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>翻译的过程可以理解为从消息<code>message</code>到译文<code>translation</code>的过程。Symfony/Translation这个组件的工作流程大致可以分为三步：</p>
+<ol start="0">
+<li>创建翻译器</li>
+<li>为翻译器添加资源: <code>source</code>到<code>target</code>的消息映射关系</li>
+<li>根据<code>domain</code>、<code>locale</code>及对应的<code>message</code>给出译文<code>translation</code>。</li>
+</ol>
+<h2>创建翻译器</h2>
+<p>翻译器的创建非常简单，仅需提供一个默认的<code>locale</code>值：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\Translator;
+
+$translator=new Translator('fr_FR');    #默认locale='fr_FR'
+</code></pre>
+<p>所谓<code>locale</code>，大致可以当成一个指代用户语言和国家/地区的字符串。推荐用
+<code>ISO639-1LanguageCode_ISO3166-1Alpha-2CountryCode&gt;</code>
+这样的格式来表示。比如：<code>fr_FR</code>。</p>
+<h2>翻译资源的加载</h2>
+<h3>Translation Resources</h3>
+<p>Translation Resources定义了一组从源(<code>source</code>)到目标<code>target</code>的消息映射关系。这种映射关系可以用不同的形式来表达，比如XML：</p>
+<pre><code class="language-XML">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xliff version=&quot;1.2&quot; xmlns=&quot;urn:oasis:names:tc:xliff:document:1.2&quot;&gt;
+    &lt;file source-language=&quot;en&quot; datatype=&quot;plaintext&quot; original=&quot;file.ext&quot;&gt;
+        &lt;body&gt;
+            &lt;trans-unit id=&quot;1&quot;&gt;
+                &lt;source&gt;Symfony is great&lt;/source&gt;
+                &lt;target&gt;J'aime Symfony&lt;/target&gt;
+            &lt;/trans-unit&gt;
+            &lt;trans-unit id=&quot;2&quot;&gt;
+                &lt;source&gt;symfony.great&lt;/source&gt;
+                &lt;target&gt;J'aime Symfony&lt;/target&gt;
+            &lt;/trans-unit&gt;
+        &lt;/body&gt;
+    &lt;/file&gt;
+&lt;/xliff&gt;
+</code></pre>
+<p>又如YAML：</p>
+<pre><code class="language-YAML">Symfony is great: J'aime Symfony
+symfony.great:    J'aime Symfony
+</code></pre>
+<p>再如PHP的Array：</p>
+<pre><code class="language-PHP">return array(
+    'Symfony is great' =&gt; 'J\'aime Symfony',
+    'symfony.great'    =&gt; 'J\'aime Symfony',
+);
+</code></pre>
+<p>当然，还支持JSON等其他形式——只要他们表达了这种映射关系，即可以被当做一个Translation Resources。</p>
+<h4>消息占位符</h4>
+<p>上面例子中的<code>%...%</code>这种表达（如<code>%name%</code>）是一种消息占位符。这种占位符机制可以动态映射一些message到translation。</p>
+<h4>复数形式</h4>
+<p>借助占位符和管道符可以很好的表达复数形式。</p>
+<pre><code>'There is one apple|There are %count% apples'
+</code></pre>
+<p>有时候我们需要借助于区间获取更多的控制：</p>
+<p>'{0} There are no apples|{1} There is one apple|]1,19] There are %count% apples|[20,Inf[ There are many apples'</p>
+<p>区间表达遵循<code>ISO 311-11</code>的记法规则,可以是两端(可以借助于-Inf和+Inf表达正负无穷)之间的数字，还可以是有限个数字的集合如:</p>
+<pre><code>{1,2,3}
+</code></pre>
+<h3>资源加载的过程：</h3>
+<ol>
+<li>设置资源加载器</li>
+<li>利用资源加载器加载资源</li>
+</ol>
+<p>Symfony支持不同的资源加载方法，:</p>
+<ul>
+<li>ArrayLoader</li>
+<li>CsvFileLoader</li>
+<li>IcuDatFileLoader</li>
+<li>PhpFileLoader</li>
+<li>XliffFileLoader</li>
+<li>JsonFileLoader</li>
+<li>YamlFileLoader</li>
+<li>...</li>
+</ul>
+<p>所有的加载器都实现了LoaderInterface接口，其load()方法返回一个catalog以用作将来的翻译。</p>
+<p>我们还可以设置定义自己的资源类型，比如采用</p>
+<pre><code>(source)(target)
+</code></pre>
+<p>这种形式，只要我们为之定义加载器：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\MessageCatalogue;
+use Symfony\Component\Translation\Loader\LoaderInterface;
+
+class MyFormatLoader implements LoaderInterface
+{
+    public function load($resource, $locale, $domain = 'messages')
+    {
+        $messages = array();
+        $lines = file($resource);
+
+        foreach ($lines as $line) {
+            if (preg_match('/\(([^\)]+)\)\(([^\)]+)\)/', $line, $matches)) {
+                $messages[$matches[1]] = $matches[2];
+            }
+        }
+
+        $catalogue = new MessageCatalogue($locale);
+        $catalogue-&gt;add($messages, $domain);
+
+        return $catalogue;
+    }
+
+}
+</code></pre>
+<p>加载Translation Resources的示例代码为:</p>
+<pre><code class="language-PHP">$translator-&gt;addLoader('xlf',new XliffFileLoader());
+$translator-&gt;addResource('xlf','message.fr.xlf','fr_FR');    # 默认domain为'messages'
+$translator-&gt;addResource('xlf','message.fr.xlf','fr_FR','admin');
+$translator-&gt;addResource('xlf','navigation.fr.xlf','fr_FR','navigation');
+
+</code></pre>
+<h2>翻译过程</h2>
+<p>翻译实际上是分成两步完成的：</p>
+<ol>
+<li>从translation resources中加载翻译好的message一览表(catalog)</li>
+<li>从catalog中定位message并返回对应的翻译。如果定位不到，则返回原始message。</li>
+</ol>
+<p>可以通过调用<code>ITranslator</code>接口提供两个关键的方法<code>trans()</code>或者<code>transChoice()</code>来执行这个过程。</p>
+<pre><code class="language-PHP">public function trans($id, array $parameters = array(), $domain = null, $locale = null);
+public function transChoice($id, $number, array $parameters = array(), $domain = null, $locale = null);
+</code></pre>
+<p>如果不提供locale，trans()方法在默认情况下会使用fallback的locale，</p>
+<pre><code class="language-PHP">$translator-&gt;trans('hello, %name%',array('name'=&gt;'Chicago'),'admin','fr_FR');
+
+$translator-&gt;transChoice(
+    '{0} There are no apples|{1} There is one apple|]1,Inf[ There are %count% apples',
+    10,
+    array('%count%' =&gt; 10),
+    'messages',
+    'fr_FR'
+);
+
+</code></pre>
+<h2>例子</h2>
+<p>来自官方文档的<a href="http://symfony.com/doc/current/components/translation/usage.html">一个例子</a>：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\Translator;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+
+$translator = new Translator('fr_FR');
+$translator-&gt;addLoader('array', new ArrayLoader());
+$translator-&gt;addResource('array', array(
+    'Symfony is great!' =&gt; 'J\'aime Symfony!',
+), 'fr_FR');
+
+var_dump($translator-&gt;trans('Symfony is great!'))
+</code></pre>
+<h2>在Symfony框架中使用翻译组件</h2>
+<p>Symfony框架集成了翻译功能，</p>
+<p>翻译资源的位置在以下位置寻找（按照以下优先级）：</p>
+<ul>
+<li><code>app/Resources/translations</code></li>
+<li><code>app/Resources/&lt;bundle name&gt;/translations</code></li>
+<li><code>Path/to/SomeBundle/Resources/translations/</code></li>
+</ul>
+<p>翻译资源文件的命名必须遵循这样的规则：</p>
+<p><code>domain.locale.loader</code></p>
+<p>domain是可选项；Symfony自带的loader包括xlf、php、yml等。例如：<code>FOSUserBundle.zh_CN.yml</code>、<code>validators.en.yml</code>等。</p>
+<p>设想用户的<code>locale</code>是<code>fr_FR</code>，当要翻译“Symfony is great” 时，会按照以下顺序寻找：</p>
+<ol>
+<li>尝试寻找<code>fr_FR</code>对应的翻译资源,例如messages.fr_FR.xlf;</li>
+<li>如果第一步没找到，则会寻找<code>fr</code>对应的翻译资源,例如messages.fr.xlf;</li>
+<li>如果还没找到，则使用<code>fallbacks</code>对应的资源。</li>
+</ol>
+<h2>在Symfony框架集成的Twig模板中使用翻译组件</h2>
+<p>绝大部分时候，我们都是在在Symfony框架的Twig中使用翻译组件。</p>
+<p>Twig提供了tags和filters支持翻译功能：</p>
+<p>tags：</p>
+<pre><code class="language-Twig">{% trans with {'%name%': 'Fabien'} f
+    rom &quot;app&quot; %}Hello %name%
+{% endtrans %}
+{% trans with {'%name%': 'Fabien'} from &quot;app&quot; into &quot;fr&quot; %}
+    Hello %name%
+{% endtrans %}
+{% transchoice count with {'%name%': 'Fabien'} from &quot;app&quot; %}
+    {0} %name%, there are no apples|{1} %name%, there is one apple|]1,Inf[ %name%, there are %count% apples
+{% endtranschoice %}
+</code></pre>
+<p>filters:</p>
+<pre><code class="language-Twig">{{ message|trans }}
+{{ message|transchoice(5) }}
+{{ message|trans({'%name%': 'Fabien'}, &quot;app&quot;) }}
+{{ message|transchoice(5, {'%name%': 'Fabien'}, 'app') }}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

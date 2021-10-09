@@ -1,0 +1,303 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/数据库理论/函数依赖.html">
+                    数据库笔记 函数依赖
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-09-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>函数依赖的定义</h2>
+<p><em>函数依赖</em> 与 <em>函数决定</em>  ：如果关系<code>R</code>的两个元组在属性<code>$A_1,A2_2,A_3,...,A_n$</code>上一致，则它们在另一个属性<code>B</code>上也一致，则称“关系<code>R</code>中属性<code>B</code>函数依赖于属性<code>$A_1 A_2 A_3 ... A_n$</code>”，记作：</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow B
+</code></pre>
+<p>或者称“<code>$A_1,A_2,A_3,...,A_n$</code>函数决定B”，其中，<code>$A_1 A_2 A_3 ... A_n$</code>称为 <em>决定因素</em> 。</p>
+<p>如果有一组属性函数决定：</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow B_1 
+
+A_1 A_2 A_3 ... A_n \rightarrow B_2
+
+A_1 A_2 A_3 ... A_n \rightarrow B_3
+
+A_1 A_2 A_3 ... A_n \rightarrow B_m
+</code></pre>
+<p>则可以简记作：</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow B_1 B_2 B_3 ... B_m
+</code></pre>
+<!-- more -->
+<h2>关系的键码</h2>
+<p>一个或者多个属性的集合 <code>$\{ A_1,A_2,...,A_n \}$</code>如果满足以下条件，则称该集合为关系<code>R</code>的键码(<code>key</code>):</p>
+<ol>
+<li>这些属性 <em>函数决定</em> 关系<code>R</code>的所有其他属性。</li>
+<li>集合的<code>$\{ A_1,A_2,...,A_n \}$</code>任何真子集都不能函数决定关系<code>R</code>的所有其他属性。(键码最小)</li>
+</ol>
+<p>如果只满足条件1，而不满足条件2，则称之为 <em>超键码(superkey)</em></p>
+<h2>函数依赖的原则</h2>
+<h3>合并分解原则</h3>
+<h4>分解原则(spiltting rule)</h4>
+<p><code>$ A_1 A_2 A_3 ... A_n \rightarrow B_1 B_2 B_3 ... B_m $</code> 可以用一组函数依赖<code>$ A_1 A_2 A_3 ... A_n \rightarrow B_i (i=1,2,...,m) $</code>来代替。</p>
+<h4>合并原则(combining rule)</h4>
+<p>一组函数依赖<code>$ A_1 A_2 A_3 ... A_n \rightarrow B_i (i=1,2,...,m) $</code> 可以用一个依赖<code>$ A_1 A_2 A_3 ... A_n \rightarrow B_1 B_2 B_3 ... B_m $</code>来代替。</p>
+<h4>平凡依赖原则(trivial dependency rule)</h4>
+<ul>
+<li>对函数依赖 <code>$ A_1 A_2 A_3 ... A_n \rightarrow B $</code>，如果B是A中的一个，称之为“平凡的”。</li>
+<li>对函数依赖<code>$ A_1 A_2 A_3 ... A_n \rightarrow B_i (i=1,2,...,m) $</code> ，
+<ul>
+<li>如果B是A的子集，则称该依赖是“平凡的”</li>
+<li>如果B中至少一个属性不在A中，则称为该依赖是“非平凡的”</li>
+<li>如果B中所有属性都不在A中，则称为该依赖是“完全非平凡的”</li>
+</ul>
+</li>
+</ul>
+<p>一个平凡的函数依赖，是有冗余信息的。事实上平凡依赖原则的英文表述<code>trivial dependency rule</code>就有 <em>琐碎的、不重要的</em> 的意思。</p>
+<h3>传递规则</h3>
+<p>如果：</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow B_1 B_2 B_3 ... B_m
+
+B_1 B_2 B_3 ... B_m \rightarrow  C_1 C_2 C_3 ... C_k
+</code></pre>
+<p>则有</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow  C_1 C_2 C_3 ... C_k
+</code></pre>
+<h2>属性的封闭集(closure)</h2>
+<p>记属性集<code>$\{ A_1,A_2,...,A_n \}$</code>为A，S 为函数依赖集。属性集A 函数决定的属性的集合称之为 <em>属性集A在依赖集S下的封闭集</em> 。</p>
+<p>属性集<code>$\{ A_1,A_2,...,A_n \}$</code>的封闭集记作
+<code>$\{ A_1,A_2,...,A_n \}^+$</code>。</p>
+<p>对于任一函数依赖<code>$A_1 A_2 ... A_n \rightarrow B$</code>，利用依赖集S计算出封闭集<code>$\{ A_1,A_2,...,A_n \}^+$</code>，如果B在此封闭集之中，则说明函数依赖<code>$A_1 A_2 ... A_n \rightarrow B$</code>蕴含于依赖集S中。</p>
+<p>由于键码可以函数决定其他所有属性，故键码属性的封闭集必然是属性全集。反过来看，若某属性集的封闭集为属性全集，则该属性集为键码。</p>
+<h2>冗余、异常及依赖的关系</h2>
+<h3>完全依赖和部分依赖</h3>
+<p>对于函数依赖<code>$W \rightarrow A$</code></p>
+<ul>
+<li>如果<code>$\exists V  \subset W$</code>，使得<code>$V \rightarrow A $</code>，则称A <code>部分依赖(partitial dependency)</code>于W</li>
+<li>如果不存在这种V，则成A<code>完全依赖(full dependency)</code>于W</li>
+</ul>
+<h3>传递依赖与直接依赖</h3>
+<p>对于函数依赖<code>$X \rightarrow Y $</code>，如果<code>$Y \nrightarrow X$</code>，而函数依赖<code>$Y \rightarrow Z$</code>成立，则称<code>Z对X传递依赖(transitive depedency)</code>，传递依赖也称为 <em>间接依赖</em></p>
+<p>如果<code>$X \rightarrow Y$</code> ，且<code>$Y \rightarrow X$</code>，则X和Y相互依赖，称之为 <em>直接依赖</em> 。</p>
+<p>直接依赖和传递依赖反映了属性对键码的函数依赖的性质和程度。</p>
+<h3>冗余和异常的根源</h3>
+<ul>
+<li>关系模式中非主属性对键码的部分依赖和传递依赖是产生数据冗余和更新异常的主要根源</li>
+<li>主属性对键码的部分依赖或传递依赖是产生数据冗余和更新异常的另一个重要根源</li>
+<li>多值依赖</li>
+</ul>
+<h2>关系模式规范化</h2>
+<p>把低级范式的关系模式转换为几个属于高级范式的关系模式的集合，称之为规范化（<code>normalization</code>）。</p>
+<p>从函数依赖的角度来看，关系模式规范化的基本思路就是：从非主属性到主属性，逐步消除决定因素不是键码的非平凡函数依赖，从而使每个决定因素都包含键码（而不是键码的一部分）。</p>
+<p>各级范式的关系图为：</p>
+<pre><code>1NF
+ |  消除非主属性对键码的部分依赖
+ V
+2NF
+ |  消除非主属性对键码的传递依赖
+ V
+3NF
+ |  消除主属性对键码的部分和传递依赖
+ V
+BCNF
+ |  消除非平凡的传递依赖
+ V
+4NF
+</code></pre>
+<h3>1NF</h3>
+<p>关系R的每个属性都不可分割</p>
+<h3>2NF</h3>
+<p>关系R符合第一范式，且每个非主属性都完全函数依赖于键码，即可称之为<code>2NF</code>。也就是说，非主属性，不得有对键码的部分依赖。</p>
+<p>比如有关系<code>$R(SNo,SName,SDept,MName,CName,Grade)$</code>，记录学生学号、姓名、专业、课程名称、授课老师、成绩，键码为<code>$SNo,CName$</code>。存在函数依赖<code>$SNo,CName \rightarrow SName,SDept,MName$</code>。</p>
+<p>显然这里是一个部分依赖，因为可以找函数依赖：<code>$SNo \rightarrow SName,SDept$</code> 。故关系R不符合<code>完全依赖</code>的要求。把R拆分成关系：</p>
+<pre><code class="language-math">%% KaTex
+S_1=(SNo,SName,SDept,MName)
+
+S_2=(SNo,CName,Grade)
+</code></pre>
+<p>则分解后的<code>$S_1$</code>的依赖关系为：</p>
+<pre><code class="language-math">%% KaTex
+SNo \rightarrow SName, SDept,MName
+
+SDept \rightarrow  MName
+</code></pre>
+<p>而分解后的<code>$S_2$</code>的依赖关系为：</p>
+<pre><code class="language-math">%% KaTex
+SNo,CName \rightarrow Grade
+</code></pre>
+<p>故分解后的两个关系均符合<code>2NF</code></p>
+<h3>3NF</h3>
+<p>关系R符合第一范式，且每个非主属性都都不传递依赖于键码，则称之为<code>3NF</code>。也是说，非主属性不得有对键码的间接依赖。</p>
+<p>属于3NF的关系模式必然属于第二模式，因为部分依赖蕴含着传递依赖：</p>
+<p>设关系R有非主属性A和主属性K，且<code>$K \rightarrow A$</code>是部分依赖，则A必然依赖于K的某个真子集<code>$K'$</code>，即<code>$\exists K' \subset K$</code>，使得<code>$K' \rightarrow A$</code>。
+又因为<code>$\exists K' \subset K$</code>，故有平凡依赖<code>$K \rightarrow K'$</code>，且<code>$K' \nrightarrow K $</code> 。
+综上，有：<code>$K \rightarrow K' \rightarrow A$</code>。</p>
+<p>上面分解出的关系<code>$S_1=(SNo,SName,SDept,MName)$</code>存在传递性的函数依赖<code>$SNo \rightarrow SDept \rightarrow  MName$</code>，故不属于<code>3NF</code>，可以继续分解为<code>$S_{11}(SNo,SName,SDept)$</code> 和 <code>$S_{12}(SDept,MName)$</code>。</p>
+<h2>模式分解</h2>
+<h3>原则</h3>
+<p>模式分解主要涉及两个原则</p>
+<h4>无损连接</h4>
+<p>对关系R进行分解时，R的元组分别在相应属性集进行投影产生新的关系。如果对新的关系进行自然连接得到的元组的集合与原关系完全一致，则称为“<code>无损链接(lossless join)</code>”。</p>
+<p>无损连接反映了模式分解的等价性原则。</p>
+<p>实现无损连接的充要条件是：<code>$(R_1 \cap R_2) \rightarrow (R_1 - R_2)$</code> 或者<code>$(R_1 \cap R_2) \rightarrow (R_2 - R_1)$</code> 。
+其中，<code>$R_1 \cap R_2$</code>代表二者的公共属性，二者的差集代表非公共属性部分。这个充要条件实际是在表达：公共属性能函数决定非公共属性部分。</p>
+<h4>保持依赖</h4>
+<p>对关系R进行分解时，R的函数依赖集也将按相应的模式分解。如果分解后的总的函数依赖集与原函数依赖集保持一致，则称之为“<code>保持依赖(preserve dependency)</code>”。</p>
+<p>保持连接反映了模式分解的依赖等价原则，保证了分解后模式与原有的模式在数据语义上一致。</p>
+<h3>分解的方法</h3>
+<h4>方法一、部分依赖归子集，完全依赖随键码</h4>
+<p>升级为2NF：</p>
+<p>从部分依赖中归纳出键码的一个真子集，然后真子集和所有的非主属性合成一个新的模式。</p>
+<p>对键码完全依赖的所有非主属性和键码组合成一个新的模式。</p>
+<h4>方法二、基本依赖为基础，中间属性做桥梁</h4>
+<p>升级为3NF：</p>
+<p>以传递依赖链的两个基本依赖为基础形成两个新的模式。</p>
+<h4>方法三、找违例自成一体，舍左右全集归一；若发现仍有违例，再回首如法炮制。</h4>
+<p>违背BC范式的函数称为BC范式的违例。</p>
+<h2>多值依赖</h2>
+<p>假设模式<code>$R(A,B,C)$</code>，其中A、B、C为属性(集)。如果在A上取特定值，而在B的取值的集合上与C上取值的集合无关，则称多值依赖<code>$A \rightarrow \rightarrow B$</code>在R中成立。也可称A 多值决定B，或者称B多值依赖A。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

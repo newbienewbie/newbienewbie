@@ -1,0 +1,328 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/Redux/Redux-30分钟极速入门.html">
+                    Redux 30分钟极速入门
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-05-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Redux 世界观</h2>
+<p><code>Redux</code>遵从的是<code>Flux</code>模式，本质上就是一个 <code>event dispatcher</code>。</p>
+<p>由于<code>React</code> 提供了<code>数据-&gt;视图</code>的映射，如果改变<code>数据</code>，<code>React</code>就会自动渲染出相应的<code>视图</code>。为了处理复杂的情况，比如各种用户点击、各种远程加载，传统的方式，可能是为组件添加各种事件监听器，一旦监听器被触发，就执行相关代码逻辑，然后计算出相关数据，最后通过<code>setState()</code>改变状态，从而自动渲染出新的视图。但是当应用复杂度增加到一定数量级时，代码会越来越不可控，也就是说，我们需要单独提炼出一个管理数据的功能，以让<code>React</code>根据数据自动渲染视图。</p>
+<p><code>Redux</code>的核心工作就是管理数据，具体而言就是:</p>
+<ol>
+<li>视图可以在某种情况下创建动作并予以触发</li>
+<li>根据当前状态、和所触发动作，生成新的状态</li>
+<li><code>React</code>根据新的状态渲染新的视图</li>
+</ol>
+<p><code>Redux</code>和<code>React</code>是独立的、互不耦合的，其负责的工作就是管理数据，所以为了简单起见，以下我们不再讨论<code>React</code>，只根据纯<code>JavaScript</code>讨论怎么利用<code>Redux</code>管理状态。</p>
+<h2>Store 、Action、和 Reducer</h2>
+<p>既然<code>Redux</code>是用来管理数据的，那么就需要一个地方来存储数据、然后提供修改数据的机制。这个机制的核心在于<code>store</code>——用于存储<code>state</code>、调度<code>action</code>。</p>
+<p><code>Store</code>的功能包括：</p>
+<ol>
+<li>维持应用状态(state)； 提供 getState() 方法获取 state；</li>
+<li>调度动作：提供 dispatch(action) 方法更新 state；</li>
+<li>订阅管理：通过 var unsubscribe=subscribe(listener) 注册监听器、注销监听器。</li>
+</ol>
+<h3>Action</h3>
+<p><code>action</code>就是用于改变状态的<code>payload</code>，或者说是一种事件——描述了想要发生的事。它和<code>Sysmfony</code>中的<a href="http://www.itminus.com/2015/04/10/WindWhisper/PHP/Symfony/Symfony-EventDispatcher/">Event</a>作用是一致的。</p>
+<p>假设我们有一个任务系统，包括两种任务动作分类，一是探索、而是完成，则可以这样定义<code>action</code>:</p>
+<pre><code class="language-JavaScript">// 定义各种 Action 分类字符串常量
+const ACTIONS={ QUEST:'task.quest', COMPLETE:'task.complete', };
+
+// 用于创建动作: quest
+function quest(ebook){
+    return { type:ACTIONS.QUEST, value:ebook, };
+}
+
+// 用于创建动作: complete
+function complete(ebook){
+    return { type:ACTIONS.COMPLETE, value:ebook, };
+}
+
+module.exports={ ACTIONS, quest, complete, };
+</code></pre>
+<h3>Reducer</h3>
+<p>上文已经规定了<code>action</code>，但是只定义要发生什么还不够，我们还要定义当发生<code>action</code>的时候程序如何响应。这部分工作便是<code>reducer()</code>函数的职责。本质上，<code>reducer</code>所做的就是实现:</p>
+<pre><code class="language-JavaScript">(当前状态,动作)=&gt;新状态。
+</code></pre>
+<p>完成这种转换的函数，即可称之为<code>reducer</code>。</p>
+<p>针对上文的<code>action</code>，编写如下<code>reducer</code>函数:</p>
+<pre><code class="language-JavaScript">const taskActions=require('../actions/task');
+
+const reducer = function (state = {}, action) {
+    switch (action.type) {
+        case taskActions.ACTIONS.QUEST:
+            // 这里输出到控制台只是为了方便追踪代码，实际上由于最后返回新的 state，React会自动渲染出新的视图
+            console.log(`test ${action.type}\t${action.value}`);
+            return Object.assign({},state, {message: action.value})
+        case taskActions.ACTIONS.COMPLETE:
+            // 这里输出到控制台只是为了方便追踪代码，实际上由于最后返回新的 state，React会自动渲染出新的视图
+            console.log(`test ${action.type}\t${action.value}`);
+            return Object.assign({},state, {message: action.value})
+        default:
+            return state;
+    }
+}
+module.exports=reducer;
+</code></pre>
+<h3>Store</h3>
+<p>迄今为止，我们写的都是不涉及其他任何库的<code>plain JavaScript</code>代码(当然也无关于<code>redux</code>库)。从现在开始，我们要引入<code>redux</code>库的几个最核心的函数(每一个都非常简单，有源码说明)。</p>
+<h4>创建<code>store</code></h4>
+<p><code>store</code> 是<code>Redux</code>的核心，<code>Redux</code>提供了<code>createStore()</code>函数来创建<code>store</code></p>
+<p><code>createStore()</code>函数核心源码非常简单：</p>
+<pre><code class="language-JavaScript">function createStore(reducer, preloadedState, enhancer) {
+    // ... 
+    
+    var currentReducer = reducer
+    var currentState = preloadedState
+    var currentListeners = []
+    var nextListeners = currentListeners
+    var isDispatching = false
+    
+    function getState() { return currentState ;} 
+
+    function subscribe(listener) {/**/ }
+    
+    function dispatch(action) {
+        
+        // ... 必要的检查
+        
+        // 调用 reducer() 
+        try {
+            isDispatching = true
+            currentState = currentReducer(currentState, action)
+        } finally {
+            isDispatching = false
+        }
+
+        // ... 逐一调用监听器
+        
+        return action
+    }
+        
+    function replaceReducer(nextReducer) { /**/ }
+    
+    function observable() {/**/}
+    
+    // 初始触发一次
+    dispatch({ type: ActionTypes.INIT })
+    
+    return { dispatch, subscribe, getState, replaceReducer, [$$observable]: observable }
+}
+</code></pre>
+<p>从这里的源码顺带可以知道，<code>store.dispath(action)</code>最核心的功能就是调用<code>reducer(currentState,action)</code>函数</p>
+<p>利用<code>createStore</code>创建<code>store</code>:</p>
+<pre><code class="language-JavaScript">const {createStore}=require('redux');
+const reducer=require('./reducers');
+
+const store = createStore(reducer);
+</code></pre>
+<h4>调度<code>action</code></h4>
+<p>调度动作这一步实际上可以拆分为两小步：</p>
+<ul>
+<li>创建动作：由动作创建器创建动作</li>
+<li>派发动作：由<code>store.dispatch()</code>派发动作触发<code>reducer</code></li>
+</ul>
+<p>对于上述的任务系统，对<code>action</code>进行调度：</p>
+<pre><code class="language-JavaScript">let taskActions= require('./actions/task');
+
+// 创建动作
+const questAction=taskActions.quest('hello,world');
+// 派发动作
+store.dispatch(questAction);
+</code></pre>
+<p>输出为：</p>
+<pre><code>test task.quest hello,world
+</code></pre>
+<h4>创建<code>action</code>后自动触发调度</h4>
+<p>可以通过装饰器的思想，构造一个同名函数，每次创建动作就可以自动触发动作派发，从而避免每次手工<code>dispatch</code>。</p>
+<p><code>bindActionCreators()</code>就是这样一个函数：绑定各个 <code>action creator</code> 到 <code>dispatch</code> —— 把相应 <code>action creator</code> 包装成会自动触发<code>dispatch</code>动作的对象。</p>
+<p>首先看下用于单个绑定的<code>bindActonCreator()</code>装饰器，其实现类似于：</p>
+<pre><code class="language-JavaScript">function bindActionCreator(actionCreator, dispatch){
+    return function(){
+        return dispatch(actionCreator.apply(undefined, arguments));
+    };
+}
+</code></pre>
+<p>此函数非常简单，返回一个函数对象，经调用后将生成<code>action</code>并触发<code>dispatch</code>调用。</p>
+<p>而<code>bindActionCreators()</code>可以理解为<code>bindActionCreator()</code>的批量模式：</p>
+<pre><code class="language-JavaScript">function bindActionCreators(actionCreators, dispatch){
+    if (typeof actionCreators === 'function') {
+        return bindActionCreator(actionCreators, dispatch);
+    }
+    
+    if (typeof actionCreators !== 'object' || actionCreators === null) {
+        throw new Error('bindActionCreators expected an object or a function, instead received ' + (actionCreators === null ? 'null' : typeof actionCreators) + '. ' + 'Did you write &quot;import ActionCreators from&quot; instead of &quot;import * as ActionCreators from&quot;?');
+    }
+    
+    var keys = Object.keys(actionCreators);
+    var boundActionCreators = {};
+    for (var i = 0; i &lt; keys.length; i++) {
+        var key = keys[i];
+        var actionCreator = actionCreators[key];
+        if (typeof actionCreator === 'function') {
+            boundActionCreators[key] = bindActionCreator(actionCreator, dispatch);
+        }
+    }
+    return boundActionCreators;
+}
+</code></pre>
+<p>有了<code>bindActionCreators</code>，就可以批量完成动作创建器到调度的绑定，从而实现自动调度：</p>
+<pre><code class="language-JavaScript">const {bindActionCreators}=require('redux');
+// 装饰
+taskActions=bindActionCreators(taskActions,store.dispatch);
+
+// 创建后自动派发动作
+taskActions.quest('hello,world');
+taskActions.complete('fuck,world');
+</code></pre>
+<p>输出为：</p>
+<pre><code>test task.quest hello,world
+test task.complete      fuck,world
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

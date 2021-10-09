@@ -1,0 +1,246 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/MVC执行概貌/2. ControllerActionInvoker与Filters管道.html">
+                    ASP.NET Core MVC — MVC执行概貌(2) ControllerActionInvoker与Filters管道
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>从实现上说，<code>ControllerActionInvoker</code>其实是<code>ResourceInvoker</code>的子类。其<code>InvokeAsync()</code>方法的主要流程就是调用<code>InvokeFilterPipelineAsync()</code>。</p>
+<h2><code>ResourceInvoker</code></h2>
+<p><code>ResourceInvoker</code>中的<code>Resource</code>含义和<code>Resource filters</code>中的含义相同。但是这里的<code>ResourceInvoker</code>会负责调用整个<code>Filter</code>管道，主要包括<code>Authorization Filters</code>(<code>2.x</code>)、<code>Exception Filters</code>、<code>Model Binding</code>、<code>Action Filters</code>、及<code>Result Filters</code>的全部过程：</p>
+<pre><code class="language-csharp">public virtual async Task InvokeAsync()
+{
+    try{
+        //.. diagnose;
+
+        using (_logger.ActionScope(_actionContext.ActionDescriptor)){
+           // ... log
+            try {
+                await InvokeFilterPipelineAsync();
+            } finally{
+                ReleaseResources();
+                // ... log
+            }
+        }
+    } finally {
+        //.. diagnose;
+    }
+}
+</code></pre>
+<p>显然，这里的<code>InvokeFilterPipelineAsync()</code>是整个方法的核心，该方法会不停地尝试调用自身的一个<code>Next</code>方法，直至结束：<!--more--></p>
+<pre><code class="language-csharp">private async Task InvokeFilterPipelineAsync()
+{
+    var next = State.InvokeBegin;
+
+    // The `scope` tells the `Next` method who the caller is, and what kind of state to initialize to
+    // communicate a result. The outermost scope is `Scope.Invoker` and doesn't require any type
+    // of context or result other than throwing.
+    var scope = Scope.Invoker;
+
+    // The `state` is used for internal state handling during transitions between states. In practice this
+    // means storing a filter instance in `state` and then retrieving it in the next state.
+    var state = (object)null;
+
+    // `isCompleted` will be set to true when we've reached a terminal state.
+    var isCompleted = false;
+
+    while (!isCompleted)
+    {
+        await Next(ref next, ref scope, ref state, ref isCompleted);
+    }
+}
+
+protected abstract Task InvokeInnerFilterAsync();
+</code></pre>
+<p>而<code>Next()</code>方法负责依次调用管道内的<code>Filter</code>。对于具体的<code>Action Filters</code> 及<code>Action</code>本身的调用，则交由抽象方法<code>InvokeInnerFilterAsync()</code>定义，延迟到子类中实现。</p>
+<p><code>ASP.NET Core</code>中内置的<code>ResourceInvoker</code>实现有<code>ControllerActionInvoker</code>和<code>PageActionInvoker</code>，分别负责对<code>MVC</code>中<code>Action</code>进行调用和对<code>RazorPage</code>的<code>handler</code>进行调用。</p>
+<h2><code>ControllerActionInvoker</code></h2>
+<p><code>ControllerActionInvoker</code>对父类抽象方法<code>InvokeInnerFilterAsync()</code>的实现是也是通过状态机实现，如果是同步调用，大致的流程是：</p>
+<ol>
+<li><code>filter.OnActionExecuting()</code>,</li>
+<li><code>InvokeActionMethodAsync()</code>，</li>
+<li><code>filter.OnActionExecuted()</code></li>
+</ol>
+<p>事实上，<code>ASP.NET Core MVC</code>中内置的<code>Controller</code>抽象类自身也是一个<code>IActionFilter</code>：</p>
+<pre><code class="language-csharp">public abstract class Controller : ControllerBase, IActionFilter, IAsyncActionFilter, IDisposable
+{
+    ...
+    [NonAction] public virtual void OnActionExecuting(ActionExecutingContext context) { }
+    [NonAction] public virtual void OnActionExecuted(ActionExecutedContext context){ }
+    [NonAction] public virtual Task OnActionExecutionAsync( ActionExecutingContext context, ActionExecutionDelegate next)
+    {
+        if (context == null) { /* throw */; }
+        if (next == null) { /* throw */; }
+
+        OnActionExecuting(context);
+        if (context.Result == null)
+        {
+            var task = next();
+            if (!task.IsCompletedSuccessfully)
+            {
+                return Awaited(this, task);
+            }
+
+            OnActionExecuted(task.Result);
+        }
+
+        return Task.CompletedTask;
+
+        static async Task Awaited(Controller controller, Task&lt;ActionExecutedContext&gt; task){ controller.OnActionExecuted(await task); }
+    }    
+    ... 
+}
+</code></pre>
+<p>可以看到，这里<code>Controller::OnActionExecutionAsync(ctx,next)</code>方法会按如下顺序依次调用：</p>
+<ol>
+<li><code>OnActionExecuting(executingContext)</code>方法</li>
+<li><code>next()</code>委托，也就是<code>Action</code>方法本身</li>
+<li><code>OnActionExecuted(executedContext)</code>方法
+和普通的<code>ActionFilter</code>行为一致。</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

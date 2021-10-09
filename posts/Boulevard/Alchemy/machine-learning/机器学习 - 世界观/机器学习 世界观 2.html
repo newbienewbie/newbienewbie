@@ -1,0 +1,217 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Alchemy/machine-learning/机器学习 - 世界观/机器学习 世界观 2.html">
+                    机器学习 世界观 一种有监督学习的算法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>训练集可以视作一个矩阵<code>$\bold X$</code>，其中每一行都代表一条训练数据向量<code>$\bold x$</code>。我们的目标就是要通过训练集反复调整权重向量，得到能够刻画数据内在规律的数学方程。</p>
+<h2>朴素思想</h2>
+<p>不妨先只考虑单个神经元的情况。对于训练集中的每一组训练数据<code>$\bold x$</code>，都通过<code>$\phi(\bold w \cdot \bold x +b)$</code>计算出一个预测值<code>$\hat y$</code>。 并和真实值<code>$y$</code>相比较得到误差<code>$e=y - \hat y$</code> 。由于<code>$\phi(\bold w \cdot \bold x +b)$</code>是对<code>$\bold w \cdot \bold x$</code>简单变换，为了简单起见，我们假设<code>$\phi$</code>是正相关函数，这样只需考虑<code>$\bold w \cdot \bold x$</code>即可推知<code>$\phi(z)$</code>的变化趋势：</p>
+<ol>
+<li>如果误差<code>$e = 0$</code>，则说明预测值与真实值相同，不需要调整权重向量<code>$\bold w$</code>。</li>
+<li>如果误差<code>$e &gt; 0$</code>，则说明预测值与真实值相比偏小，需要修正<code>$\bold w$</code>。我们可以通过调整<code>$\bold w$</code>，使之与输入向量<code>$\bold x$</code>之间的夹角更小一点，这样计算出来的<code>$\bold w \cdot \bold x$</code>值会更大，从而导致预测值<code>$\phi(z)$</code>会增大一点。</li>
+<li>如果误差<code>$e &lt; 0$</code>，则说明预测值与真实值相比偏大，需要修正<code>$\bold w$</code>。我们可以通过调整<code>$\bold w$</code>，使之与输入向量<code>$\bold x$</code>之间的夹角更大一点，这样计算出来的<code>$\bold w \cdot \bold x$</code>值会更小，从而导致预测值<code>$\phi(z)$</code>会减小一点。</li>
+</ol>
+<p>所以，现在的问题在于，能否找到一种简单的策略来调整<code>$\bold w$</code>，可以<code>$\bold w$</code>让其和<code>$\bold x$</code>之间的夹角更大（或者更小）？<!--more--></p>
+<p>数学家根据向量加减法运算的规则，设计出了这样一种算法：</p>
+<ol>
+<li>要让<code>$\bold w$</code>和<code>$\bold x$</code>之间夹角更小，可以令<code>$\bold w := \bold w + \bold x$</code>，根据向量加分的平行四边形法则，等式的右边代表向量<code>$\bold w$</code>和向量<code>$\bold x$</code>的对角线，从而令调整后的<code>$\bold w$</code>更加“偏向”于输入向量<code>$\bold x$</code>，形成更小的夹角。为了更灵活调节夹角的大小，我们可以取一个系数<code>$\alpha$</code>和<code>$\bold x$</code>的数乘，得到向量<code>$\alpha \bold x$</code>，然后调整<code>$\bold w$</code>和其之间的夹角，也即<code>$\bold w := \bold w + \alpha\bold x$</code>。</li>
+<li>类似的，要让<code>$\bold w$</code>和<code>$\bold x$</code>之间夹角更大，可以转而去令<code>$\bold w$</code>和<code>$-\bold x$</code>之间的夹角更小，即可以令<code>$\bold w :=\bold w - \alpha\bold x$</code>。</li>
+</ol>
+<p>考虑到<code>$e=y- \hat y$</code>的取值和上述加法或减法有严格相关性，可以将上述调整<code>$\bold w$</code>向量的算法统一表示为：</p>
+<pre><code class="language-math">%% KaTex
+\bold w := \bold w +  \eta e \bold x
+</code></pre>
+<p>其中，<code>$\eta$</code>称之为学习速率，表达了每次调整向量<code>$\bold w$</code>和向量<code>$\bold x$</code>之间夹角的速度。</p>
+<p>事实上，偏置量<code>$b$</code>可以视作输入恒为<code>$1$</code>时对应的权重，故偏置的调整规则也可以类似地统一表示为：</p>
+<pre><code class="language-math">%% KaTex
+b := b + \eta e 
+</code></pre>
+<h2>算法框架</h2>
+<ol>
+<li>初始化权值向量<code>$\bold w$</code></li>
+<li>对于训练集中每一个<code>$\bold x^{(i)}$</code>的执行以下操作：
+<ul>
+<li>计算当前权重下预测出的输出值<code>$\hat y$</code></li>
+<li>计算预测值和真实值之间的误差<code>$e= y - \hat y$</code></li>
+<li>调整权重向量<code>$ \bold w := \bold w + \eta e \bold x $</code></li>
+<li>调整偏置值 <code>$ \bold b := \bold b + \eta e $</code></li>
+</ul>
+</li>
+</ol>
+<h2>算法实现</h2>
+<pre><code class="language-python">class Perception(object):
+
+    def __init__(self,eta=0.01,n_iter=10):
+        self.eta=eta
+        self.n_iter=n_iter
+        self.weight=None
+        self.bias=np.zeros(1)
+        self.errors_=[]
+    
+    def _net_input(self,x):
+        return np.dot(x,self.weight) + self.bias
+    
+    def think(self,x):
+        return np.where(self._net_input(x) &gt;= 0.0 ,1, -1)
+    
+    def train(self,X,y):
+        self.weight=np.zeros(X.shape[1])
+
+        for _ in range(self.n_iter):
+            errors=0
+            for x, target in zip(X,y):
+                update=self.eta*(target-self.think(x))
+                self.weight +=update * x
+                self.bias +=update
+                errors +=int(update != 0)
+            self.errors_.append(errors)
+        return self
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/智能指针/Rust智能指针2——析构.html">
+                    Rust智能指针2——析构
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-27
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>本文是正式开始智能指针学习之前的基础知识之二：析构</p>
+<p>在<a href="http://www.itminus.com/blog/2017/12/29/WindWhisper/Rust/%E6%89%80%E6%9C%89%E6%9D%83%E7%B3%BB%E7%BB%9F/%E6%89%80%E6%9C%89%E6%9D%83%E7%B3%BB%E7%BB%9F1%E2%80%94%E2%80%94%E4%B8%96%E7%95%8C%E8%A7%82/">《Rust所有权系统1——世界观》</a>中，我们举了这样一个例子：</p>
+<pre><code class="language-Rust">{
+    let x = Box::new(100i32);  // 在堆上分配内存，存储32位整数100
+    // ...
+}                              // `Rust`在编译时会帮我插入代码来释放这个堆上内存
+</code></pre>
+<p>用来说明，<code>Rust</code>编译器会在作用域结束的位置插入代码，来帮我们释放资源。我们不必手工管理内存，再不需要像写C时那样<code>malloc()</code>，更不需要心惊胆战是不是哪里忘记<code>free()</code>或者疑神疑鬼是不是重复<code>free()</code>了，生活美好得就更在<code>Java</code>里一样。但是问题是，<code>Rust</code>是怎么知道要去释放哪些资源的呢？ 这要从<code>Drop</code>这个<code>Trait</code>说起。</p>
+<!--more-->
+<h2><code>Drop</code></h2>
+<p>事实上，<code>Rust</code>提供了一个名为<code>Drop</code>的<code>Trait</code>，可以定制当一个类型的值在作用域结束前要做些什么，从功能上讲，这个<code>Trait</code>十分类似于<code>C++</code>的析构函数。<code>Box&lt;T&gt;</code>类型也实现了这个<code>Trait</code>，每当<code>Box&lt;T&gt;</code>的一个实例作用域结束，其所实现的<code>Drop</code>的<code>drop()</code>方法就被调用，从而释放该实例所指向的堆上内存空间。</p>
+<p>假设我们有一个简单的结构体：</p>
+<pre><code class="language-Rust">struct Sth {
+    field: String,
+}
+
+impl Sth {
+    fn new(s:String)-&gt;Sth{
+        Sth{field:s}
+    }
+}
+</code></pre>
+<p>现在想在其实例析构时做点其他事，比如检查特朗普是不是又发推特了：</p>
+<pre><code class="language-Rust">impl Drop for Sth {
+    fn drop(&amp;mut self){
+        // 找到最新的推特，这里假装是 特朗普又举着手指说 ：你被开除了 ! 
+        self.field=String::from(&quot;You Are Fired!&quot;);
+        // ...
+        println!(&quot;The latest Tweets from Donald J. Trump is &lt; {} &gt;&quot;,self.field);
+    }
+}
+</code></pre>
+<p>和常见<code>GC</code>的<code>mark-and-swipe</code>不同，编译器插入资源回收代码都是在编译期发生的事儿。正是由于这个特点，<code>Rust</code>中的资源析构是确定性的。</p>
+<h2>手工释放</h2>
+<p>有时候我们会想尽早释放内存，但是需要注意的是，尽管一个类型可以实现<code>Drop</code>，但是<code>Rust</code>中并不允许人为手工地显式调用其实例的<code>drop()</code>方法。这是因为会触发多次释放内存（<code>double free</code>）的问题。考虑一段有问题的程序：</p>
+<pre><code class="language-Rust">{
+    sth.drop();  // sth.drop() 被显式调用
+}                // 这里会发生什么？
+</code></pre>
+<p>假如<code>Rust</code>允许这样显式调用<code>sth.drop()</code>，那么当作用域结束，编译器插入的用于释放资源的代码就会被重复执行，显然，这造成了多次释放同一段内存的出问题。要是想提前手工释放内存，可以使用<code>std::mem::drop()</code>函数:</p>
+<pre><code class="language-Rust">{
+    let sth = Sth { string: String::from(&quot;hello,world&quot;) };
+    drop(sth);
+    // ...
+}
+</code></pre>
+<h2>小结</h2>
+<p><code>Drop</code>类似于<code>C++</code>的析构机制，这个<code>Trait</code>给了智能指针自动释放资源的能力，让我们的生活美好得如同在<code>Java</code>中那样。正因为此，<code>Drop</code>也是智能指针相对于普通引用(指针)的重要区别之一。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

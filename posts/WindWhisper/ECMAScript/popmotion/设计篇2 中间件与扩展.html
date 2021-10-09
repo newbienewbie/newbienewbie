@@ -1,0 +1,308 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/popmotion/设计篇2 中间件与扩展.html">
+                    popmotion 设计篇2 ：中间件与扩展
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在上一篇中，我们设计出了这样一种动作类：</p>
+<pre><code class="language-JavaScript">class Action{
+    constructor(props){
+        this.props=props;
+    }
+    
+    start(executor){
+        let {
+            update=v=&gt;{},
+            complete=()=&gt;{},
+            error=()=&gt;{}
+        }=executor;
+        
+        let {do}=this.props;
+        
+        do(update,complete,error);
+    }
+}
+
+function action(do){
+    return new Action({do,});
+}
+</code></pre>
+<p>我们为<code>Action</code>在初始化的时候提供一个算法框架函数<code>do(update,complete,error)</code>，其中以三个名为<code>update</code>、<code>complete</code>、<code>error</code>三个函数作为基础，构建了整个函数的执行逻辑。具体在启动动作的时候，再传递一个执行器<code>executor</code>即可。</p>
+<p>不过，这种方案有个局限性在于，我们只能遵循<code>do</code>的算法框架。可否再在某种算法框架<code>do</code>的基础上，对之进行动态修改？<!--more--></p>
+<p>举个例子，算法框架中调用了三次<code>update(x)</code>：</p>
+<pre><code class="language-javascript">const a=action(({ update }) =&gt; {
+    update(1);
+    update(2);
+    update(1);
+});
+
+</code></pre>
+<p>如果我们觉得这里调用次数过多，难道要重修必须要重写一个算法框架吗生成新的类吗？</p>
+<p>当然不用，借助于装饰器的思想，我们完全可以提供一个<code>filter(predicate: Predicate)</code>方法，来决定是否真正调用<code>start({update,})</code>中注入的函数，语法和效果类似于：</p>
+<pre><code class="language-javascript">a.filter((v) =&gt; v === 1)
+    .start(console.log); // 会输出 1, 1
+</code></pre>
+<p>基于装饰器的思想，我们完全可以<code>update</code>、<code>complete</code>、<code>error</code>函数进行装饰，从而在一定程度上修改算法框架、扩展算法框架。</p>
+<p>比如，针对以上的<code>filter(predicate)</code>方法，可以轻松写出以下代码：</p>
+<pre><code class="language-javascript">class Action{
+    constructor(props){
+        this.props=props;
+    }
+    
+    filter(predicate){
+        let origin_do=this.props.do;
+        let new_update=(update)=&gt;{
+            if(predicte(v)){
+                update(v);
+            }
+        };
+        this.newUpdate=new_update;
+    }
+    
+    start(executor){
+        let {do}=this.props;
+        
+        let {
+            update=v=&gt;{},
+            complete=()=&gt;{},
+            error=()=&gt;{}
+        }=executor;
+        
+        update=this.newUpdate?this.newUpdate:update;
+        
+        do(update,complete,error);
+    }
+}
+</code></pre>
+<p>很丑陋是不是？如果我们有其他类似的装饰器方法，怎么办？显然，我们需要一个数组，把类似<code>filter(predicate)</code>这种东西存起来，然后再在<code>start(execute)</code>调用<code>do(update,complete,error)</code>之前，动态合成出具体的<code>update</code>、<code>complete</code>、<code>error</code>。</p>
+<p>于是，每次调用<code>filter(predicate)</code>之类的方法，就相当于定义一种可以施加的影响：可以再将来把(<code>update</code>、<code>complete</code>,<code>error</code>)变换为新的(<code>update</code>,<code>complete</code>，<code>error</code>)。</p>
+<p>为了方便，不妨把这种转换称之为<code>middleware</code>，于是我们可以写出以下实现：</p>
+<pre><code class="language-javascript">class Action{
+    constructor(props){
+        this.props=props;
+        // this.props.do 是一个算法框架函数
+        // this.props.middlewares 是一个中间件数组
+    }
+    
+    // 这里为了直观，我们直接修改当前对象，
+    // todo: 改为创建一个新对象，让代码更函数式
+    filter(predicate){
+    
+        // 自定义一个用于转换的中间件
+        let mw=(update,complete,error)=&gt;{
+            return {
+                &quot;update&quot;: (v)=&gt;{
+                    if(predicate(v)) update(v); 
+                },
+                &quot;complete&quot;: complete,
+                &quot;error&quot;: error
+            },
+        };
+        
+        this.props.middlewares.push(mw);
+    }
+    
+    /**
+      * 根据executor和自身的middlewares合成新的函数对象
+      */
+    _produce(executor){
+        let {
+            update = (v)=&gt;{},
+            complete =()=&gt;{},
+            error=()=&gt;{},
+        }=executor;
+        
+        let middlewares=this.props.middlewares;
+        
+        for(let i=0;i&lt;middwares.length;i++){
+            let mw=this.middlewares[i];
+            let r=mw(update,complete,error);
+            update=r.update;     
+            complete=r.complete;
+            error=r.error;
+        }
+
+        return {update,complete, error };
+    }
+    
+    start(executor){
+        let {do}=this.props;
+        
+        let {update,complete,error}=this._produce(executor);
+        
+        do(update,complete,error);
+    }
+}
+</code></pre>
+<p>至此，我们完成了大致的设计（简易版）。不过，这个方案目前仍至少有以下几个小缺点：</p>
+<ol>
+<li>以上<code>filter(predicate)</code>这种实现的写法显然在改动自身，为了符合不可变的思想，我们可以把<code>filter(predicate)</code>设计成返回一个新的对象的方法，也就是说，某种程度上，算是一个工厂方法。</li>
+<li>以上的思路还是有些过度设计。毕竟大多时候实现只要多<code>update</code>、<code>complete</code>进行扩展，而每次都中间件调用后都返回三个函数构成的对象有些太重了——我们更多时候只需要新的<code>update</code>而已，所以官方对<code>middleware</code>的定义不再是调用后返回新的<code>{update,complete,error}</code>对象，而是:</li>
+</ol>
+<pre><code class="language-typescript">type Middleware = 
+    (update: Update, complete?: Complete) 
+    =&gt; 
+    (v: any) =&gt; any
+</code></pre>
+<p>此外，我们的<code>complete()</code>调用并不会终止框架算法的执行，为了做到这一点，需要引入一个简单的标志变量或者观察者（<code>Observer</code>)，这样在链式组合调用过程中，就可以通过<code>complete</code>表示是否要在某个时间点终止执行。官方是的实现方案是将具体如何执行算法框架也放到了观察者中。不过这种细节并不影响总体的方案设计。</p>
+<p>至此，我们具备了这样一种能力，即：可以通过简单地自定义其他中间件的函数，以良好的扩展性设计出丰富的功能。如<code>pipe(funcs)</code>：</p>
+<pre><code class="language-javascript">const double = (v) =&gt; v * 2;
+const px = (v) =&gt; v + 'px';
+
+const one = action((update,complete,error)=&gt;{
+    update(0.2);
+    update(2);
+    update(1);
+});
+const twoPx = one.pipe(double, px);
+
+one.start(console.log); // 1
+twoPx.start(console.log); // '2px'
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (1) 授权选项与Policy获取.html">
+                    Authorization — (1) 授权选项与Policy获取
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>和<code>Authentication</code>一样，<code>Authorization</code>机制也有一个对应的<code>AuthorizationOptions</code>供开发者进行配置。更进一步地，和<code>AuthenticationOptions.AddScheme(name,configureBuilder)</code>类似，<code>AuthorizationOptions</code>也提供了一个名为<code>AddPolicy(string name, Action&lt;AuthorizationPolicyBuilder&gt; configurePolicy)</code>方法来配置授权策略。</p>
+<p>不过和<code>Authentication</code>机制不同的是，<code>AddAuthentication()</code>返回的是一个<code>AuthenticationBuilder</code>实例，这样开发者就可以链式构建<code>AuthenticationOptions</code>：</p>
+<pre><code class="language-csharp">services.AddAuthentication(options =&gt;{
+    ...
+})
+    .AddCookie(IdentityConstants.ApplicationScheme, o =&gt;
+    {
+        o.LoginPath = new PathString(&quot;/Account/Login&quot;);
+        o.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = SecurityStampValidator.ValidatePrincipalAsync
+        };
+    })
+    .AddCookie(IdentityConstants.ExternalScheme, o =&gt;
+    {
+        o.Cookie.Name = IdentityConstants.ExternalScheme;
+        o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+    })
+</code></pre>
+<p>但是<code>AddAuthorization()</code>并没有返回一个<code>Builder</code>之类东西来供开发者链式构建<code>AuthorizationOptions</code>，这可能是基于向后兼容考虑。在<code>Authorization</code>中，开发者直接使用<code>AddPolicy()</code>等实例方法来配置授权策略：<!-- more --></p>
+<pre><code class="language-csharp">services.AddAuthorization(options =&gt;
+{
+    options.AddPolicy(&quot;policy1&quot;, policyBuilder =&gt; { /* ... */ } );
+    options.AddPolicy(&quot;policy2&quot;, policyBuilder =&gt; { /* ... */ } );
+    ... // other policies
+});
+</code></pre>
+<p>注意这里<code>options.AddPolicy()</code>方法对具体的<code>AuthorizationHandler</code>一无所知，所以也不会去把相关<code>AuthorizationHandler</code>注册为服务，这也导致了在授权服务的配置过程中，我们需要手工把相关授权处理器注册为服务。</p>
+<p>不管怎么说，开发者都可以根据项目需要配置多种授权策略。</p>
+<h2>AuthorizationOptions</h2>
+<p><code>AuthorizationOptions</code>负责三件事：一是存储当前<code>WebApp</code>中注册的所有<code>Policy</code>，这块工作主要是通过一个私有的字典<code>IDictionary&lt;string,AuthorizationPolicy&gt;</code>完成；二是为当前<code>WebApp</code>指定默认策略(<code>DefaultPolicy</code>)和回退策略(<code>FallbackPolicy</code>)；三是为当前<code>WebApp</code>指定认证失败后的钩子。</p>
+<h4>策略的添加与查询</h4>
+<pre><code class="language-csharp">public class AuthorizationOptions
+{
+    private IDictionary&lt;string, AuthorizationPolicy&gt; PolicyMap { get; } = new Dictionary&lt;string, AuthorizationPolicy&gt;(StringComparer.OrdinalIgnoreCase);
+    
+    public void AddPolicy(string name, AuthorizationPolicy policy)
+    {
+        if (name == null) { /* throw */ }
+        if (policy == null) { /* throw */ }
+        PolicyMap[name] = policy;
+    }
+
+    public void AddPolicy(string name, Action&lt;AuthorizationPolicyBuilder&gt; configurePolicy)
+    {
+        if (name == null) { /* throw */ }
+        if (configurePolicy == null) { /* throw */ }
+
+        var policyBuilder = new AuthorizationPolicyBuilder();
+        configurePolicy(policyBuilder);
+        PolicyMap[name] = policyBuilder.Build();
+    }
+
+    public AuthorizationPolicy GetPolicy(string name)
+    {
+        if (name == null) { /* throw */ }
+        
+        return PolicyMap.ContainsKey(name) ? PolicyMap[name] : null;
+    }
+
+    // ...
+
+}
+</code></pre>
+<h4>默认策略、回退策略和认证失败钩子</h4>
+<p>此三个属性较为简单，其中默认策略是要求用户登陆。</p>
+<pre><code class="language-csharp">public class AuthorizationOptions
+{
+    // ...
+    
+    public AuthorizationPolicy DefaultPolicy { get; set; } = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    public AuthorizationPolicy FallbackPolicy { get; set; }
+
+    public bool InvokeHandlersAfterFailure { get; set; } = true;
+
+}
+</code></pre>
+<h2>AuthorizationPolicyProvider</h2>
+<p>顾名思义，<code>IAuthorizationPolicyProvider</code>用于向外部提供<code>Policy</code>。根据<code>Policy</code>的不同，该接口提供三种调用方式：</p>
+<ul>
+<li>获取指定名称的<code>Policy</code></li>
+<li>获取默认的<code>Policy</code></li>
+<li>获取用于<code>Fallback</code>的<code>Policy</code></li>
+</ul>
+<pre><code class="language-csharp">public interface IAuthorizationPolicyProvider
+{
+    Task&lt;AuthorizationPolicy&gt; GetPolicyAsync(string policyName);    // 获取指定名称的Policy
+    Task&lt;AuthorizationPolicy&gt; GetDefaultPolicyAsync();              // 获取默认的Policy
+    Task&lt;AuthorizationPolicy&gt; GetFallbackPolicyAsync();             // 获取用于Fallback的Policy
+}
+</code></pre>
+<p>作为<code>IAuthorizationPolicyProvider</code>的默认实现，<code>DefaultAuthorizationPolicyProvider</code>会从<code>DI</code>容器中获取<code>AuthorizationOptions</code>，然后向外部提供特定的<code>Policy</code>：</p>
+<pre><code class="language-csharp">public class DefaultAuthorizationPolicyProvider : IAuthorizationPolicyProvider
+{
+    private readonly AuthorizationOptions _options;
+    private Task&lt;AuthorizationPolicy&gt; _cachedDefaultPolicy;
+    private Task&lt;AuthorizationPolicy&gt; _cachedFallbackPolicy;
+
+   
+    public DefaultAuthorizationPolicyProvider(IOptions&lt;AuthorizationOptions&gt; options)
+    {
+        if (options == null){ /* throw */ }
+        _options = options.Value;
+    }
+    
+    // 返回默认的Policy（优先从本地缓存加载）
+    public Task&lt;AuthorizationPolicy&gt; GetDefaultPolicyAsync()
+    {
+        return GetCachedPolicy(ref _cachedDefaultPolicy, _options.DefaultPolicy);
+    }
+
+    // 返回用于Fallback的Policy（优先从本地缓存加载）
+    public Task&lt;AuthorizationPolicy&gt; GetFallbackPolicyAsync()
+    {
+        return GetCachedPolicy(ref _cachedFallbackPolicy, _options.FallbackPolicy);
+    }
+    
+    // 从Options返回指定名称的Policy
+    public virtual Task&lt;AuthorizationPolicy&gt; GetPolicyAsync(string policyName)
+    {
+        return Task.FromResult(_options.GetPolicy(policyName));
+    }
+    
+    private Task&lt;AuthorizationPolicy&gt; GetCachedPolicy(ref Task&lt;AuthorizationPolicy&gt; cachedPolicy, AuthorizationPolicy currentPolicy)
+    { /* ... */ }
+    
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,932 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/architecture/architecture2-query.html">
+                    WordPress 前台基础架构分析之二：查询篇
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>WordPress查询过程</h2>
+<p>WordPress查询过程也即<code>wp()</code>函数的调用过程, 该函数定义于<code>wp-includes/functions.php</code>文件中:</p>
+<pre><code class="language-PHP">//wp-includes/functions.php
+
+function wp( $query_vars = '' ) {
+	global $wp, $wp_query, $wp_the_query;
+	$wp-&gt;main( $query_vars );
+
+	if ( !isset($wp_the_query) )
+		$wp_the_query = $wp_query;
+}
+</code></pre>
+<p>这里涉及到三个全局类对象，<code>$wp</code>,<code>$wp_query</code>,<code>$wp_the_query</code>，均定义于<code>wp-settings.php</code>中，其中:</p>
+<ol>
+<li><code>$wp</code>则是的<code>WP</code>类(文件<code>wp-includes/class-wp.php</code>)的实例,表示当前请求的WordPress博客环境信息</li>
+<li><code>$wp_the_query</code>和<code>wp_query</code>为<code>WP_Query</code>类(文件<code>wp-includes/class-wp.php</code>)实例，用于查询(其实是后者是对前者的引用)</li>
+</ol>
+<h3><code>WP</code>类</h3>
+<p><code>$wp</code>有如下关键的属性和方法</p>
+<ul>
+<li>属性
+<ul>
+<li><code>$query_vars</code>和<code>$query_string</code>: 如m,p,posts,w,cat,s,exact,page,more,orderby,tag等等</li>
+<li><code>$request</code> : Permalink或者request URI</li>
+<li><code>$matched_rule</code> 和<code>$matched_query</code> : 重写匹配到的请求</li>
+</ul>
+</li>
+<li>方法
+<ul>
+<li><code>main($query_vars='')</code>: 设置所有的变量到该环境类对象,该方法实际上只是调用这些方法
+<ul>
+<li><code>init();</code>                       #初始化</li>
+<li><code>parse_request($query_args);</code>   #解析请求</li>
+<li><code>send_headers();</code>               #发送响应头</li>
+<li><code>query_posts();</code>                #执行查询</li>
+<li><code>handle_404();</code>                 #处理404</li>
+<li><code>register_globals();</code>           #注册全局变量</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>最值得关注的是这个<code>$wp-&gt;query_posts()</code>方法,其实调用的是在文件<code>settings.php</code>中定义的全局对象<code>$wp_the_query</code>进行调用</p>
+<pre><code class="language-PHP">public function query_posts() {
+    global $wp_the_query;
+    $this-&gt;build_query_string();
+    $wp_the_query-&gt;query($this-&gt;query_vars);    #调用WP_Query类对象的查询方法
+}
+</code></pre>
+<h3>WP_Query</h3>
+<h4>WP_Query的作用</h4>
+<p>除了直接使用$wpdb调用相关的模型层方法，WordPress针对自身的数据库schema和常用功能设计了<code>WP_Query</code>类,该类位于WPINC/query.php文件中。</p>
+<p>该类的构造器接受一个<code>query_string</code>的查询字符串或者对应的数组作为参数,返回一个<code>WP_Query</code>类对象,如：</p>
+<pre><code class="language-PHP">$posts=new WP_Query(array(
+    'showposts'=&gt;10,
+    'offset'=&gt;0,
+    'category'=&gt;0,
+    'orderby'=&gt;'post_date',
+    'order'=&gt;'desc',
+    'include'=&gt;'',
+    'exclude'=&gt;'',
+    'meta_key'=&gt;'',
+    'meta_value'=&gt;'',
+    'post_type'=&gt;'post',
+    'suppress_filters'=&gt;true,
+    'post_status'=&gt;'publish'
+));
+</code></pre>
+<p>当这个<code>$wp_query</code>对象执行查询后,一系列相应的属性会被重新设置。根据这些属性值，Loop过程会加载不同的模板。</p>
+<p>比如，如果<code>$wp_query-&gt;is_search()</code>属性值被设置为真，WordPress会使用<code>search.php</code>模板(如果有的话)。</p>
+<h3>WP_Query的属性和方法</h3>
+<p>该类提供了一系列初始的属性和方法：</p>
+<ul>
+<li>属性
+<ul>
+<li><code>$query</code>    #保存了<code>wp_parse_args($queryString)</code>的返回值;</li>
+<li><code>$query_vars</code>    #<code>$query</code>的关联数组</li>
+<li><code>$queried_object</code>    #保存了请求的category,author,post 或page的信息</li>
+<li><code>$queried_object_id</code></li>
+<li><code>posts</code>           #<code>get_posts()</code>返回值，表示请求的posts</li>
+<li><code>post_count</code>      #<code>get_posts()</code>返回的<code>posts</code>的数量</li>
+<li><code>current_post</code>    #用于迭代，将要被显示的post的index</li>
+<li><code>post</code>            #用于迭代，当前被显示的post</li>
+<li><code>is_xxx</code>   #query flags 属性</li>
+</ul>
+</li>
+<li>方法
+<ul>
+<li><code>init()</code>   #初始化并设置默认值</li>
+<li><code>parse_query()</code> #解析query string或者相应数组,并设置query type booleans</li>
+<li><code>parse_query_vars()</code>    #这个函数只是重新调用<code>parse_query()</code></li>
+<li><code>get_posts()</code>   #从数据库中获取请求的posts，并生成<code>$posts</code>和<code>$post_count</code></li>
+<li><code>query()</code>       #调用<code>parse_query()</code>和<code>get_posts()</code></li>
+<li><code>rewind_posts()</code> #rewind</li>
+<li><code>have_posts()</code>   #是否有posts</li>
+<li><code>next_post()</code>    #在<code>$posts</code>中迭代倒下一个位置，递增<code>$current_post</code>，设置<code>$post</code></li>
+<li><code>the_post()</code>     #迭代到下一个位置，并且设置全局$global变量</li>
+<li><code>get_queried_object()</code></li>
+<li><code>get_queried_object_id()</code></li>
+<li><code>get()</code></li>
+<li><code>set()</code></li>
+<li><code>is_xxx()</code></li>
+</ul>
+</li>
+</ul>
+<p>值得注意的是，<code>query()</code>方法是这里的核心方法，它负责两大业务:</p>
+<ol>
+<li>是解析查询参数(并设置相应的属性值)</li>
+<li>是根据解析参数值进行数据库查询(并设置相应属性)</li>
+</ol>
+<p>实际上只是调用:</p>
+<ol>
+<li><code>parse_query()</code></li>
+<li><code>get_posts()</code></li>
+</ol>
+<p>当执行完查询之后，常用的可用属性包括：</p>
+<ul>
+<li><code>order</code></li>
+<li><code>orderby</code>    #<code>author</code>|<code>date</code>|<code>title</code>|<code>modified</code>|<code>menu_order</code>|<code>parent</code>|<code>ID</code>|<code>rand</code>|<code>meta_value</code>| <code>none</code></li>
+<li><code>cat</code>,<code>tag</code></li>
+<li><code>category_name</code></li>
+<li><code>categroy__and</code>,<code>tag__and</code>    #数组</li>
+<li><code>category__in</code>,<code>tag__in</code>    #数组</li>
+<li><code>category__not_in</code></li>
+<li><code>tag_slug__and</code></li>
+<li><code>tag_slug__in</code></li>
+<li><code>showposts</code></li>
+<li><code>p</code></li>
+<li><code>name</code></li>
+<li><code>page_id</code></li>
+<li><code>pagename</code></li>
+<li><code>post__in</code></li>
+<li><code>post__not_in</code></li>
+<li><code>post__type</code></li>
+<li><code>post_status</code></li>
+<li><code>author</code></li>
+<li><code>author_name</code></li>
+<li><code>hour</code></li>
+<li><code>minute</code></li>
+<li><code>second</code></li>
+<li><code>day</code></li>
+<li><code>monthnum</code></li>
+<li><code>year</code></li>
+<li><code>w</code></li>
+<li><code>paged</code></li>
+<li><code>offset</code></li>
+<li><code>meta_key</code></li>
+<li><code>meta_compare</code></li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/architecture/architecture4-overall.html">
+                    WordPress 前台基础架构分析之四：总览
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>核心函数基本构成</h2>
+<p>WordPress核心文件包含了绝大部分WordPress流行函数，均位于<code>wp-includes/</code>文件夹下。</p>
+<ul>
+<li>functions.php     # main API</li>
+<li>options.php       # Options API</li>
+<li>plugin.php        # Plugin API</li>
+<li>User.php          # User API</li>
+<li>Post.php          # Post API</li>
+<li>Taxnonmy.php      # Taxnonmy API</li>
+<li>formatting.php    # Formatting Functions</li>
+<li>pluggable.php     # 可覆盖的API</li>
+<li>..，</li>
+</ul>
+<p>这些众多的文件定义了众多API，常见的有：</p>
+<ul>
+<li>Plugin API</li>
+<li>Widgets API</li>
+<li>Shortcode API</li>
+<li>HTTP API          # 发送HTTP请求</li>
+<li>Settings API</li>
+<li>Options API</li>
+<li>Dashboard Widgets API</li>
+<li>Rewrite API</li>
+</ul>
+<h2>再看Loop时的全局变量</h2>
+<p>前文已经说到，WordPress的博客功能其实就是再做三件事:</p>
+<ol>
+<li>加载必要的文件</li>
+<li>根据条件查询数据库，然后保存到全局对象或者全局对象中。</li>
+<li>根据查询后的结果，选择加载合适的模板。</li>
+</ol>
+<p>Loop时设置的关键的全局变量有：</p>
+<ul>
+<li>Post Dtata : <code>$post</code></li>
+<li>Author Data : <code>$autordata</code></li>
+<li>User Data : <code>$current_user</code></li>
+<li>Environment Data: 环境变量
+<ul>
+<li>客户端：<code>$is_IE</code>,<code>$is_iphone</code>,<code>$is_mobile</code>,...</li>
+<li>服务端： <code>$is_apache</code>,<code>$is_IIS</code></li>
+</ul>
+</li>
+</ul>
+<p>WordPress定义的Template Tag 会根据全局变量的不同，给出相应的值（或者默认值）。</p>
+<p>因此，应该优先调用Template Tag而非使用全局对象或者变量。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/architecture/Capabilities.html">
+                    WordPress Capabilities
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>内置的Roles与Capabilities</h2>
+<p>WordPress内置了以下的角色(Roles)：</p>
+<ol>
+<li>Super Admin</li>
+<li>Administrator</li>
+<li>Editor</li>
+<li>Author</li>
+<li>Contributor</li>
+<li>Subscriber</li>
+</ol>
+<p>没个角色都拥有特定的capabilities，诸如:read类、 edit类、 delete类、 publish类、 manage categories类、 manage links类、 moderate comments类、 upload files类、 remove users类等等。</p>
+<p>WordPress中capabilities分为两种：</p>
+<ul>
+<li>permitive   表示一个指定角色能否做一件事儿</li>
+<li>meta     用于根据上下文语境来确定一个指定用户能否做一件事儿</li>
+</ul>
+<p>二者的重要区别是，前者针对的是Role，是宽泛性的，常为复数；后者一般针对的是User，为单数。</p>
+<p><code>map_meta_cap()</code> translates a user's primitive capabilities to his/her meta capabilities.</p>
+<h2>WordPress的用户-角色原理</h2>
+<h3>基本思想</h3>
+<p>从本质上说，角色能力控制的基础是要表达这样的一种信息：</p>
+<ol>
+<li>角色集合的管理: 都有哪些角色？如何增加、删除和修改角色。</li>
+<li>角色能力管理: 都有哪些能力？如何增加、删除、和修改能力</li>
+</ol>
+<p>可以表达为这样的PHP数组形式：</p>
+<pre><code class="language-PHP">array (
+
+  	'role1' =&gt; array (
+  		'name' =&gt; 'rolename1',
+  		'capabilities' =&gt; array(
+            'cap1'=&gt;true,
+            'cap2'=&gt;false,
+            //...
+        )
+  	),
+
+  	'role2' =&gt; array (
+  		'name' =&gt; 'rolename2',
+  		'capabilities' =&gt; array(
+            'cap1'=&gt;true,
+            'cap2'=&gt;false,
+            //...
+        )
+  	),
+
+    //...
+
+)
+</code></pre>
+<h3>文件定义概述</h3>
+<p>为了实现上述功能，WordPress的<code>wp-includes/capabilities.php</code>文件定义了这样几个类：</p>
+<ul>
+<li><code>WP_Roles</code>    # 管理一系列<code>WP_Role</code>的类，其有一个全局类实例<code>$wp_roles</code></li>
+<li><code>WP_Role</code>     # 管理一个角色的capabilities</li>
+<li><code>WP_User</code>     # 管理用户</li>
+</ul>
+<p>和这样的几个函数：</p>
+<ul>
+<li><code>map_meta_cap($cap,$user_id)</code></li>
+<li><code>current_user_can($capability)</code></li>
+<li><code>current_user_can_for_blog( $blog_id, $capability )</code></li>
+<li><code>author_can($post,$capability)</code></li>
+<li><code>user_can($post,$capability)</code></li>
+<li><code>wp_roles()</code>         #获取全局的<code>WP_Roles</code>实例</li>
+<li><code>get_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>get_role($role)</code> 方法</li>
+<li><code>add_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>add_role($role)</code> 方法</li>
+<li><code>remove_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>remove_role($role)</code> 方法</li>
+<li><code>get_super_admins()</code>                #获取超级管理员数组</li>
+<li><code>is_super_admin($user_id=false)</code>    #是否是超级管理员</li>
+</ul>
+<p>其中，<code>WP_Roles</code> 用于管理一组角色，<code>WP_Role</code>用于管理一个角色的各项能力。</p>
+<h2>用法：</h2>
+<h3>检查用户的capability</h3>
+<p>最实用的函数是：<code>current_user_can($capability)</code>，可以用来检查当前用户是否有做某件事的权限。</p>
+<h3>新建角色</h3>
+<p>当内置的角色不满足实际需求时，还可以自定义自己的角色：</p>
+<ul>
+<li><code>wp_roles()</code>         #获取全局的<code>WP_Roles</code>实例</li>
+<li><code>get_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>get_role($role)</code> 方法</li>
+<li><code>add_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>add_role($role)</code> 方法</li>
+<li><code>remove_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>remove_role($role)</code> 方法</li>
+</ul>
+<p>比如，要增加一个新的角色<code>photo_uploader</code>,默认的capability是<code>organize_gallery</code>:</p>
+<pre><code class="language-PHP">add_role('photo_uploader','Photo Uploader','organize_gallery');
+</code></pre>
+<p>要删除这个角色：</p>
+<pre><code class="language-PHP">remove_role('photo_uploader');
+</code></pre>
+<h3>特定角色的capabilities管理</h3>
+<p>如果想给一个已经存在的特定角色添加capability，可以获取该角色<code>WP_Role</code>实例后再调用<code>add_cap()</code>方法:</p>
+<pre><code class="language-PHP">$role=get_role('author');
+$role-&gt;add_cap('organize_gallery');
+</code></pre>
+<h3>用户角色-能力管理</h3>
+<p>获取用户对象：</p>
+<pre><code class="language-PHP">
+//利用id获取用户对象
+$user=new WP_User($id);
+
+// 利用用户名获取用户对象
+$user=new WP_User(null,$user_name);
+
+</code></pre>
+<p>管理用户的角色:</p>
+<pre><code class="language-PHP">
+//添加角色
+$user-&gt;add_role($role);
+
+//移除角色
+$user-&gt;remove_role($role_name);
+
+//设置角色(覆盖)
+$user-&gt;set_role($role_name);
+
+</code></pre>
+<h2>WP_Roles类</h2>
+<p><code>WP_Roles</code>是用来管理角色集合的，内部维护了具有之前提到的那种结构的<code>$roles</code>属性(PHP数组)，提供对一组角色进行管理的功能，当调用：</p>
+<p><code>add_role($role,$display_name,$capabilities=array())</code></p>
+<p>时，会优先检查该数组结构是否存在相应的$role是否已经存在，如果没有，再同步到数据库中，然后同步其他属性。</p>
+<h2>WP_Role类</h2>
+<p><code>WP_Role</code>类是非常简单的类，用于管理具体的角色都能做那些事。具有这样两个属性：</p>
+<ul>
+<li>name             # 此角色名</li>
+<li>capabilities     # 此角色的能力集合</li>
+</ul>
+<p>然后针对capabilities这个集合提供这样几个方法：</p>
+<ul>
+<li><code>has_cap( $cap )</code></li>
+<li><code>add_cap( $cap, $grant=true )</code></li>
+<li><code>remove_cap( $cap )</code></li>
+</ul>
+<p><code>WP_Roles</code>中为指定角色添加$capabilities<code>add_cap()</code>方法：</p>
+<pre><code>public function add_cap( $role, $cap, $grant = true ) {
+
+    if ( ! isset( $this-&gt;roles[$role] ) )
+        return;
+
+    $this-&gt;roles[$role]['capabilities'][$cap] = $grant;
+    if ( $this-&gt;use_db )
+        update_option( $this-&gt;role_key, $this-&gt;roles );
+}
+</code></pre>
+<p>本质上还是在操作$roles这个内部数组，然后同步到数据库中。</p>
+<h2>WP_User类</h2>
+<p><code>WP_User</code>类用于管理一个用户的角色和能力。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/architecture/architecture3-template.html">
+                    WordPress 前台基础架构分析之三：模板
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>加载模板</h2>
+<p>WP的模板加载是通过wp-includes/template-load.php文件来完成的：</p>
+<pre><code class="language-PHP">&lt;?
+//wp-includes/template-loader.php
+//...
+
+if ( defined('WP_USE_THEMES') &amp;&amp; WP_USE_THEMES ) :
+	$template = false;
+	if     ( is_404()            &amp;&amp; $template = get_404_template()            ) :
+	elseif ( is_search()         &amp;&amp; $template = get_search_template()         ) :
+	elseif ( is_front_page()     &amp;&amp; $template = get_front_page_template()     ) :
+	elseif ( is_home()           &amp;&amp; $template = get_home_template()           ) :
+	elseif ( is_post_type_archive() &amp;&amp; $template = get_post_type_archive_template() ) :
+	elseif ( is_tax()            &amp;&amp; $template = get_taxonomy_template()       ) :
+	elseif ( is_attachment()     &amp;&amp; $template = get_attachment_template()     ) :
+		remove_filter('the_content', 'prepend_attachment');
+	elseif ( is_single()         &amp;&amp; $template = get_single_template()         ) :
+	elseif ( is_page()           &amp;&amp; $template = get_page_template()           ) :
+	elseif ( is_category()       &amp;&amp; $template = get_category_template()       ) :
+	elseif ( is_tag()            &amp;&amp; $template = get_tag_template()            ) :
+	elseif ( is_author()         &amp;&amp; $template = get_author_template()         ) :
+	elseif ( is_date()           &amp;&amp; $template = get_date_template()           ) :
+	elseif ( is_archive()        &amp;&amp; $template = get_archive_template()        ) :
+	elseif ( is_comments_popup() &amp;&amp; $template = get_comments_popup_template() ) :
+	elseif ( is_paged()          &amp;&amp; $template = get_paged_template()          ) :
+	else :
+		$template = get_index_template();
+	endif;
+	/**
+	 * Filter the path of the current template before including it.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $template The path of the template to include.
+	 */
+	if ( $template = apply_filters( 'template_include', $template ) )
+		include( $template );
+	return;
+endif;
+
+</code></pre>
+<p>显然，WordPress是根据请求标志<code>is_xxx()</code>(由<code>WP_Query</code>全局类对象设置)来判定要加载哪个模板的。</p>
+<p>这里出现的<code>get_xxx_template()</code>函数都在<code>wp-includes/template.php</code>中定义,内部是通过调用<code>get_query_template()</code>实现的。例如,
+获取<code>index.php</code>:</p>
+<pre><code class="language-PHP">function get_index_template() {
+	return get_query_template('index');
+}
+</code></pre>
+<p>和获取<code>404.php</code></p>
+<pre><code class="language-PHP">function get_404_template() {
+	return get_query_template('404');
+}
+</code></pre>
+<p><code>get_query_template()</code>非常简单,核心功能就是</p>
+<ol>
+<li>利用<code>locate_template()</code>找出优先级别最高的模板的位置：</li>
+<li>部署钩子</li>
+</ol>
+<p>当模板等级中最优先的模板被找到后，WordPress会对其进行加载并生成响应。</p>
+<p>一个来自于WordPress官方的例子：</p>
+<p>如果你的博客位于<code>http://example.com/blog/</code> ，有一个访问者点击了这样一个分类页<code> http://example.com/blog/category/your-cat/</code>， WordPress会在当前模板主题目录中以这样的过程搜寻模板:</p>
+<ol>
+<li>先试图搜寻文件名匹配category’s slug的模板文件. 例如当category slug是“unicorns”的时候，那么WordPress会搜寻名为<code>category-unicorns.php</code>的文件</li>
+<li>如果<code>category-unicorns.php</code>找不见，并且category id是4, WordPress会继续搜寻名为<code>category-4.php</code>的文件</li>
+<li>如果<code>category-4.php</code>仍然找不见, WordPress则会搜寻通用的category template<code>category.php</code></li>
+<li>如果<code>category.php</code>也不存在, WordPress会搜寻通用的archive template, <code>archive.php</code></li>
+<li>如果<code>archive.php</code>仍然找不到, WordPress则会退回去搜寻主题主页<code>index.php</code></li>
+</ol>
+<h3>模板类型</h3>
+<p>WordPress常见的模板类型及代表性的模板包括：</p>
+<ul>
+<li>Archive Page                   #archive.php
+<ul>
+<li>Author Archive             #author.php</li>
+<li>Category Archive           #category.php</li>
+<li>Tag Archive                #tag.php</li>
+<li>Custom Taxonomy Archive    #taxonomy.php</li>
+<li>Date Archive               #date.php</li>
+<li>Custom Post Type Archive   #archive-$posttype.php</li>
+</ul>
+</li>
+<li>Singular Page                  #singular.php
+<ul>
+<li>Single Post                #single.php
+<ul>
+<li>Attachment Page        #attachment.php</li>
+<li>Blog Post              #single-post.php</li>
+<li>Custom Post            #single-{$posttype}.php</li>
+</ul>
+</li>
+<li>Static Page                #page.php</li>
+</ul>
+</li>
+<li>Site Front Page                #front-page.php</li>
+<li>Blog Posts Index Page          #home.php</li>
+<li>Comments Popup Page            #comments-popup.php</li>
+<li>Error 404 Page                 #404.php</li>
+<li>Search Result Page             #search.php</li>
+</ul>
+<p>特别的，对于某种Post Type(包括post类型)，其归档页模板的寻找路线是：</p>
+<ol>
+<li>archive-{$posttype}.php</li>
+<li>archive.php</li>
+<li>index.php</li>
+</ol>
+<p>其单页面模板的寻找路线是：</p>
+<ol>
+<li>single-{$posttype}.php</li>
+<li>single.php</li>
+<li>singular.php</li>
+<li>index.php</li>
+</ol>
+<p>在WordPress中，任意一个最终没有找到对应的模板文件的请求都会被<code>index.php</code>模板处理。</p>
+<h3>Template Hierarchy与钩子</h3>
+<h4>模板重定向</h4>
+<p>在文件<code>wp-includes/template-loader.php</code>的开头，WordPress布置了一个重定向action钩子：</p>
+<pre><code class="language-PHP">// wp-includes/template-loader.php
+
+if ( defined('WP_USE_THEMES') &amp;&amp; WP_USE_THEMES ) 
+    do_action( 'template_redirect' );
+//...
+
+// 查找要加载哪个模板
+// ...
+
+</code></pre>
+<p>这个钩子给了我们彻底抛弃使用WordPress默认模板等级的权利，只需要添加钩子使用自己的模板选择逻辑，然后exit就行。</p>
+<h4>模板等级中的钩子</h4>
+<p>WordPress模板系统能让你对默认的Template Hierarchy进行filter,这意味着我们能在等级中的某一个点进行插入和改变一些东西。</p>
+<p>相关的filter钩子布置于函数<code>get_query_template()</code>中，filter钩子名的形式为<code>{$type}_template</code>:</p>
+<pre><code class="language-PHP">/**
+ * Retrieve path to a template
+ *
+ * @param string $type Filename without extension.
+ * @param array $templates An optional list of template candidates
+ * @return string Full path to template file.
+ */
+function get_query_template( $type, $templates = array() ) {
+	$type = preg_replace( '|[^a-z0-9-]+|', '', $type );
+
+	if ( empty( $templates ) )
+		$templates = array(&quot;{$type}.php&quot;);
+
+	$template = locate_template( $templates );
+	/**
+	 * Filter the path of the queried template by type.
+	 *
+	 * The dynamic portion of the hook name, `$type`, refers to the filename
+	 * -- minus the extension -- of the file to load. This hook also applies
+	 * to various types of files loaded as part of the Template Hierarchy.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string $template Path to the template. See {@see locate_template()}.
+	 */
+	return apply_filters( &quot;{$type}_template&quot;, $template );
+}
+</code></pre>
+<p>WordPress在按照默认的模板等级查找到相关模板后，又触发了与该模板类型相关的钩子事件，这就给了我们一个改变默认模板优先级的机会。</p>
+<p>完整的filter清单如下：</p>
+<ul>
+<li><code>index_template</code></li>
+<li><code>404_template</code></li>
+<li><code>archive_template</code></li>
+<li><code>author_template</code></li>
+<li><code>category_template</code></li>
+<li><code>tag_template</code></li>
+<li><code>taxonomy_template</code></li>
+<li><code>date_template</code></li>
+<li><code>home_template</code></li>
+<li><code>front_page_template</code></li>
+<li><code>page_template</code></li>
+<li><code>paged_template</code></li>
+<li><code>search_template</code></li>
+<li><code>single_template</code></li>
+<li><code>text_template</code>,<code>plain_template</code>,<code>text_plain_template</code>,</li>
+<li><code>attach_template</code></li>
+<li><code>comments_template</code></li>
+</ul>
+<p>当需要对默认的Template Hierarchy进行修改的时候，就可以使用这些过滤器。
+比如，想对默认的评论模板进行替换，就可以将自己的模板函数查找器添加filter钩子<code>comments_template</code>。
+又比如，相对默认的某种PostType类型的单页模板进行修改，就可以将自己的模板函数查找器添加倒filter钩子<code>single_template</code>。</p>
+<p>来自WordPress官方例子如下：</p>
+<p>对于默认的Author Hierarchy：</p>
+<ol>
+<li><code>author-{nicename}.php</code></li>
+<li><code>author-{id}.php</code></li>
+<li><code>author.php</code></li>
+</ol>
+<p>为了在<code>author.php</code>之前增加一个被优先使用的模板<code>author-{role}.php</code></p>
+<pre><code class="language-PHP">function author_role_template( $templates='' ) {
+ 
+    $author = get_queried_object();
+    $role=$author-&gt;roles[0];
+ 
+    if(!is_array($templates) &amp;&amp; !empty($templates)) {
+        $templates=locate_template(array(&quot;author-$role.php&quot;,$templates),false);
+    }elseif(empty($templates)) {
+        $templates=locate_template(&quot;author-$role.php&quot;,false);
+    }else {
+        $new_template=locate_template(array(&quot;author-$role.php&quot;));
+        if(!empty($new_template)) array_unshift($templates,$new_template);
+    }
+    return $templates;
+}
+ 
+add_filter( 'author_template', 'author_role_template' );
+</code></pre>
+<h4>模板加载前的filter钩子</h4>
+<p>最后，在模板找到之后和加载之前的时刻，WordPress还布置了一个名为<code>template_include</code>的钩子：</p>
+<pre><code class="language-PHP">// wp-includes/template-loader.php
+
+if ( $template = apply_filters( 'template_include', $template ) )
+    include( $template );
+return;
+</code></pre>
+<p>此filter钩子可以帮助我们加载最终合适的模板。对于Custom Post Type的各类模板加载非常有用。</p>
+<p>例如，著名插件Woocommerce中，为了保证插件对所有模板适用，把相关的自定义模板都放到了自己插件的子目录下，同时添加钩子函数引入自己的模板加载器：</p>
+<pre><code class="language-PHP">
+class WC_Template_Loader {
+
+    //...
+
+    public static function init() {
+        add_filter( 'template_include', array( __CLASS__, 'template_loader' ) );
+        add_filter( 'comments_template', array( __CLASS__, 'comments_template_loader' ) );
+    }
+
+
+	public static function template_loader( $template ) {
+        //...
+		return $template;
+	}
+
+
+
+	public static function comments_template_loader( $template ) {
+        //...
+		return $template;
+	}
+
+    //...
+
+}
+
+</code></pre>
+<p>这是一种十分健壮的做法。</p>
+<h2>总结</h2>
+<p>WordPress的前台博客功能其实思路非常简单，即</p>
+<ol>
+<li>加载必要文件</li>
+<li>执行查询并设置全局变量</li>
+<li>加载相关模板</li>
+</ol>
+<p>加载相关模板特别需要理解的是$post-type的归档页和单页的模板加载优先级。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/wordpress-plugin-dev/Custom-Post-Type.html">
+                    WordPress Custom Post Type
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>WordPress自带了5种Post Type：</p>
+<ol>
+<li>Post</li>
+<li>Page</li>
+<li>Attachment</li>
+<li>Revision</li>
+<li>Nav Menus</li>
+</ol>
+<p>对于一个基本的博客，这些类型足以应付大多数需求。但是当情况复杂后，就需要定制自己的Post Type了。</p>
+<h2>Custom Post Type</h2>
+<p>定制的Post Type可能是任何东西，不仅仅是面向公众的内容碎片。比如，可以定制自己的Post Type来跟踪程序中错误。</p>
+<p>WordPress提供的Custom Post Type功能使得WP的Post足以模拟任何实体——“The only limitation is your imagination”。</p>
+<h3>注册定制的Post Type</h3>
+<p>注册新的Post Type类型可以用以下函数实现：</p>
+<pre><code class="language-PHP">
+register_post_type($post_type,$args_array);
+</code></pre>
+<p>一般都在<code>init</code>时进行注册：</p>
+<pre><code class="language-PHP">add_action('init',function(){
+    register_post_type(
+        'mytesttype',
+        array(
+            'labels' =&gt; array( 'name' =&gt; 'MyTester' ), 
+            'public' =&gt; true, 
+        )
+    );
+});
+
+</code></pre>
+<h3>定制Post Type参数</h3>
+<p>函数<code>register_post_type()</code>的第二个参数提供了众多定制Post Type的选项：</p>
+<ul>
+<li><code>public</code>    # 前台是否公众可见?默认为false</li>
+<li><code>show_ui</code>   # 是否创建默认UI?默认为<code>public</code>定义的值</li>
+<li><code>publicy_queryable</code>    # 前台公共可查？默认为<code>public</code>定义的值</li>
+<li><code>exclude_from_search</code>  # 从搜索结果中排除?默认为<code>public</code>定义的值</li>
+<li><code>show_in_nav_menus</code>    # nav menu可见?默认为<code>public</code>定义的值</li>
+<li><code>supports</code>  # 哪些meta boxes?
+<ul>
+<li><code>title</code></li>
+<li><code>editor</code></li>
+<li><code>author</code></li>
+<li><code>thumbnail</code></li>
+<li><code>excerpt</code></li>
+<li><code>comments</code></li>
+<li><code>trackbacks</code></li>
+<li><code>custom-fields</code></li>
+<li><code>page-attributes</code></li>
+<li><code>revision</code></li>
+<li><code>post-formats</code></li>
+</ul>
+</li>
+<li><code>labels</code>         # array，用于各种情况下显示的标签</li>
+<li><code>hierarchial</code>    # 默认为false</li>
+<li><code>has_archive</code></li>
+<li><code>can_export</code>     # 可导出？默认为true</li>
+<li><code>taxonomies</code>     # array</li>
+<li><code>menu_position</code>  # 默认在评论菜单之后</li>
+<li><code>menu_icon</code>      # 图标</li>
+<li><code>show_in_menu</code>   # 是否在admin menu中显示</li>
+<li><code>show_in_admin_bar</code>   # 是否在admin bar中显示</li>
+<li><code>capability_type</code>     #</li>
+<li><code>capability</code>          # an array of custom capabilities ( 改、删、阅、发布)</li>
+<li><code>query_var</code>           # 查询变量</li>
+<li><code>rewrite</code>             # 创建permalink</li>
+</ul>
+<p>其中，<code>labels</code> 接受一个数组，用于各种情况下，需要显示的标签</p>
+<ul>
+<li><code>name</code>                # 通用名，常为复数</li>
+<li><code>singular_name</code>       # 单数形式</li>
+<li><code>add_new</code>             # Add New submenu item</li>
+<li><code>add_new_item</code>        # 列表页新建一个Post</li>
+<li><code>edit_item</code></li>
+<li><code>new_item</code></li>
+<li><code>view_item</code></li>
+<li><code>all_items</code></li>
+<li><code>menu_name</code></li>
+<li><code>name_admin_bar</code></li>
+<li><code>search_items</code></li>
+<li><code>not_found</code></li>
+<li><code>not_found_in_trash</code></li>
+<li><code>parent_item_colon</code></li>
+</ul>
+<h2>Post Type 相关的常用函数</h2>
+<ul>
+<li><code>get_post_types($args,$output,$operator)</code>    # 获取指定条件下的Post Types</li>
+<li><code>get_post_type($post)</code>                       # 获取指定post的Post Type</li>
+<li><code>post_type_exists($post_type)</code>               # 是否存在指定类型的Post Type</li>
+<li><code>add_post_type_support($post_type,$sups)</code>    # 增加support</li>
+<li><code>remove_post_type_support($post_type,$sups)</code> # 增加support</li>
+<li><code>set_post_type($postid,$post_type)</code>          # 设置Post Type类型</li>
+<li><code>is_post_type_hierarchical('super_duper')</code>   # 是否是有等级的</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page29.html">
+          Previous
+        </a>
+        31 of 32
+        <a href="/posts/page31.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

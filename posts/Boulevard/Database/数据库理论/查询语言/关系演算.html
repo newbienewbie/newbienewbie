@@ -1,0 +1,198 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/数据库理论/查询语言/关系演算.html">
+                    数据库笔记 关系演算
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>关系演算包括 <em>元组关系演算</em> 和 <em>域关系演算</em> 。</p>
+<h2>元组关系演算</h2>
+<p>元组关系演算表达式一般形式为<code>$\{t\mid \varphi(t)\}$</code>，其中<code>t</code>为元组变量，<code>$\varphi(t)$</code>是以元组变量<code>$t$</code>为基础的公式。</p>
+<ol start="0">
+<li><code>$\lor$</code>、<code>$\land$</code>、<code>$\lnot$</code>分别表示逻辑运算的或、且、非。</li>
+<li><code>$(\exists t) (\varphi)$</code>：表示至少有一个元组<code>$t$</code>使得<code>$\varphi$</code>为真。<code>$\exists$</code>称之为 <em>存在量词</em></li>
+<li><code>$(\forall t) (\varphi)$</code>：表示对于所有的元组<code>$t$</code>都使得<code>$\varphi$</code>为真。<code>$\forall$</code>称之为 <em>全称量词</em></li>
+</ol>
+<!--more-->
+<h3>原子公式的含义</h3>
+<ol>
+<li><code>$R(t)$</code>表示t是关系R的一个元组。
+<ul>
+<li>例如:<code>$\{t| R(t) \lor S(t)\}$</code>表示<code>$t$</code>是关系<code>$R$</code>或者<code>$S$</code>的一个元组，等价于关系代数中的<code>$R \bigcup S$</code>。</li>
+<li>再如：<code>$\{t| R(t) \land S(t)\}$</code>，表示<code>$t$</code>既是关系<code>$R$</code>也是关系<code>$S$</code>中的一个元组，等价于关系代数中的<code>$R \bigcap S$</code>。</li>
+</ul>
+</li>
+<li>用<code>$t[i]$</code>表示元组的第<code>$i$</code>个分量，<code>$\theta$</code>表示某种算术运算。则<code>$t[i] \;\theta\; s[j]$</code> 表示元组<code>$t$</code>的第<code>$i$</code>个分量与元组<code>$s$</code>的第<code>$j$</code>个分量进行<code>$\theta$</code>运算后为真。
+<ul>
+<li>例如:<code>$\{t|(\exists s) (R(t) \land S(t) \land t[1] =s[2])\}$</code>表示<code>$t$</code>是关系<code>$R$</code>的元组，并且，<code>$\exists s \in S$</code>，使得<code>$t[i]$</code>与<code>$s[2]$</code>相等。</li>
+<li>再如：<code>$\{t|(\forall s) (R(t) \land S(t) \land t[2] &gt; s[1])\}$</code>表示<code>$t$</code>是关系<code>$R$</code>的元组，并且，对<code>$\forall s \in S$</code>，都有<code>$t[i] &gt; s[2]$</code>。</li>
+</ul>
+</li>
+<li>用<code>$C$</code>表示某个常量，则<code>$t[i] \;\theta\; C$</code> 表示元组<code>$t$</code>的第<code>$i$</code>个分量与常量<code>$C$</code>进行<code>$\theta$</code>运算后为真；类似的，<code>$C \;\theta\; t[i]$</code> 表示常量<code>$C$</code>与元组<code>$t$</code>的第<code>$i$</code>个分量进行<code>$\theta$</code>运算后为真。</li>
+</ol>
+<h3>与关系代数的关系：</h3>
+<p>与关系代数表达力相同：</p>
+<ol>
+<li><code>$R \bigcup S$</code>等价于 <code>$\{t| R(t) \lor S(t)\}$</code>。</li>
+<li><code>$R \bigcap S$</code>等价于 <code>$\{t| R(t) \land S(t)\}$</code>。</li>
+<li><code>$R - S $</code>等价于<code>$\{t| R(t) \land \lnot S(t)\}$</code></li>
+<li><code>$\sigma_C(R)$</code>等价于<code>$\{t| R(t) \land C' \}$</code></li>
+<li><code>$\pi_{i_1,i_2,...i_n}$</code>等价于<code>$\{t| (\exists r) (R(r) \land t[1]=r[t_2] \land t[2]=r[t_2]) \land t[n]=r[i_n] \}$</code></li>
+<li><code>$R \times S$</code>等价于<code>$\{t^{(m+n)}| (\exists r^{(m)})(\exists s^{(n)}) (R(r)\land S(s) \land t[1]=r[1] \land t[2]=s[2] ... \land t[m]=r[m] \land t[m+1]=s[1] \land t[m+n]=s[n]) \}$</code></li>
+</ol>
+<h2>域关系演算</h2>
+<p>与元组关系演算的表达式用的是元组变量不同，域关系演算用的是元组分量的变量，简称域变量。域变量的变化范围是某个值域，而不是某个关系。</p>
+<h3>原子公式</h3>
+<ol>
+<li><code>$R(x_1,x_2,...,x_k)$</code>：<code>$R$</code>为关系,<code>$x_i$</code>为<code>$R$</code>的域变量或者常量。如果<code>$(x_1,x_2,x_3,...x_k)$</code>是<code>R</code>的一个元组，则<code>$R(x_1,x_2,...,x_k)$</code>为真。</li>
+<li><code>$x \theta y$</code>: <code>$x$</code>和<code>$y$</code>为常量或者域变量，<code>$\theta$</code>为算术运算符，如果<code>$x$</code>和<code>$y$</code>满足<code>$\theta$</code>关系，则<code>$x \theta y$</code>为真</li>
+</ol>
+<h3>基本含义</h3>
+<p>域关系演算表达式的一般形式为<code>$\{(x_1,x_2,...,x_k)| \varphi(x_1,x_2,...,x_k) \}$</code>，含义为：使<code>$\varphi$</code>为真的域变量<code>$x_1,x_2,...,x_k$</code>组成的元组的集合。</p>
+<p>域关系演算、元组关系演算、关系代数三者的表达能力是一样的。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

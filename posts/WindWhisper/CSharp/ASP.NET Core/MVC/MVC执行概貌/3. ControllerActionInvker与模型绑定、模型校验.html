@@ -1,0 +1,398 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/MVC执行概貌/3. ControllerActionInvker与模型绑定、模型校验.html">
+                    ASP.NET Core MVC — MVC执行概貌(3) ControllerActionInvker与模型绑定、模型校验
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>ControllerActionInvker</code>中有一个字段<code>_arguments</code>，类型为<code>Dictionary&lt;string, object&gt;</code>，用于存放参数绑定的结构。该类提供了<code>BinArgumentsAsync()</code>方法用于绑定参数：</p>
+<pre><code class="language-csharp">private Task BindArgumentsAsync()
+{
+    var actionDescriptor = _controllerContext.ActionDescriptor;
+    if (actionDescriptor.BoundProperties.Count == 0 &amp;&amp; actionDescriptor.Parameters.Count == 0) {
+        return Task.CompletedTask;
+    }
+
+    Debug.Assert(_cacheEntry.ControllerBinderDelegate != null);
+    return _cacheEntry.ControllerBinderDelegate(_controllerContext, _instance, _arguments);
+}
+</code></pre>
+<p>该方法执行后，会为字段<code>_arguments</code>逐一添加以参数名为键名的键值。这里的<code>ControllerBinderDelegate</code>是一个委托类型，负责绑定参数：</p>
+<pre><code class="language-csharp">internal delegate Task ControllerBinderDelegate(ControllerContext controllerContext, object controller, Dictionary&lt;string, object&gt; arguments);
+</code></pre>
+<p>该委托的实例由<code>ControllerBinderDelegateProvider</code>的静态方法<code> CreateBinderDelegate()</code>提供:<!-- more --></p>
+<pre><code class="language-csharp">internal static class ControllerBinderDelegateProvider
+{
+    public static ControllerBinderDelegate CreateBinderDelegate(ParameterBinder parameterBinder, IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor, MvcOptions mvcOptions)
+    {
+        // ... check null
+        
+        var parameterBindingInfo = GetParameterBindingInfo(modelBinderFactory, modelMetadataProvider, actionDescriptor, mvcOptions);
+        var propertyBindingInfo = GetPropertyBindingInfo(modelBinderFactory, modelMetadataProvider, actionDescriptor);
+        if (parameterBindingInfo == null &amp;&amp; propertyBindingInfo == null)
+        {
+            return null;
+        }
+
+        return Bind;
+    }
+}
+</code></pre>
+<p>可以看到，这里的有两个重要的方法调用：<code>GetParameterBindingInfo()</code>和<code>GetPropertyBindingInfo()</code>，分别用于生成参数绑定信息和属性绑定信息:</p>
+<pre><code class="language-csharp">private static BinderItem[] GetParameterBindingInfo( IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor, MvcOptions mvcOptions)
+{
+    var parameters = actionDescriptor.Parameters;
+    if (parameters.Count == 0) { return null; }
+
+    var parameterBindingInfo = new BinderItem[parameters.Count];
+    for (var i = 0; i &lt; parameters.Count; i++)
+    {
+        var parameter = parameters[i];
+
+        ModelMetadata metadata;
+        if (mvcOptions.AllowValidatingTopLevelNodes &amp;&amp;
+            modelMetadataProvider is ModelMetadataProvider modelMetadataProviderBase &amp;&amp;
+            parameter is ControllerParameterDescriptor controllerParameterDescriptor)
+        {
+            // The default model metadata provider derives from ModelMetadataProvider
+            // and can therefore supply information about attributes applied to parameters.
+            metadata = modelMetadataProviderBase.GetMetadataForParameter(controllerParameterDescriptor.ParameterInfo);
+        }
+        else
+        {
+            // For backward compatibility, if there's a custom model metadata provider that
+            // only implements the older IModelMetadataProvider interface, access the more
+            // limited metadata information it supplies. In this scenario, validation attributes
+            // are not supported on parameters.
+            metadata = modelMetadataProvider.GetMetadataForType(parameter.ParameterType);
+        }
+
+        var binder = modelBinderFactory.CreateBinder(new ModelBinderFactoryContext
+        {
+            BindingInfo = parameter.BindingInfo,
+            Metadata = metadata,
+            CacheToken = parameter,
+        });
+
+        parameterBindingInfo[i] = new BinderItem(binder, metadata);
+    }
+
+    return parameterBindingInfo;
+}
+
+private static BinderItem[] GetPropertyBindingInfo( IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor)
+{
+    var properties = actionDescriptor.BoundProperties;
+    if (properties.Count == 0) { return null; }
+
+    var propertyBindingInfo = new BinderItem[properties.Count];
+    var controllerType = actionDescriptor.ControllerTypeInfo.AsType();
+    for (var i = 0; i &lt; properties.Count; i++)
+    {
+        var property = properties[i];
+        var metadata = modelMetadataProvider.GetMetadataForProperty(controllerType, property.Name);
+        var binder = modelBinderFactory.CreateBinder(new ModelBinderFactoryContext
+        {
+            BindingInfo = property.BindingInfo,
+            Metadata = metadata,
+            CacheToken = property,
+        });
+
+        propertyBindingInfo[i] = new BinderItem(binder, metadata);
+    }
+
+    return propertyBindingInfo;
+}
+</code></pre>
+<p><code>CreateBinderDelegate</code>方法调用的最后返回了一个<code>Bind</code>函数，这个<code>Bind</code>的实现是：</p>
+<pre><code class="language-csharp">async Task Bind(ControllerContext controllerContext, object controller, Dictionary&lt;string, object&gt; arguments)
+{
+    var valueProvider = await CompositeValueProvider.CreateAsync(controllerContext);
+    var parameters = actionDescriptor.Parameters;
+
+    for (var i = 0; i &lt; parameters.Count; i++)
+    {
+        var parameter = parameters[i];
+        var bindingInfo = parameterBindingInfo[i];
+        var modelMetadata = bindingInfo.ModelMetadata;
+
+        if (!modelMetadata.IsBindingAllowed) { continue; }
+
+        var result = await parameterBinder.BindModelAsync(controllerContext, bindingInfo.ModelBinder, valueProvider, parameter, modelMetadata, value: null);
+
+        if (result.IsModelSet)
+        {
+            arguments[parameter.Name] = result.Model;
+        }
+    }
+
+    var properties = actionDescriptor.BoundProperties;
+    for (var i = 0; i &lt; properties.Count; i++)
+    {
+        var property = properties[i];
+        var bindingInfo = propertyBindingInfo[i];
+        var modelMetadata = bindingInfo.ModelMetadata;
+
+        if (!modelMetadata.IsBindingAllowed) { continue; }
+
+        var result = await parameterBinder.BindModelAsync(controllerContext, bindingInfo.ModelBinder, valueProvider, property, modelMetadata, value: null);
+
+        if (result.IsModelSet)
+        {
+            PropertyValueSetter.SetValue(bindingInfo.ModelMetadata, controller, result.Model);
+        }
+    }
+}
+}
+</code></pre>
+<p>内部调用的是<code>ParameterBinder</code>类，故名思义，该类负责绑定参数。其<code>BindModelAsync()</code>有两部分工作：</p>
+<ol>
+<li>模型绑定：<code>ParameterBinder</code>类通过依赖注入传入一个<code> IModelMetadataProvider</code>和<code>IModelBinderFactory</code>，然后由<code> IModelMetadataProvider</code>创建<code>metadata</code>，再由<code>BinderFactory</code>生成<code>binder</code>，最后调用<code>binder</code>绑定参数，</li>
+<li>模型校验：<code>ParameterBinder</code>类通过依赖注入传入一个<code>IObjectModelValidator</code>实例，在<code>modelBinder.BindModelAsync()</code>完成之后，通过该<code>IObjectModelValidator</code>实例来完成模型校验：</li>
+</ol>
+<pre><code class="language-csharp">public virtual async Task&lt;ModelBindingResult&gt; BindModelAsync( ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, object value)
+{
+    ... check null
+                if (parameter.BindingInfo?.RequestPredicate?.Invoke(actionContext) == false)
+    {
+        Logger.ParameterBinderRequestPredicateShortCircuit(parameter, metadata);
+        return ModelBindingResult.Failed();
+    }
+
+    var modelBindingContext = DefaultModelBindingContext.CreateBindingContext( actionContext, valueProvider, metadata, parameter.BindingInfo, parameter.Name);
+    modelBindingContext.Model = value;
+
+    var parameterModelName = parameter.BindingInfo?.BinderModelName ?? metadata.BinderModelName;
+    if (parameterModelName != null)
+    {
+        // The name was set explicitly, always use that as the prefix.
+        modelBindingContext.ModelName = parameterModelName;
+    }
+    else if (modelBindingContext.ValueProvider.ContainsPrefix(parameter.Name))
+    {
+        // We have a match for the parameter name, use that as that prefix.
+        modelBindingContext.ModelName = parameter.Name;
+    }
+    else
+    {
+        // No match, fallback to empty string as the prefix.
+        modelBindingContext.ModelName = string.Empty;
+    }
+
+    await modelBinder.BindModelAsync(modelBindingContext);
+
+    Logger.DoneAttemptingToBindParameterOrProperty(parameter, metadata);
+
+    var modelBindingResult = modelBindingContext.Result;
+
+    if (_objectModelValidator is ObjectModelValidator baseObjectValidator)
+    {
+        Logger.AttemptingToValidateParameterOrProperty(parameter, metadata);
+
+        EnforceBindRequiredAndValidate( baseObjectValidator, actionContext, parameter, metadata, modelBindingContext, modelBindingResult);
+
+        Logger.DoneAttemptingToValidateParameterOrProperty(parameter, metadata);
+    }
+    else
+    {
+        // For legacy implementations (which directly implemented IObjectModelValidator), fall back to the
+        // back-compatibility logic. In this scenario, top-level validation attributes will be ignored like
+        // they were historically.
+        if (modelBindingResult.IsModelSet)
+        {
+            _objectModelValidator.Validate( actionContext, modelBindingContext.ValidationState, modelBindingContext.ModelName, modelBindingResult.Model);
+        }
+    }
+
+    return modelBindingResult;
+}
+</code></pre>
+<p>这里的<code>EnforceBindRequiredAndValidate</code>：</p>
+<pre><code class="language-csharp">private void EnforceBindRequiredAndValidate( ObjectModelValidator baseObjectValidator, ActionContext actionContext, ParameterDescriptor parameter, ModelMetadata metadata, ModelBindingContext modelBindingContext, ModelBindingResult modelBindingResult) 
+{
+    RecalculateModelMetadata(parameter, modelBindingResult, ref metadata);
+
+    if (!modelBindingResult.IsModelSet &amp;&amp; metadata.IsBindingRequired)
+    {
+        // Enforce BindingBehavior.Required (e.g., [BindRequired])
+        var modelName = modelBindingContext.FieldName;
+        var message = metadata.ModelBindingMessageProvider.MissingBindRequiredValueAccessor(modelName);
+        actionContext.ModelState.TryAddModelError(modelName, message);
+    }
+    else if (modelBindingResult.IsModelSet)
+    {
+        // Enforce any other validation rules
+        baseObjectValidator.Validate( actionContext, modelBindingContext.ValidationState, modelBindingContext.ModelName, modelBindingResult.Model, metadata); 
+    }
+    else if (metadata.IsRequired)
+    {
+        // We need to special case the model name for cases where a 'fallback' to empty
+        // prefix occurred but binding wasn't successful. For these cases there will be no
+        // entry in validation state to match and determine the correct key.
+        //
+        // See https://github.com/aspnet/Mvc/issues/7503
+        //
+        // This is to avoid adding validation errors for an 'empty' prefix when a simple
+        // type fails to bind. The fix for #7503 uncovered this issue, and was likely the
+        // original problem being worked around that regressed #7503.
+        var modelName = modelBindingContext.ModelName;
+
+        if (string.IsNullOrEmpty(modelBindingContext.ModelName) &amp;&amp;
+            parameter.BindingInfo?.BinderModelName == null)
+        {
+            // If we get here then this is a fallback case. The model name wasn't explicitly set
+            // and we ended up with an empty prefix.
+            modelName = modelBindingContext.FieldName;
+        }
+
+        // Run validation, we expect this to validate [Required].
+        baseObjectValidator.Validate( actionContext, modelBindingContext.ValidationState, modelName, modelBindingResult.Model, metadata);
+    }
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

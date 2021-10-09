@@ -1,0 +1,828 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/ASP-NET-厂网再改造笔记.html">
+                    ASP.NET 厂网再改造笔记
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-03-11
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>领导上周末打电话安排要对单位网站首页的产量公告按照配产要求进行改造，说实话，我还以为上次的优化是 final commit 了。不过既然领导安排了任务，不管有没有回报，都必须去执行。</p>
+<p>这次改造过程不得不说是“一波三折”。领导安排任务正是我天天在局办公大厦加班搞分公司<code>EPBP</code>可研PPT的时候，好不容易周三晚上得空了，才开始分析同事传来的需求图。发现要动数据库，后台完全重写，首页按照领导的布局，可能放不下。不管咋说，后台还是好做的。后台数据库是 SQL Server 2005，考虑到是单兵作战，首选<code>Node.js</code>来开发，通过<code>Nginx</code>完成与<code>ASP.NET</code>配合。</p>
+<p>开工，基本步骤:
+0. 设计数据库，新建一张产量目标表、产量记录表，完成原始数据迁移。</p>
+<ol>
+<li>利用<code>SequelizeJS</code>完成数据库访问。</li>
+<li>编写相关服务及单元测试</li>
+<li>编写后台路由及管理界面的前端部分；后台管理界面直接上<code>Ant Design</code></li>
+<li>编写首页的前端部分。</li>
+</ol>
+<h2>小坑</h2>
+<p>遇到些小坑问题：</p>
+<ol>
+<li>时间问题：老系统的时间实际是把本地日期直接当<code>UTC</code>日期存储(相差了8小时)。在给服务端传递日期的时候需要注意传递本地时间，后端拿到后读取传递日期的年、月、日，再强制设置为<code>UTC</code>时间。</li>
+<li>首页布局问题：同事传来的产量公告的布局不合理——首页压根放不下，经过两天反复协商，最终改为表格式。由于我平时还得忙着汇报材料，南北疆远程沟通，效率极低。</li>
+<li>样式问题：之前代码改造主要集中在后端和<code>JavaScript</code>方面。遗留的老<code>CSS</code>脏代码太多，实在没有勇气重构。由于这次要涉及大量样式调整，终于鼓起勇气用<code>less</code>重写了整个首页<code>CSS</code>代码。对于首页的服务端渲染的部分，比如通知公告、新闻动态、会议纪要、生产信息等样式采用静态css的样式，方便<code>Chrome</code>浏览器提前渲染；对于客户端渲染部分的样式，则使用<code>Webpack</code>打包动态创建<code>style</code>标签，当用户把页面下拉到下一屏时，浏览器已经完成这部分的渲染。</li>
+</ol>
+<h2>巨坑</h2>
+<p>服务器跑的是 <code>Windows Server 2008 R2</code>，搭载的数据库是<code>SQL Server 2005</code>；而我本机用的是<code>SQL Server 2014</code>进行开发、单元测试的。我当时并没有意识到这是个恐怖的大问题，<code>SequelizeJS</code>在做分表查询的时候使用了<code>offset ... fetch next ...</code>，而这一特性是从<code>SQL Server 2012</code>才引入的。等我以为一切开发测试完毕，趁着大家午休时间部署到生产服务器上后，我才发现有些不对劲，后端 <code>REST API</code> 一直报错。一查 <code>pm2 log</code>，才意识到我的重大失误。然后开始立刻紧急回滚代码。</p>
+<p>代码回滚、重新部署完毕，第一思路是升级数据库，但是手头唯一可用的空闲服务器因为硬盘报废了三块，已于一个多月之前挂了。而且由于一些的奇特的原因，短期内是没有恢复的希望了。原地升级数据库，除了风险较大不说，更恐怖的事是目前的服务器操作系统是<code>Windows Server 2008 R2</code>，要安装<code>SQL Server 2012</code>，根据<code>Windows</code>官方文档，必须升级到<code>2008 R2 SP2</code>。在没有多余服务器的情况下，让我隔着几百公里远程升级操作系统和数据库，这个风险就太难控了。
+花了一整天时间查阅资料并对风险进行评估后，我不得不选择了最不愿意选择的思路：再在服务器上安装一个<code>MySQL</code>数据库，然后把数据库访问层及相关服务的代码进行少量调整，比如字段类型、和PV计数的原始SQL语句。</p>
+<h2>最终</h2>
+<p>最终首页部分渲染为：</p>
+<p>{% asset_img &quot;chanliangonggao.png&quot; &quot;产量公告&quot;  %}</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/SequelizeJS/关联查询.html">
+                    关联查询
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-02-18
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>模型关联定义</h2>
+<p>假设现有一个文章表post、文章分类表category、用户表（视作作者表）user</p>
+<ul>
+<li>post 和 category 是 <code>N:1</code>关系，外键为<code>category_id</code></li>
+<li>post 和 user 是<code>N:1</code>关系，外键为<code>author_id</code></li>
+</ul>
+<p>假定<code>Sequelize</code>定义的各个<code>model</code>的所有字段都采用<code>camelCase</code>风格，而数据库及其中的表、字段命名一律采用下划线风格。</p>
+<pre><code class="language-JavaScript">// post.js
+module.exports = function(sequelize, DataTypes) {
+  return sequelize.define('post', {
+
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    // ... 其他字段省略
+
+    // 定义作者ID
+    authorId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field:'author_id',
+    },
+    // 定义分类ID
+    categoryId: {
+      type: DataTypes.INTEGER,
+      allowNull:false,
+      field:'category_id'
+    },
+    
+  }, {
+    tableName: 'post'
+  });
+};
+</code></pre>
+<p>现将定义的模型关联如下：</p>
+<pre><code class="language-JavaScript">// 声明 post 和 category 之间 N:1 联系
+post.belongsTo(category);
+
+// 声明 post 和 category 之间 N:1 联系，指定二者之间通过外键`author_id`关联
+post.belongsTo(user,{foreignKey:'author_id'})
+</code></pre>
+<h2>懒加载</h2>
+<p>默认情况下（也就是不指定<code>include</code>数组），<code>Sequelize</code>执行的是懒加载——仅仅只查询指定的模型，与之关联的模型则可以通过</p>
+<ul>
+<li><code>get{TargetModel}()</code></li>
+<li><code>set{TargetModel}()</code></li>
+</ul>
+<p>方法获取和设置。</p>
+<p>再假如有这样的一个关联：</p>
+<pre><code class="language-JavaScript">user.belongsTo(
+    picture, 
+    { 
+        as: 'ProfilePicture', 
+        constraints: false 
+    }
+)
+</code></pre>
+<p>则 user 就拥有方法：</p>
+<pre><code class="language-JavaScript">user.getProfilePicture();
+</code></pre>
+<h2>急加载</h2>
+<p>懒加载有一个弊端是，如果要获取关联信息，需要执行多次<code>SQL</code>查询，这显然在有些场景下并不合适。</p>
+<h3><code>include</code></h3>
+<p>现要对文章的作者、分类也一并进行查询，可以通过传递选项的<code>include</code>进行查询：</p>
+<pre><code class="language-JavaScript">domain.post.findAll({
+    where:{
+        // status:'approval',
+    },
+    include:[
+        {
+            model:domain.category,
+        },
+        {
+            model:domain.user,
+        },
+    ],
+})
+</code></pre>
+<p>则会被转为<code>left join</code>：</p>
+<pre><code class="language-SQL">SELECT 
+    `post`.`id`, -- 其他字段省略
+    `post`.`author_id` AS `authorId` ,    -- 模型定义中的外键字段
+    `post`.`category_id` AS `categoryId`, -- 模型定义中的外键字段 
+    `post`.`author_id`,                   -- 这里再追加一个定义关联时指定的外键
+    `category`.`id` AS `category.id`,     -- 其他字段省略
+    `user`.`id` AS `user.id`,             -- 其他字段省略
+FROM `post` AS `post` 
+LEFT OUTER JOIN `category` AS `category` 
+    ON `post`.`category_id` = `category`.`id` 
+LEFT OUTER JOIN `user` AS `user` 
+    ON `post`.`author_id` = `user`.`id`;
+</code></pre>
+<p>注意，如果<code>include</code>数组项中除了指定<code>model</code>之外，还指定了<code>where</code>条件，则对应的<code>model</code>连接方式会被转化为<code>inner join</code>:</p>
+<pre><code class="language-JavaScript">domain.post.findAll({
+    where:{
+        status:'approval',
+    },
+    include:[
+        {
+            model:domain.category,
+            where:{
+                id:3
+            }
+        },
+        {
+            model:domain.user,
+        },
+    ],
+});
+</code></pre>
+<p>对应的SQL语句为（注意看两个where条件）：</p>
+<pre><code class="language-SQL">SELECT 
+    `post`.`id`,                      -- 其他字段省略 
+    `category`.`id` AS `category.id`, -- 其他字段省略
+    `user`.`id` AS `user.id`          -- 其他字段省略
+FROM `post` AS `post` 
+INNER JOIN `category` AS `category` 
+    ON `post`.`category_id` = `category`.`id` AND `category`.`id` = 3 
+LEFT OUTER JOIN `user` AS `user` 
+    ON `post`.`author_id` = `user`.`id`
+WHERE `post`.`status` = 'approval';
+</code></pre>
+<h3>急加载的 as 问题</h3>
+<p>之前定义关联的时候，对 author 是直接使用 user，并指定了一个外键：</p>
+<pre><code class="language-JavaScript">post.belongsTo(user,{foreignKey:'authorId'})
+</code></pre>
+<p>这样急加载查询后得到的结果类似于：</p>
+<pre><code>[
+    {
+        id:1,
+        title:'',
+        categoryId:2,
+        category:{id:2,/*其余省略*/},
+        authorId:1,    // 这里是模型中定义的字段
+        author_id:1,   // 这里是追加的外键关联字段
+        user:{id:1,/*其余省略*/},
+    },
+    // ...
+]
+</code></pre>
+<p>如果我们想把这里的<code>user</code>改为<code>author</code>,则需要在定义管理和急加载查询两个地方都进行改动：</p>
+<p>在定义关联的时候指定<code>as</code>：</p>
+<pre><code class="language-JavaScript">post.belongsTo(user,{foreignKey:'author_id',as:'author'});
+</code></pre>
+<p>一旦在定义管理的时候指定了<code>as</code>,在急加载查询的时候也必须要指定<code>as</code>，否则会报错：</p>
+<pre><code>Unhandled rejection Error: user is not associated to post!
+</code></pre>
+<p>其中的具体原因在于仅仅告诉<code>Sequelize</code>要急加载的模型信息是不够的。不妨考虑有一个 uesr 表、picture 表，满足这这样的关系：</p>
+<ul>
+<li>user用于存储用户信息</li>
+<li>picture用于存储用户的普通图片和头像</li>
+<li>每个user可以拥有多个普通picture，</li>
+<li>一个普通picture必定属于某个用户</li>
+<li>每个profilePicture可以被多个用户同时使用，</li>
+<li>一个用户只能拥有一个profilePicture。</li>
+</ul>
+<p>于是，</p>
+<ol>
+<li>在user和picture之间可以是<code>1:N</code>,</li>
+<li>在user和 profilePicture 之间则是 <code>N:1</code>关系</li>
+</ol>
+<p>二者关联定义如下：</p>
+<pre><code class="language-JavaScript">user.hasMany(picture);
+user.belongsTo(
+    picture, 
+    { 
+        as: 'profilePicture', 
+        constraints: false 
+    }
+);
+</code></pre>
+<p>于是，两个模型 user 和 picture 之间就同时拥有了两种关联关系。由于有这种情况的存在，<code>Sequelize</code>是无法只根据模型名推算出要急加载的到底是普通的 picture 还是 profilePicture 的。</p>
+<p>所以，一旦在定义关联时候指定了别名，当需要急加载时，除了指定模型名，还必须告诉<code>Sequelize</code>模型名的别名：</p>
+<pre><code class="language-JavaScript">domain.post.findAll({
+    where:{
+        // status:'approval',
+    },
+    include:[
+        {
+            model:domain.category,
+        },
+        {
+            model:domain.user,
+            as:'author'
+        },
+    ],
+})
+</code></pre>
+<p>这样，返回的结果集类似于：</p>
+<pre><code class="language-JavaScript">[
+    {
+        &quot;id&quot;:1,
+        &quot;categoryId&quot;:2,
+        &quot;category&quot;:{&quot;id&quot;:2,/*其他字段省略*/},
+        &quot;authorId&quot;:1,
+        &quot;author_id&quot;:1,
+        &quot;author&quot;:{&quot;id&quot;:1,/*其他字段省略*/},
+    },
+]
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/misc/百度地图-BMap-的-React-封装.html">
+                    百度地图 BMap 的 React 封装
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-02-15
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>百度地图的常规使用</h2>
+<p>要使用百度地图<code>BMap</code>，需要引入一个入口脚本。根据加载<code>BMap</code>策略的不同，可以分为<code>同步</code>和<code>异步</code>两种方式。</p>
+<h3>同步式</h3>
+<p><code>同步式</code>入口脚本的<code>URL</code>地址为：</p>
+<pre><code>http://api.map.baidu.com/api?v=2.0&amp;ak=马赛克
+</code></pre>
+<p>返回的脚本内容类似于：</p>
+<pre><code class="language-JavaScript">(function(){ 
+    window.BMap_loadScriptTime = (new Date).getTime(); 
+    document.write('&lt;script type=&quot;text/javascript&quot; src=&quot;http://api.map.baidu.com/getscript?v=2.0&amp;ak=${这里是马赛克}&amp;services=&amp;t=20170207140543&quot;&gt;&lt;/script&gt;');
+})();
+</code></pre>
+<p>很明显，入口脚本会再创建一个<code>script</code>再远程请求服务端返回真正的核心脚本。当核心脚本加载完毕后，就可以调用百度地图<code>BMap</code>的相关<code>API</code>进行操作了。</p>
+<p>来自<a href="http://lbsyun.baidu.com/index.php?title=jspopular/guide/helloworld">官方文档示例</a>：</p>
+<pre><code class="language-HTML">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=utf-8&quot; /&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;initial-scale=1.0, user-scalable=no&quot; /&gt;
+    &lt;style type=&quot;text/css&quot;&gt;
+    body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:&quot;微软雅黑&quot;;}
+    &lt;/style&gt;
+    &lt;script type=&quot;text/javascript&quot; src=&quot;http://api.map.baidu.com/api?v=2.0&amp;ak=您的密钥&quot;&gt;&lt;/script&gt;
+    &lt;title&gt;地图展示&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;allmap&quot;&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;script type=&quot;text/javascript&quot;&gt;
+    // 百度地图API功能
+    var map = new BMap.Map(&quot;allmap&quot;);    // 创建Map实例
+    map.centerAndZoom(new BMap.Point(116.404, 39.915), 11);  // 初始化地图,设置中心点坐标和地图级别
+    map.addControl(new BMap.MapTypeControl());   //添加地图类型控件
+    map.setCurrentCity(&quot;北京&quot;);          // 设置地图显示的城市 此项是必须设置的
+    map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放
+&lt;/script&gt;
+</code></pre>
+<p><code>同步式</code>的缺点很明显，入口脚本会继续创建一个核心脚本，核心脚本加载完毕后浏览器才会继续执行之后的相关代码。</p>
+<h3>异步式</h3>
+<p>由于<code>同步式</code>的加载方式会让浏览器等待百度服务器返回脚本才能继续执行，从而影响了用户体验，百度地图还提供了<code>异步式</code>的接口，大致思路是在接口<code>URL</code>中指定一个回调函数，百度服务器返回相应脚本，当<code>BMap</code>完成加载后，再触发回调函数。</p>
+<p>假设请求<code>URL</code>为：</p>
+<pre><code>http://api.map.baidu.com/api?v=2.0&amp;ak=马赛克&amp;callback=init
+</code></pre>
+<p>则百度返回的入口脚本类似于：</p>
+<pre><code class="language-JavaScript">(function(){ 
+    window.BMap_loadScriptTime = (new Date).getTime(); 
+    window.BMap=window.BMap||{};
+    window.BMap.apiLoad=function(){
+        delete window.BMap.apiLoad;
+        //# 注意这里的回调函数
+        if(typeof init==&quot;function&quot;){ init() }
+    };
+    var s=document.createElement('script');
+    s.src='http://api.map.baidu.com/getscript?v=2.0&amp;ak=马赛克&amp;services=&amp;t=20170207140543';
+    document.body.appendChild(s);
+})();
+</code></pre>
+<p>至于使用方式很明显了，这里是官方的使用示例：</p>
+<pre><code class="language-HTML">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=utf-8&quot; /&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;initial-scale=1.0, user-scalable=no&quot; /&gt;
+    &lt;style type=&quot;text/css&quot;&gt;
+    body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:&quot;微软雅黑&quot;;}
+    &lt;/style&gt;
+    &lt;title&gt;异步加载地图&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;allmap&quot;&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;script type=&quot;text/javascript&quot;&gt;
+    //百度地图API功能
+    function loadJScript() {
+        var script = document.createElement(&quot;script&quot;);
+        script.type = &quot;text/javascript&quot;;
+        script.src = &quot;http://api.map.baidu.com/api?v=2.0&amp;ak=您的密钥&amp;callback=init&quot;;
+        document.body.appendChild(script);
+    }
+    function init() {
+        var map = new BMap.Map(&quot;allmap&quot;);            // 创建Map实例
+        var point = new BMap.Point(116.404, 39.915); // 创建点坐标
+        map.centerAndZoom(point,15);                 
+        map.enableScrollWheelZoom();                 //启用滚轮放大缩小
+    }  
+    window.onload = loadJScript;  //异步加载地图
+&lt;/script&gt;
+</code></pre>
+<h2>百度地图的<code>React</code>封装思路</h2>
+<p>为什么要封装百度地图？原因是在使用<code>React</code>的<code>SPA</code>中使用<code>BMap</code>，每次都要手工引入百度地图的入口脚本<code>script</code>不够优雅；更关键的是，由于需要提前在视图文件中引入入口脚本，那么不管用户是否点开触发百度地图的路由，<code>SPA</code>都会主动加载<code>BMap</code>。</p>
+<p><code>React</code>封装<code>BMap</code>的思路比较简单，即</p>
+<ol>
+<li>在组件加载前先判断当前是否已经有入口脚本，如果没有，则创建之。</li>
+<li>创建用于显示百度地图的容器</li>
+<li>在组件加载完毕后，检查当前<code>BMap</code>是否可用：如果不可用，等待一段时间后再检查；如果可用，创建<code>BMap.Map</code>实例</li>
+<li>调用事先准备好的回调函数。</li>
+</ol>
+<p>然而这里有个坑——必须采用百度的异步入口脚本：因为<code>React</code>异步创建了入口脚本<code>script</code>，如果入口脚本是同步式的，则会调用<code>document.write()</code>方法，很显然，在异步创建的<code>script</code>中调用<code>document.write()</code>会触发错误。
+解决方法很简单，直接采用百度地图的异步式入口脚本，随便指定一个<code>callback</code>参数——比如叫<code>init</code>，则百度地图服务器返回的回调代码类似于：</p>
+<pre><code>if(typeof init==&quot;function&quot;){ init() }
+</code></pre>
+<p>如果<code>init</code>不存在，就不会有任何副作用。而我们真正想要执行的回调函数则通过属性的方式传递给<code>React</code>封装好的组件，并在合适的时候予以触发。</p>
+<p>核心代码为：</p>
+<pre><code class="language-JavaScript">export const BMapComponent=React.createClass({
+
+    getDefaultProps:function(){
+        const ID=`itminus_bmap${parseInt(Math.random()*10000000)}`;
+        return {
+            ak:'',
+            callback:function(map){},
+            id:ID,
+        };
+    },
+
+    componentWillMount(){
+        // 注意callback=init参数不能去掉，因为这是百度地图异步加载的接口，
+        // 否则，会因为React异步创建了script，百度返回的script中又调用document.write()，从而触发错误
+        let bmapSrc=`http://api.map.baidu.com/api?v=2.0&amp;ak=${this.props.ak}&amp;callback=init`;
+        if(typeof BMap !='undefined'){
+            return;
+        }else{
+            let script=document.querySelector(`script[src='${bmapSrc}']`);
+            if(!script){
+                script= document.createElement(&quot;script&quot;);
+                script.src = bmapSrc;
+                document.body.appendChild(script);
+            }
+        }
+    },
+
+    componentDidMount(){
+        function timeoutPromise(timeout){
+            return new Promise(function(resolve,reject){
+                setTimeout(function() {
+                    resolve();
+                }, timeout);
+            });
+        }
+        function waitUntil(props){
+            return new Promise(function(resolve,reject){
+                const map=new BMap.Map(props.id);
+                resolve(map);
+            }).catch(err=&gt;{
+                console.log(&quot;there's no BMap yet. Waitting ...&quot;,err);
+                return timeoutPromise(300).then(()=&gt;{
+                    return waitUntil(props);
+                });
+            });
+        }
+        waitUntil(this.props).then(map=&gt;{
+            console.log(`[+] bmap loaded`,map);
+            this.props.callback(map);
+        });
+    },
+
+    render:function(){ 
+        return &lt;div id={this.props.id}&gt;&lt;/div&gt;;
+    } 
+});
+
+export default BMapComponent;
+</code></pre>
+<p>使用的时候则非常简单：</p>
+<pre><code>export const Contact=React.createClass({
+    render:function(){
+        return (&lt;div className=&quot;contact&quot;&gt;
+            &lt;div className=&quot;feedback&quot;&gt;
+                &lt;h1&gt;FEEDBACK&lt;/h1&gt;
+                &lt;form&gt;
+                &lt;/form&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;map&quot;&gt;
+                &lt;BMapComponent 
+                    ak={&quot;马赛克&quot;}  
+                    callback={(map)=&gt;{
+                        var point = new BMap.Point(116.404, 39.915);  // 创建点坐标  
+                        var bs = map.getBounds();   //获取可视区域
+                        var bssw = bs.getSouthWest();   //可视区域左下角
+                        var bsne = bs.getNorthEast();   //可视区域右上角
+                        map.centerAndZoom(point, 15);  
+                    }}
+                /&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;);
+    }
+});
+</code></pre>
+<p>显示效果类似于：
+{% asset_img &quot;baidu_map_demo.jpg&quot; &quot;百度地图 BMap 的 React 封装&quot; %}</p>
+<h2>封装好的组件</h2>
+<p>在 <code>simple-react-ui</code> 中实现<code>BaiduMap</code>，使用<code>TypeScript</code>编写，编译后发布。</p>
+<ul>
+<li><a href="https://github.com/newbienewbie/simple-react-ui">GitHub地址</a></li>
+<li><a href="https://www.npmjs.com/package/simple-react-ui">npm地址</a></li>
+</ul>
+<p>使用：</p>
+<pre><code>import BaiduMap from 'simple-react-ui/dist/baidumap';
+
+
+export const Contact = React.createClass({
+
+    render: function () {
+        return (&lt;div className=&quot;map&quot;&gt;
+            &lt;BaiduMap
+                ak={&quot;马赛克&quot;}
+                callback={(map) =&gt; {
+                    var point = new BMap.Point(116.404, 39.915);  // 创建点坐标  
+                    var bs = map.getBounds();   //获取可视区域
+                    var bssw = bs.getSouthWest();   //可视区域左下角
+                    var bsne = bs.getNorthEast();   //可视区域右上角
+                    map.centerAndZoom(point, 15);
+                }}
+            /&gt;
+        &lt;/div&gt;);
+    }
+});
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/JScript/JScript-与对象遍历.html">
+                    JScript 与对象遍历
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-24
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>有些<code>COM</code>集合，本身就支持按索引访问元素，比如：</p>
+<pre><code class="language-JavaScript">var app=new ActiveXObject(&quot;Excel.Application&quot;);
+var fso=new ActiveXObject('Scripting.FileSystemObject');
+
+var excelFile=fso.GetFile(&quot;./生产管理专业业务对接表单（1.20）.xlsx&quot;);
+var book=app.Workbooks.Open(excelFile);
+app.Visible=true;
+
+var sheet=book.Worksheets(1);
+var list=[];
+for(var i=1;i&lt;=book.Worksheets.Count;i++){
+    var item=book.Worksheets.Item(i);
+    list.push(item.Name);
+}
+WScript.Echo(list);
+book.Close();
+</code></pre>
+<p>对于这类集合，我们可以循环使用<code>Item(i)</code>的方式，遍历其元素。</p>
+<p>然而，还有某些<code>COM</code>集合，并不支持按索引访问元素。要使用<code>JScript</code>遍历这种集合，需要借助于<code>Enumerator</code>接口。枚举器(<code>Enumerator</code>)定义可以用<code>TypeScript</code>表示如下：</p>
+<pre><code class="language-TypeScript">/**
+ * Allows enumerating over a COM collection, which may not have indexed item access.
+ */
+interface Enumerator&lt;T&gt; {
+    /**
+     * Returns true if the current item is the last one in the collection, or the collection is empty,
+     * or the current item is undefined.
+     */
+    atEnd(): boolean;
+
+    /**
+     * Returns the current item in the collection
+     */
+    item(): T;
+
+    /**
+     * Resets the current item in the collection to the first item. If there are no items in the collection,
+     * the current item is set to undefined.
+     */
+    moveFirst(): void;
+
+    /**
+     * Moves the current item to the next item in the collection. If the enumerator is at the end of
+     * the collection or the collection is empty, the current item is set to undefined.
+     */
+    moveNext(): void;
+}
+</code></pre>
+<p><code>Enumerator</code>并非是<code>ECMAScript</code>规范，而是<code>JScript</code>的私货。我们可以使用这种枚举器来遍历<code>COM</code>接口，比如，使用枚举器来遍历目录：</p>
+<pre><code class="language-JavaScript">var fs=new ActiveXObject('Scripting.FileSystemObject');
+var f=fs.GetFolder(&quot;C:\\Windows&quot;);
+
+var list=[];
+for(var e=new Enumerator(f.SubFolders);!e.atEnd();e.moveNext()){
+    list.push(e.item());
+}
+WScript.Echo(list);
+</code></pre>
+<p>甚至还可以用枚举器遍历之前那个支持按索引访问元素的<code>COM</code>集合，对代码改写如下：</p>
+<pre><code class="language-JavaScript">var app=new ActiveXObject(&quot;Excel.Application&quot;);
+var fso=new ActiveXObject('Scripting.FileSystemObject');
+
+var excelFile=fso.GetFile(&quot;./生产管理专业业务对接表单（1.20）.xlsx&quot;);
+var book=app.Workbooks.Open(excelFile);
+app.Visible=true;
+
+var sheet=book.Worksheets(1);
+var list=[];
+for(var e=new Enumerator(book.Worksheets);!e.atEnd();e.moveNext()){
+    var item=e.item();
+    list.push(item.Name);
+}
+WScript.Echo(list);
+book.Close();
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/JScript/JScript-与模块化.html">
+                    JScript 与模块化
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-24
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Windows Script Files (.wsf)</h2>
+<p><code>Windows script file</code>(<code>*.wsf</code>) 是一个<code>XML</code>文件，表现的像个<code>Windows Script</code>容器，然而它们并非和特定的<code>engine</code>相关，可以包含任意<code>Windows Script</code>：</p>
+<p>比如，有一个<code>JScript</code>文件的代码为：</p>
+<pre><code class="language-JavaScript">//fso.js
+function GetFreeSpace(drvPath) {
+   var fs, d, s;
+   fs = new ActiveXObject(&quot;Scripting.FileSystemObject&quot;);
+   d = fs.GetDrive(fs.GetDriveName(drvPath));
+   s = &quot;Drive &quot; + drvPath + &quot; - &quot; ;
+   s += d.VolumeName;
+   s += &quot; Free Space: &quot; + d.FreeSpace/1024 + &quot; Kbytes&quot;;
+   return s;
+} 
+</code></pre>
+<p>现在创建一个<code>*.wsf</code>文件来引用<code>JScript</code>脚本，然后使用<code>VBScript</code>调用之：</p>
+<pre><code class="language-XML">&lt;job id=&quot;IncludeExample&quot;&gt;
+   &lt;script language=&quot;JScript&quot; src=&quot;fso.JS&quot;/&gt;
+   &lt;script language=&quot;VBScript&quot;&gt;
+      ' Get the free space for drive C.
+      s = GetFreeSpace(&quot;c:&quot;)
+      WScript.Echo s
+   &lt;/script&gt;
+&lt;/job&gt;
+</code></pre>
+<h2>模块化编写脚本</h2>
+<p>注意上面使用脚本的方式，是不是和在<code>HTML</code>中引用、创建<code>script</code>脚本非常类似？<code>*.wsf</code>给了我们模块化开发<code>JScript</code>的能力。
+比如，我们可以引用一个<code>MyLib1.js</code>、再创建一个<code>MyLib2.js</code>的库：</p>
+<pre><code class="language-XML">&lt;!-- MyJob.wsf --&gt;
+&lt;job id=&quot;IncludeExample&quot;&gt;
+  &lt;script language=&quot;JScript&quot; src=&quot;MyLib1.js&quot;/&gt;
+  &lt;script language=&quot;JScript&quot; src=&quot;MyLib2.js&quot;/&gt;
+  &lt;script language=&quot;JScript&quot;&gt;
+    WScript.Echo(myLib1.foo());
+    WScript.Echo(myLib2.bar());
+  &lt;/script&gt;
+&lt;/job&gt;
+</code></pre>
+<p>事实上，更多时候可以使用<code>package</code>，这样就能同时处理多个任务——从另一个角度说，能提供更高级别的封装。</p>
+<p>比如要显示：</p>
+<ul>
+<li>domain name</li>
+<li>computer name</li>
+<li>user name</li>
+</ul>
+<p>我们使用<code>VBScript</code>、<code>JScript</code>分别完成：</p>
+<pre><code class="language-XML">&lt;package&gt;
+   &lt;job id=&quot;vbs&quot;&gt;
+      &lt;script language=&quot;VBScript&quot;&gt;
+         Set WshNetwork = WScript.CreateObject(&quot;WScript.Network&quot;)
+         WScript.Echo &quot;Domain = &quot; &amp; WshNetwork.UserDomain
+         WScript.Echo &quot;Computer Name = &quot; &amp; WshNetwork.ComputerName
+         WScript.Echo &quot;User Name = &quot; &amp; WshNetwork.UserName
+      &lt;/script&gt;
+   &lt;/job&gt;
+
+   &lt;job id=&quot;js&quot;&gt;
+      &lt;script language=&quot;JScript&quot;&gt;
+         var WshNetwork = WScript.CreateObject(&quot;WScript.Network&quot;);
+         WScript.Echo(&quot;Domain = &quot; + WshNetwork.UserDomain);
+         WScript.Echo(&quot;Computer Name = &quot; + WshNetwork.ComputerName);
+         WScript.Echo(&quot;User Name = &quot; + WshNetwork.UserName);
+      &lt;/script&gt;
+   &lt;/job&gt;
+&lt;/package&gt;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page17.html">
+          Previous
+        </a>
+        19 of 32
+        <a href="/posts/page19.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

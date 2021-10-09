@@ -1,0 +1,709 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/记一次大小尾引发的血案.html">
+                    记一次大小尾引发的血案
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-18
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>事情要从单位前些年建设的远程监控平台说起。此平台后端由山东某公司(暂称G公司)编写，负责远程监控我厂的油井。
+由于油井数量众多、分批建设，现场硬件由不同厂家提供、建设，驱动不兼容。另一方面，原后端程序写得太渣：</p>
+<ol>
+<li>所有操作都是同步阻塞操作，同时没有任务队列。收到什么数据，就尝试直接写入数据库。如果现场七百口井同时发送数据，算上每个井的压力、温度、电参、载荷等参数，画面太美无法想象。</li>
+<li>浏览器端查询操作：数据库检索不分页，每次想查询屁大点的数据，都要把数据库翻个底朝天。</li>
+<li>代码实在太渣，各种丢失历史数据、各种警情漏报。</li>
+</ol>
+<p>鉴于平台实在太烂，单位从胜利油田引进了生产指挥系统<code>PCS</code>。</p>
+<h2>协议</h2>
+<p>为了利旧现场仪表和RTU，要统一各家驱动协议。胜软开发工程师以<code>Modbus</code>协议为原型，在三维力控相关驱动和原有硬件通信协议的基础上，提出来一套新的标准规范。通信协议传输数据的主要格式为：</p>
+<pre><code>HEAD(4)  长度(2)  地址(2)  功能码(1)  伴随码(2)  仪表数据  ED(2)  CRC-16(2)
+</code></pre>
+<p>其中：</p>
+<ul>
+<li><code>长度</code>：从<code>地址</code>起,<code>ED</code>之前结束(不包括<code>ED</code>)。</li>
+<li><code>功能码</code>、<code>伴随码</code>：代表后面传送的<code>数据</code>是哪种类型的数据，比如压力数据、电参数据</li>
+<li><code>CRC-16</code>：校验值</li>
+</ul>
+<p>协议要求传送的数据低字节在前、高字节在后。
+我对此有比较大的疑问，为什么要让数据低字节在前？然后我联系了胜软工程师、三维力控工程师，他们给出的回复是：直接从内存里做了<code>memcpy()</code>操作，并未进行手工进行网络序转换。
+后来我召集各硬件厂家来我厂开会，就此协议征求意见。截至到胜软对协议定稿，包括G公司在内的各厂家均未提出任何异议。</p>
+<h2>插曲</h2>
+<p>协议定稿后，然后就进入了<code>RTU</code>驱动开发测试环节。由于新的标准协议跟其中某家公司（暂称为J公司）的既有协议比较像，他们很快完成了通信协议的开发。
+但是在挑了一个口井进行实际测试的时候发现，后端死活无法接收到数据。胜软工程师和J公司现场人员花了两个工作日，也未能定位原因。
+在我的要求下，他们使用<code>wireshark</code>进行抓包然后交由我分析。
+仪表数据通过<code>UDP</code>协议发送。对其中一段数据的主要内容整理、分析、和解释后如下（已略去如设备识别等与此处不相干内容）：</p>
+<pre><code>[48H][45H][41H][44H]  # HEAD
+[2DH][00H]            # length 45
+[01H][00H]            # addr 0001
+[03H][00H][00H]       # func
+[ABH][02H][DBH][02H]  # p1 683 731 。683表示压力6.83MPa；731表示电池 7.31V
+[00H][00H][00H][00H]  # p2 
+[39H][00H][DEH][02H]  # p3 57  734
+[00H][00H][00H][00H]  # p4 
+[00H][00H][00H][00H]  # p5
+[00H][00H][00H][00H]  # t1
+[F6H][00H][D9H][02H]  # t2 246 729
+[00H][00H][00H][00H]  # t3
+[00H][00H][00H][00H]  # t4
+[00H][00H][00H][00H]  # t5 
+[45H][44H]            # ED
+[E4H][B5H]            # CRC
+</code></pre>
+<p>其中，<code>#</code>后面表示我的注释信息。
+对报文<code>HEAD</code>~<code>ED</code>中间部分进行高低字节换位，然后分别转换至整数，即可得到上面的解释信息。
+我把上面这段报文解释发至胜软工程师，让他校对下后台配置的信息是否有误，他立刻发现报文中<code>地址位</code>不对，然后联系J公司工程师，进而发现J公司<code>RTU</code>程序程序有个bug，每隔一段时间<code>设备地址</code>总是重置为<code>0x0001</code>。
+大约一个来月，J公司率先完成了他们所供应的全部仪表到新<code>PCS</code>平台的接入工作。</p>
+<h2>报告：你家电话线不通</h2>
+<p>在我从北京出差回来后，已经超过了原订的时间节点，这时候发现G公司奇葩到连一个测试井位都未完成。于是对他们进行了催促，他们表示正在全力研发，并配合胜软工程师进行测试。虽然心里有些许不高兴，但还是答应再宽限了几天。
+忽然在前天下午，G公司负责人Z打电话给我怒气冲冲的告状说这协议有问题！他们时间全部白费了！然而我之前已经听说有两个厂家都独立按照此协议完成了接入工作，所以我表示可以让他们工程师写了一份问题说明给我，我必须检查是否有真有错误。</p>
+<p>由于有了之前的经验，我快速分析了下报文。为了方便阅读，对他们报文的其中一段整理如下：</p>
+<pre><code>[48H][45H][41H][44H]             # HEAD
+[41H][00H]                       # 长度
+[35H][0EH]                       # 地址
+[02H][00H][00H]                  # 功能码：电参，      
+[00H][00H][00H][00H][00H][00H]   # ABC 三相电压         
+[00H][00H][00H][00H][00H][00H]   # ABC 三相电流        
+[00H][00H][00H][00H][00H][00H]   # 有功、无功、视在功率 
+[00H][00H][88H][13H]             # 功率因数 频率       
+[00H][00H]                       # 平均电流            
+[00H][00H][00H][00H]             # 电压、电流不平衡度   
+[00H][00H][00H][00H]             # 正向有功总电能        
+[00H][00H][00H][00H]             # 设置流量，4个字节          
+[00H][00H][00H][00H]             # 瞬时流量，4个字节       
+[00H][00H][00H][00H]             # 累计流量，4个字节                
+[00H][00H]                       # 功图电池电量       
+[00H][00H]                       # 开停井             
+[00H][00H][00H][00H][00H][00H]   # ABC三相上行峰值电流 
+[00H][00H][00H][00H][00H][00H]   # ABC三相下行峰值电流 
+[45H][44H]                       # ED
+[7EH][26H]                       # CRC
+</code></pre>
+<p>他们表示<code>CRC</code>值为 0x267E，然后按照高低位转换，应该是 0x7E26 。但是后端认为应该是 0x267E 。G公司认为自己占理，要求后端改程序。</p>
+<h2>狗血临头</h2>
+<p>作为甲方，后端胜软、各个硬件厂商都是我的服务/供应商，我当然不会偏向于任何一方，所以我跟向我报告协议有问题的G公司的工程师谈了下我的理解：协议中<code>HEAD</code>~<code>ED</code>中间的部分是从内存里直接<code>memcpy()</code>拷贝的，所以是采用低字节在前、高字节在后，并没有转换到网络序；然而<code>CRC</code>部分是根据前面这段信息进行冗余校验，协议原文中描述“低字节在前,长度从地址起,ED之前结束,不包括ED。报头报尾均为大写。”并不是指<code>CRC</code>部分。
+然而G公司的工程师态度很强硬，跟我从这个问题扯到了其他问题：</p>
+<ol>
+<li>由于之前他们通过<code>UDP</code>协议传输不同，现在改用了<code>TCP</code>，我偶然间提到应用层是网络传输的最高层，他表示随便那本书上都写了不是最高层。</li>
+<li>我表示应用层也要考虑网络序问题，因为<code>OSI</code>模型要求对等转换。他则任务应用层不用考虑。</li>
+</ol>
+<p>于是我在挂了电话后贴了<code>OSI</code>模型的<code>wiki</code>链接，他又说“现在不是讨论网络架构的层，我们讨论的是应用层和你说的完全是两码事”。然而大家正在争论的这个协议不就是应用层协议吗？
+为了说明应用层也要考虑对等转换，我写了一个<code>CPP</code>客户端+<code>Node.js</code>服务端解释程序发给他。</p>
+<p><code>cpp</code> 部分负责对一个整数值 0x7e26，在不做网络序转换的前提下直接进行网络传送，核心代码为：</p>
+<pre><code class="language-cpp">int a_int = 32294; // 0x7e26
+char *ch = (char*)(&amp;a_int);
+// 0x7e = ~ 
+// 0x26 = &amp;
+// 因为内存中是低字节在前，所以输出序列为: &amp;~
+printf(ch); 
+
+char *sendbuf = ch;
+// 发送sendbuf的程序代码略过
+</code></pre>
+<p>而服务端的<code>Node.js</code>为：</p>
+<pre><code class="language-JavaScript">const server = net.createServer(function (c) {
+    c.on('end', () =&gt; {
+        console.log('client disconnected');
+    });
+    c.on('data',(data)=&gt;{
+        const buffer=Buffer.from(data);
+        console.log(`接收到数据为`,buffer);
+
+        // 不转换
+        const hexString=buffer.toString('hex');
+        const wrongInt=parseInt(hexString,16);
+        console.log(`由于客户端直接传来了低字节在前的数据，如果无对等转换，就会解析到错误的整数${wrongInt}`);
+
+        // 逆序高低字节转换
+        const array=[];
+        for(let i=buffer.length-1;i&gt;-1;i--){
+            array.push(buffer[i]);
+        }
+        const raw=Buffer.from(array);
+        const rawInt=parseInt(raw.toString('hex'),16);
+        console.log(`事实上，原来的数实际是${rawInt}`);
+    })
+});
+</code></pre>
+<p>以此证明，对等转换也需要考虑字节序问题。然而他认为他们是按照协议来的，协议有问题就改协议，谁程序有问题就改程序。
+竟然还说“我不知道你用的啥系统，啥年代了，现在的网络用socket就可以解决了，真不知道你要把网络层都拿出来做什么，难道你要把每层都用你的代码实现”。</p>
+<p>我向来是不喜欢用甲方身份压迫别人做事情的，于是表示：法律足够明确，谁都认为自己合法，是不是可以按照自己想法来对其他事情不管不顾？打官司谁来裁定哪一方合法？
+他仿佛早把我这个中间调停者当成了敌人，问我理解的就是协议的本意了吗？继续强调他们是按照协议来做的，谁有错就让谁改。
+到此刻，我也不想跟这个人沟通下去了。</p>
+<ol>
+<li>我立刻联系了协议标准编写人，确认协议本意确实和我理解一致；然后把确认结果发给他。</li>
+<li>同时让协议标准工程师拟一份补充协议，详细对此问题说明。</li>
+<li>决定让G公司改程序。</li>
+</ol>
+<p>事后，我跟胜软工程师了解到:</p>
+<ol>
+<li>协议标准说明书里有报文和对应<code>CRC-16</code>值示例。显然，他们写程序没做单元测试。</li>
+<li>在此之前，他们犯过诸多愚蠢的错误，诸如报头不对、<code>TCP</code>发送却告知后端是采用<code>UDP</code>协议。</li>
+</ol>
+<p>我瞬间感觉到，我跟G公司那个工程师讨论问题，纯属浪费生命。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Instrument/nginx/nginx极速学习之一.html">
+                    nginx极速学习之一
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>Nginx</code> 是非常优秀的开源 Web Server，基本功能包括：</p>
+<ul>
+<li>Web Server</li>
+<li>Serving static content</li>
+<li>Reverse Proxy</li>
+<li>Compression and decompression</li>
+<li>Web content cache</li>
+</ul>
+<p>充当 Web Server ，是 <code>Nginx</code> 最核心的功能。</p>
+<h2>Nginx 是如何处理请求的？</h2>
+<p>我们知道，HTTP 协议可以抽象为<code>Request-Response</code>模型，那么它是如何根据请求做出响应的呢？</p>
+<p><code>Request-Response</code>模型实际是要完成请求到响应文件的映射。
+一个正常的 HTTP Request 类似于：</p>
+<pre><code>{Verb} {路径}
+Host: {域名}或者{IP}:{端口号}
+其他headers
+\r\n
+data
+</code></pre>
+<p>对于 <code>Nginx</code> ，首先关注的不同点就是 <code>Host</code> 、<code>路径</code>。</p>
+<h3>Nginx 是如何匹配 server 的</h3>
+<p>考虑一个常见情况：我们知道，一个物理机之上可以放置多个虚拟服务器，拥有同一个IP、共享80端口，但是拥有不同的域名。</p>
+<p>合理的响应方式必然是要根据收到的<code>HTTP</code>请求中的<code>Host</code>来生成相应网站的响应。 <code>Nginx</code> 的处理方式也符合这样的直觉：</p>
+<ol>
+<li>测试<code>Request</code>的<code>IP</code>、<code>PORT</code>是否和<code>listen</code>指令配置的<code>IP</code>、<code>PORT</code>是否一致，找到匹配<code>IP:PORT</code>的相应服务器。</li>
+<li>在上一步找到的Server基础上，测试<code>Request</code>的<code>HOST</code>是否和<code>server_name</code>指令配置的服务器名是否一致；</li>
+<li>如果匹配<code>server_name</code>这一步未找到，则会交由默认的Server处理（如果未显示定义默认服务器，则默认是第一个）。</li>
+</ol>
+<p>一个常见的 <code>Nginx</code> 配置类似于：</p>
+<pre><code>server {
+    listen      192.168.1.1:80;
+    server_name example.org www.example.org;
+    ...
+}
+
+server {
+    listen      192.168.1.1:80;
+    server_name example.net www.example.net;
+    ...
+}
+
+server {
+    listen      192.168.1.2:80;
+    server_name example.com www.example.com;
+    ...
+}
+</code></pre>
+<p>那么，一个请求满足条件：</p>
+<pre><code>IP 192.168.1.1 
+PORT 80
+域名 www.example.net
+</code></pre>
+<p>则会匹配到配置好的第二个 server 。</p>
+<h3>Nginx 是如何匹配 location 的</h3>
+<p><code>Nginx</code> 对<code>location</code>的匹配顺序规则为：</p>
+<ol>
+<li>first searches for the most specific prefix location given by literal strings regardless of the listed order</li>
+<li>Then nginx checks locations given by regular expression in the order listed in the configuration file ,The first matching expression stops the search and nginx will use this location</li>
+<li>If no regular expression matches a request, then nginx uses the most specific prefix location found earlier.</li>
+</ol>
+<p><code>Nginx</code> 配置：</p>
+<pre><code>server {
+    listen      80;
+    server_name example.org www.example.org;
+    root        /data/www;
+
+    location / {
+        index   index.html index.php;
+    }
+
+    location ~* \.(gif|jpg|png)$ {
+        expires 30d;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass  localhost:9000;
+        fastcgi_param SCRIPT_FILENAME
+                      $document_root$fastcgi_script_name;
+        include       fastcgi_params;
+    }
+}
+</code></pre>
+<p>这段配置中，列出了若干 <code>location</code>配置，所以，一个<code>/index.php</code>请求的匹配过程应该是:</p>
+<ol>
+<li>首先会命中最为具体的prefix location <code>/</code></li>
+<li>然后又会找到第一个匹配到的正则表达式location <code>\.php$</code>，匹配结束</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/build-in/JavaScript-函数参数.html">
+                    JavaScript 函数参数
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-04
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>JavaScript 函数中，有一个本地变量，<code>arguments</code>，这是一个非常原始的货色，</p>
+<ul>
+<li>它暴露的<code>array-like</code>属性我们要将其转换为真正的<code>Array</code>实例。</li>
+<li>它暴露的<code>callee</code>属性绝大多数情况有更好的替代品。</li>
+<li>它暴露的<code>caller</code>属性已经被废弃</li>
+</ul>
+<h2>Array 实例 与 array-like 对象</h2>
+<p>首先有一个基本认识是: <code>arguments</code>并非真正的<code>Array</code>实例，而是一个 <code>array-like</code> 对象。</p>
+<h3>array-like 对象的特征</h3>
+<p>如果一个对象具有以下属性，则可认为是<code>array-like</code>对象</p>
+<ol>
+<li>拥有<code>length</code>属性</li>
+<li>拥有一系列整数属性，范围为 <code>(0...length-1]</code></li>
+</ol>
+<p>和真正的<code>Array</code>实例不同，<code>array-like</code>对象并不具有常见的数组方法，诸如：</p>
+<ul>
+<li>slice()</li>
+<li>forEach()，map()，filter()，reduce()，join()</li>
+<li>push()，pop()，shift()，unshift()</li>
+<li>splice()</li>
+<li>...</li>
+</ul>
+<h3>把 array-like 对象转化为真正的 Array 实例</h3>
+<p>在 <code>ES2015</code> 之前，可以利用</p>
+<pre><code class="language-JavaScript">var slice=Array.prototype.slice;
+var arr=slice.apply(arrayLike); // ES5 以后才支持接受 array-like 参数。IE9 未实现。
+</code></pre>
+<p>示例：</p>
+<pre><code class="language-JavaScript">!function fn(){
+    var args1=Array.prototype.slice.apply(arguments); 
+    var args2=Array.prototype.slice.call(arguments);
+    console.log(`${Array.isArray(args1)} ${args1}`) ;
+    console.log(`${Array.isArray(args2)} ${args2}`) ;
+}(1,2,3,4,5);
+</code></pre>
+<p>输出为:</p>
+<pre><code>true 1,2,3,4,5
+true 1,2,3,4,5
+</code></pre>
+<p>在 <code>ES2015</code> 中 引入了新的方法：</p>
+<pre><code class="language-JavaScript">Array.prototype.from(arrayLike[, mapFn[, thisArg]])
+</code></pre>
+<p>可以实现从 <code>array-like</code> 对象或者是<code>iterable object</code>转化到真正的 <code>Array</code> 实例。</p>
+<h3>把 arguments 转化为真正的 Array 实例</h3>
+<p>除了上文提到的两个转换方法，可以使用<code>ES2015</code>中函数引入了新的特性——<code>rest parameter</code>:</p>
+<pre><code class="language-JavaScript">// ES2015 以前:
+function f(arg1, arg2){
+    var args = Array.prototype.slice.call(arguments, f.length);
+    // args 现在是真正的数组，表示 arguments 的第2项(0-based)之后的所有参数组成的数组
+}
+ 
+// ES2015 :
+function(arg1, arg2, ...args) {
+    // args 现在是真正的数组，表示 arguments 的第2项(0-based)之后的所有参数组成的数组
+}
+</code></pre>
+<h2>arguments 的其他属性</h2>
+<h3>arguments.length</h3>
+<p>这是一个容易被忽略的知识点，<code>arguments</code> 这个伪变量的<code>length</code>属性和函数对象本身的<code>length</code>属性意义并不一致：</p>
+<ul>
+<li>函数对象的<code>length</code>属性是形式参数的个数；</li>
+<li><code>arguments.length</code>属性是某次调用的实际参数的个数。</li>
+</ul>
+<p>示例：</p>
+<pre><code>!function(arg1,arg2){
+    console.log(`function.length:\t${arguments.callee.length}`);
+    console.log(`arguments.length:\t${arguments.length}`);
+}(1,2,3);
+
+</code></pre>
+<p>输出为：</p>
+<pre><code>function.length:        2
+arguments.length:       3
+</code></pre>
+<h2>arguements 与函数的调用关系</h2>
+<p>有两个已经不推荐使用的属性，可以用来表示函数的调用关系：</p>
+<ul>
+<li><code>arguments.callee</code> 指向当前执行的函数。</li>
+<li><code>arguments.caller</code> 指向调用当前函数的函数。</li>
+</ul>
+<p>尽管现在诸多网上资料都会列出这两个属性，但是应当慎重使用<code>callee</code>，禁止使用<code>caller</code> !</p>
+<h3>callee</h3>
+<p><code>callee</code>属性指向当前正在执行的函数。对早期的ES版本，其在匿名函数中有很好的应用场景，比如上文中用之获取正在执行的函数对象的<code>length</code>属性。</p>
+<p>从 ES5 开始，严格模式下禁止使用 <code>arguments.callee()</code>，因为这么调用会造成无法内联、尾递归，另外一个主要原因是递归调用会获取到一个不同的<code>this</code>值。</p>
+<p>为了避免使用<code>arguments.callee</code>，我们可以使用函数表达式来解决问题：</p>
+<pre><code class="language-JavaScript">!function(){
+    const arr=[1,2,3,4,5].map(function factorial (n) {
+        return !(n &gt; 1) ? 1 : factorial(n-1)*n;
+    });
+    console.log(arr);
+}();
+</code></pre>
+<p>输出为：</p>
+<pre><code>[ 1, 2, 6, 24, 120 ]
+</code></pre>
+<h3>caller</h3>
+<p><code>arguemnts.caller</code>属性已经被移除！
+早期主要用于提供调用当前执行函数的函数，这样就可以在执行函数的时候先调用自身。在 JavaScript1.1 曾有实现，然后由于潜在的不安全原因，被移除。
+不要使用！</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/爬虫/Fetch-API-使用代理.html">
+                    Fetch API 使用代理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-01
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>关于<code>node-fetch</code>如何使用代理来发送请求，其官网文档只简单提示可以用<code>agent</code>进行代理：</p>
+<pre><code class="language-JavaScript">{
+    method: 'GET'
+    , headers: {}        // request header. format {a:'1'} or {b:['1','2','3']}
+    , redirect: 'follow' // set to `manual` to extract redirect headers, `error` to reject redirect
+    , follow: 20         // maximum redirect count. 0 to not follow redirect
+    , timeout: 0         // req/res timeout in ms, it resets on redirect. 0 to disable (OS limit applies)
+    , compress: true     // support gzip/deflate content encoding. false to disable
+    , size: 0            // maximum response body size in bytes. 0 to disable
+    , body: empty        // request body. can be a string, buffer, readable stream
+    , agent: null        // http.Agent instance, allows custom proxy, certificate etc.
+}
+</code></pre>
+<p>在<code>npm</code>上搜了下，貌似这个<code>http-proxy-agent</code>包还不错，提供了<code>http.Agent</code>的实现。恰好前两天有人问爬虫问题，顺手就找个免费的代理来测试下：</p>
+<pre><code class="language-JavaScript">const fetch=require('node-fetch');
+const HttpProxyAgent = require('http-proxy-agent');
+ 
+// HTTP/HTTPS proxy to connect to 
+let proxy ='http://112.226.72.152:8888';
+const agent = new HttpProxyAgent(proxy);
+
+fetch('http://gs.amac.org.cn/amac-infodisc/api/pof/manager?page=0&amp;size=20',{
+    method:'POST',
+    headers:{
+        'content-type':'application/json',
+        'referer':'http://gs.amac.org.cn/amac-infodisc/res/pof/manager/index.html',
+        'user-agent':&quot;Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0&quot;,
+    },
+    body:JSON.stringify({}),
+    agent:agent,
+}).then(resp=&gt;{
+    return resp.json();
+})
+.then(info=&gt;{
+    console.log(info);
+})
+.catch(e=&gt;{
+    console.log(e);
+});
+</code></pre>
+<p>顺利的拿到了结果:</p>
+<pre><code>{ content:                                                                                          
+   [ 
+        { 
+            id: '138',                                                                                   
+            managerName: '平安道远投资管理（上海）有限公司',                                             
+            artificialPersonName: '杨晓华',                                                              
+            // ...其他信息省略                                                      
+            primaryInvestType: '证券投资基金' 
+        },
+        {
+            id: '194',                                                                                   
+            managerName: '上海重阳投资管理股份有限公司',                                                 
+            artificialPersonName: '裘国根',                                                              
+            // ...其他信息省略                                                      
+        },           
+        // ...其他信息省略
+   ],
+    totalPages: 899,                                                                                  
+    totalElements: 17973,                                                                             
+    last: false,                                                                                      
+    numberOfElements: 20,                                                                             
+    first: true,                                                                                      
+    sort:                                                                                             
+    [ { direction: 'ASC',                                                                            
+        property: 'registerDate',                                                                    
+        ignoreCase: false,                                                                           
+        nullHandling: 'NATIVE',                                                                      
+        ascending: true } ],                                                                         
+    size: 20,                                                                                         
+    number: 0 
+} 
+</code></pre>
+<p>貌似效果还不错。看来这两天可以写个代理池来提供服务了。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/electron/学习使用Electron编写桌面软件.html">
+                    学习使用Electron编写桌面软件
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-01
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Electron 简介</h2>
+<p>可以复用前端技能（JavaScript、HTML、CSS）来写桌面软件的玩意儿！</p>
+<ol>
+<li>GitHub 出品，于2014年春开源。</li>
+<li>跨平台: Mac, Windows, Linux</li>
+<li>成功案例：<code>Atom</code>编辑器、<code>Visual Studio Code</code> 编辑器，etc</li>
+</ol>
+<p>技术架构：结合<code>Chromium</code>和<code>Node.js</code>二者为一个 runtime（共享同一个 V8 实例）。</p>
+<p>版本更新策略：
+0. <code>Electron</code> 的 <code>Chromium</code> 通常在新的稳定版本发布的一两周内更新。</p>
+<ol>
+<li>每当一个新版本的<code>Node.js</code>发布，<code>Electron</code> 通常会等上一个月才升级（以求更稳定）。</li>
+<li>通常，共用的<code>V8</code>是<code>Chromium</code>所使用的，有时候这意味着要给<code>Node.js</code>打补丁。不管咋说，在<code>Electron</code>中，<code>Node.js</code>和<code>Chromium</code>共享同一个<code>V8</code>。</li>
+</ol>
+<h2>应用编写</h2>
+<p>一个<code>Electron</code>应用就是一个普通的<code>npm</code>包。
+首先在<code>package.json</code>中配好入口文件，顺带设置好脚本启动的命令方便以后从命令行启动：</p>
+<pre><code class="language-JavaScript">{
+    // ...
+    &quot;main&quot;: &quot;start.js&quot;,
+    &quot;scripts&quot;: {
+        &quot;start&quot;: &quot;node_modules/.bin/electron .&quot;,
+    },
+    // ...
+}
+</code></pre>
+<p><code>Electron</code> 执行的时候，会从当前目录的<code>package.json</code>读取<code>main</code>字段规定的入口文件进行启动。</p>
+<p>与普通的JS项目一样，可以无缝使用各种现成的包(轮子)。</p>
+<pre><code class="language-JavaScript">// start.js
+const electron=require('electron');
+const path=require('path');
+
+const app=electron.app;
+const INDEX_HTML_PATH=path.join(__dirname,&quot;dist&quot;,&quot;views&quot;,&quot;login.html&quot;);
+
+let win;
+
+app.on('ready',function(){
+    win=new electron.BrowserWindow();
+    win.loadURL(`file://${INDEX_HTML_PATH}`);
+    win.on('closed',()=&gt;{
+        win=null;
+    });
+});
+
+app.on('window-all-closed', function(){
+    app.quit();
+});
+</code></pre>
+<p>这里 <code>login.html</code> 引用了一个经过<code>webpack</code>打包的脚本，里面使用了<code>React</code>来构建登陆组件——尽管复用我们的前端技能吧！</p>
+<p>运行截图 {% asset_img &quot;electron运行效果截图.jpg&quot; &quot;electron运行效果截图&quot;%}</p>
+<h2>打包</h2>
+<p>我们并不想把所有文件挨个拷给使用者。类似于 <code>Java</code> 的<code>jar</code> 打包，前端界提供了<code>asar</code>。</p>
+<p>安装<code>asar</code>工具，</p>
+<pre><code>&gt; npm install asar -g
+</code></pre>
+<p>打包：</p>
+<pre><code>&gt; asar pack your-proj app.asar
+</code></pre>
+<p><code>asar</code>默认会把<code>node_modules</code>下的文件也打包，在某些时候这是必要的，但是对于大多数前端文件，我们都可以通过<code>webpack</code>整合资源：此时完全可以移除<code>node_modules</code>文件夹再打包，这样总体积就会小很多。</p>
+<h2>分发</h2>
+<p>编写完<code>Electron</code>应用，如何让用户双击执行呢？总不能让用户全局安装<code>electron</code> 在调用命令行启动吧？</p>
+<p>步骤如下：</p>
+<ol start="0">
+<li>首先务必保证，打包好的应用的文件名为<code>app.asar</code></li>
+<li>在应用的工程目录中，找到文件夹<code>node_modules\electron\dist</code>，把<code>dist</code>文件夹整体拷贝出来，</li>
+<li>把打包好的<code>app.asar</code>放入<code>dist/resources/</code>文件夹下</li>
+<li>把<code>dist/electron.exe</code>重命名为你的目标文件名；还可以通过专业工具修改图标、公司名称等。</li>
+<li>把<code>dist</code>文件夹重命名为你任何合适的名称。</li>
+</ol>
+<p>用户双击你重名后的<code>exe</code>文件,即可执行。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page21.html">
+          Previous
+        </a>
+        23 of 32
+        <a href="/posts/page23.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

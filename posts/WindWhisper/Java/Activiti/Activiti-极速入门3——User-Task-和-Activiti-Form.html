@@ -1,0 +1,188 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Java/Activiti/Activiti-极速入门3——User-Task-和-Activiti-Form.html">
+                    Activiti 极速入门3——User Task 和 Activiti Form
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>我们可以通过<code>scriptTask</code>或者<code>serviceTask</code>来处理一些自动化任务，但是，如果需要和人进行交互，则可以使用<code>userTask</code>来完成：
+<code>userTask</code>
+指定<code>activiti:formKey</code>属性使用自己的渲染技术进行模板渲染</p>
+<pre><code class="language-XML">&lt;startEvent id=&quot;theStart&quot; activiti:formKey=&quot;your.form&quot; /&gt;
+</code></pre>
+<p>利用<code>activiti:formProperty</code>定义表单属性，</p>
+<pre><code class="language-XML">&lt;userTask id=&quot;myUserTask&quot; name=&quot;Enter Data&quot; 
+    activiti:assignee=&quot;${initiator}&quot; 
+    activiti:candidateGroups=&quot;kezhang&quot; &gt;
+    &lt;extensionElements&gt;
+        &lt;activiti:formProperty id=&quot;name&quot; name=&quot;Full Name&quot; type=&quot;string&quot;&gt; &lt;/activiti:formProperty&gt;
+        &lt;activiti:formProperty id=&quot;age&quot; name=&quot;age&quot; type=&quot;long&quot; required=&quot;true&quot;&gt;&lt;/activiti:formProperty&gt;
+    &lt;/extensionElements&gt;
+&lt;/userTask&gt;
+</code></pre>
+<p>一旦表单被提交，表单中的字段就会被以流程变量存储于流程上下文中，默认的类型是<code>String</code>，其他支持的类型包括<code>long</code>, <code>Boolean</code>, <code>enum</code>, 和<code>date</code> 。</p>
+<p>服务<code>FormService</code>可以访问<code>userTask</code> 或<code>startEvent</code>定义的<code>formProperty</code>，也可以被用来提交表单字段来完成特定的<code>userTask</code>。</p>
+<pre><code class="language-Java">
+// Task task = ...
+FormData formData = formService.getTaskFormData(task.getId());
+
+Map&lt;String, Object&gt; variables = new HashMap&lt;String, Object&gt;();
+for (FormProperty formProperty : formData.getFormProperties()) {
+    // get type 
+    formProperty.getType();
+    // get name
+    formProperty.getName();
+    // get id
+    formProperty.getId();
+    // value= ...
+    Object value /=* via input or sthm */ ;
+    variables.put(formProperty.getId(), value);
+}
+taskService.complete(task.getId(), variables);
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

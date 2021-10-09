@@ -1,0 +1,192 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/OpenShift-宕机？.html">
+                    OpenShift 宕机？
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-10-22
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>凌晨00:20左右，突然发现本博客网站不能访问：</p>
+<p>{% asset_img &quot;博客网站故障.jpg&quot; &quot;openshift控制台无法打开&quot; %}</p>
+<p>这倒霉劲！这才部署几天啊！</p>
+<p>然后开始排查原因之旅。</p>
+<h2>域名、DNS</h2>
+<p>由于图便宜、省事，网站放在墙外、域名也没备案，尽管用了百度云加速，在国内访问本网站仍然常有不稳定现象发生。
+所以首先怀疑的是<code>DNS污染</code>,类似之前<a href="http://www.itminus.com/2015/08/14/Misc/Github-and-DNS-Hijacking-by-Somebody/">写的这篇博文</a>。于是开VPN远程登陆另一地区的某台服务器，发现我部署在上面的监控程序也捕获到了博客异常。
+于是搭梯子访问，依然如此。</p>
+<h2>OpenShift 宕机了吗？</h2>
+<p>我开始意识到了事情绝非那么简单，于是想登陆<code>OpenShift</code>控制台，看看我的程序是不是挂了。然后发现：</p>
+<p>{% asset_img &quot;openshift控制台无法打开.jpg&quot; &quot;openshift控制台无法打开&quot; %}</p>
+<p><code>OpenShift</code> 的 Web 控制台竟然也挂了。</p>
+<p>恰在此时，收到了百度短信推送：</p>
+<blockquote>
+<p>[百度]你好，你的网站http://www.itminus.com 发现运行故障！发现时间：2016-10-22 00:54:00。请及时登录百度云观测处理，以免引起损失&lt;百度云观测&gt;</p>
+</blockquote>
+<p>一不小心点到网站的连接，竟然正常了？拿电脑再次访问，竟然也正常。</p>
+<p>不过我好奇的是百度云加速提示我的<code>1001</code>错误到底是什么，在<a href="http://anquan.baidu.com/bbs/forum.php?mod=viewthread&amp;tid=371363&amp;page=1#pid1989640">百度云加速FAQ</a>查到：</p>
+<p>{% asset_img &quot;百度云-FAQ-1001.jpg&quot; &quot;百度云-FAQ-1001&quot; %}</p>
+<p>非常奇怪！百度云糊涂了吗？因为在这几日网站都是正常的，最近又没改动过什么，域名映射为啥不对？不管了，反正网站正常了。</p>
+<p>谁知道，一眨眼功夫，再一访问又是提示这个错误！于是我连忙试了下部署在<code>OpenShift</code>的其他几个网站，发现竟然也都无法访问。
+到这里我心里反倒安定了下来：应该不是我网站本身的问题了。</p>
+<h2>DDoS</h2>
+<p>既然已经确认不是我网站本身问题，那就静待处理结果吧！</p>
+<p>夜里又收到了两条百度推送：</p>
+<blockquote>
+<p>[百度]运行故障恢复（部分地区）：你好，你的网站http://www.itminus.com 发生的运行故障已在部分地区恢复！恢复时间：2016-10-22 04:44:00。查看更多详情，请登录&lt;百度云观测&gt;</p>
+</blockquote>
+<blockquote>
+<p>[百度]运行故障恢复（全部地区）：你好，你的网站http://www.itminus.com 已从运行故障中恢复！恢复时间：2016-10-22 06:34:00。查看更多详情，请登录&lt;百度云观测&gt;</p>
+</blockquote>
+<p>第二天一早，还是觉得很蹊跷，<code>OpenShift</code> 官网也没放出消息。记得前几日黑客余弦微博上发了一个重磅消息说最近 Mirai DDoS 攻击源码被放出来，难道是机器人大军捣得鬼？
+用关键词 openshift hack attack ddos 组合着搜了下，发现最近几日很多网站都遭到了 <code>DDoS</code>攻击 ,但是目前没发现有关<code>OpenShift</code>的新闻。</p>
+<p>看来要成无头冤案了?</p>
+<h2>案件回头看</h2>
+<p>下午一上知乎，就看到了<a href="https://www.zhihu.com/question/51848100">相关讨论</a>。 这感情好……<code>GitHub</code>、<code>Twitter</code>、<code>Visa</code>、<code>Heroku</code>数不清的各大网站都受到了影响！
+大神王音也怀疑是<a href="https://www.zhihu.com/question/51848100">Mirai源代码的公开有关</a></p>
+<p>回头看：当时看百度云加速提示的1001错误，觉得很奇怪，近期并为改动，为什么会报这个错误？
+现在在才明白：原来这场 <code>DDoS</code> 攻击了诸多目标，其中就包括美国最主要的DNS服务商，直接效果就是导致我在<code>OpenShift</code>上的二级域名解析失败，所以百度云报&quot;无法访问源站服务器&quot;。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

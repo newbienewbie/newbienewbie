@@ -1,0 +1,444 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/css/响应式网格系统的实现原理.html">
+                    响应式网格系统的实现原理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-12-03
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>响应式布局的基本原理</h2>
+<p>由于CSS的覆盖特性，我们可以先写一般性的通用样式，然后再编写特殊的样式对细节进行调整。为了编写一个响应式页面，可以有两种策略：</p>
+<ul>
+<li>对于一个 <code>desktop-first view</code>, 应该先设置大屏幕的样式，然后根据媒体查询，依次为更小的屏幕设置样式（即根据 <code>max-width</code> 从大到小的顺序依次设置样式）</li>
+<li>对于一个 <code>mobile-first view</code> , 应该先设置小屏幕样式，然后根据根据媒体查询，依次为更大的屏幕设置样式（即根据 <code>min-width</code> 从小大到大的顺序依次设置样式）</li>
+</ul>
+<p>设有一个<code>header</code>元素，现在采用 <code>mobile-first view</code> 策略。则其<code>CSS</code>规则可以写作: <!-- more --></p>
+<pre><code class="language-CSS">header {
+    width: 50%;
+}
+@media (min-width: 576px) {
+    header {
+        width: 75%;
+    }
+}
+@media (min-width: 768px) {
+    header {
+        width: 100%;
+    }
+}
+@media (min-width: 992px) {
+    header {
+        width: 100%;
+        color: gray;
+    }
+}
+</code></pre>
+<p>直接采用<code>CSS</code>弊端很多，比如这里的最低宽度定义是硬编码。为了简便起见，可以使用<code>SCSS</code>定义一个<code>@mixin</code></p>
+<pre><code class="language-SCSS">@mixin forLargerThan($media) {
+    @media (min-width: $media/16+em) { 
+        @content; 
+    }
+}
+</code></pre>
+<p>然后即可进行覆盖式的声明:</p>
+<pre><code class="language-SCSS">header {
+    width: 50%;
+    // ... 其他声明
+    @include forLargerThan(576) {
+        width: 70%;
+        // 其他声明
+    }
+    @include forLargerThan(768) {
+        width: 100%;
+        // 其他声明
+    }
+    @include forLargerThan(992) {
+        width: 100%;
+        // 其他声明
+    }
+}
+</code></pre>
+<p>类似地，我们还可以定义一个用于<code>desktop-first view</code>的<code>@mixin</code>:</p>
+<pre><code class="language-SCSS">@mixin forSmallerThan($media) {
+    @media (max-width: $media/16+em) { 
+        @content; 
+    }
+}
+</code></pre>
+<p>然后根据屏幕尺寸上限(<code>max-width</code>)从大到小的顺序，依次设置断点即可。</p>
+<h2>响应式网格系统的设计</h2>
+<p>网格式并不必然和响应式挂钩，在响应式设计出现之前，就有很多网格式方案出现。为了让网格布局系统支持响应式，我们可以利用上文定义的<code>forLargerThan($media)</code>的<code>@mixin </code>，为不同大小的屏幕预定义一些样式类。这里采用12栅格的网格系统。</p>
+<h3>基于 float 的网格布局</h3>
+<p>实现网格布局，兼容性最好的实现方式是在同行网格之间采用<code>float</code>布局。其实现思想非常简单：</p>
+<pre><code class="language-SCSS">.row{
+    &amp;:before,&amp;:after { content: ''; display: table; }
+    &amp;:after { clear: both; }
+}
+
+.grid {
+    &amp;_1, &amp;_2, &amp;_3, &amp;_4, &amp;_5, &amp;_6, &amp;_7, &amp;_8, &amp;_9, &amp;_10, &amp;_11, &amp;_12 {
+        float: left;
+        margin: 0 10px;
+    }
+}
+</code></pre>
+<p>当然，上述代码只是简单定义了浮动的样式实现网格并排排列。为了适配不同尺寸的屏幕，还需要采用媒体查询定义各网格在不同屏幕下的具体宽度：</p>
+<pre><code class="language-SCSS">// 先为 desktop 定义默认的样式:
+.grid-container {
+    width: 980px;
+    padding: 0 10px;
+    margin: auto;
+    @include forSmallerThan(980px) { width: 768px; }
+    @include forSmallerThan(768px) { width: 640px; }
+    @include forSmallerThan(640px) { width: 480px; }
+    @include forSmallerThan(480px) { width: 320px; padding: 0; }
+
+    .grid_12 { 
+        width: 940px; 
+        @include forSmallerThan(980px) { width: 728px; }
+        @include forSmallerThan(768px) { width: 600px; }
+        // .... 在更小尺寸的屏幕上的宽度省略
+    }
+
+    .grid_11 { 
+        // ... 不同屏幕下的宽度定义省略
+    }
+
+    // .... 其他网格
+
+    .grid_1 { 
+        width: 140px;
+        @include forSmallerThan(980px){
+            ...
+        }
+        // ...
+    }
+}
+</code></pre>
+<p>基于<code>float</code>布局最大的问题是对不同屏幕的宽度难以自动计算宽度。</p>
+<h3>基于<code>flexbox</code>的网格布局</h3>
+<p>为了克服<code>float</code>网格布局的缺点，可以采用<code>flexbox</code>布局作为基础实现网格系统。<code>Bootstrap v4</code> 便是采用了这一方案。</p>
+<h4>尺寸命名与响应式</h4>
+<p><code>Bootstrap</code>将一些屏幕尺寸称呼如下：</p>
+<table>
+<thead>
+<tr>
+<th>命名</th>
+<th>最小尺寸值</th>
+<th>缩写</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>extra small</td>
+<td>&lt;  576px</td>
+<td>xs</td>
+</tr>
+<tr>
+<td>small</td>
+<td>&gt;= 576px</td>
+<td>sm</td>
+</tr>
+<tr>
+<td>medium</td>
+<td>&gt;=768px</td>
+<td>md</td>
+</tr>
+<tr>
+<td>large</td>
+<td>&gt;=992px</td>
+<td>lg</td>
+</tr>
+<tr>
+<td>extra large</td>
+<td>&gt;=1200px</td>
+<td>xl</td>
+</tr>
+</tbody>
+</table>
+<p>具体的<code>breakpoints</code>定义为一个<code>map</code>，预定义的<code>$breakpoints</code>为:</p>
+<pre><code class="language-SCSS">$grid-breakpoints: (
+    xs: 0,
+    sm: 576px,
+    md: 768px,
+    lg: 992px,
+    xl: 1200px
+) !default;
+</code></pre>
+<p><code>Bootstrap</code>采用的是<code>mobile-first</code>策略。和<code>$forLargerThan</code>类似，<code>Bootstrap</code>定义了以下<code>@mixin</code>:</p>
+<pre><code class="language-SCSS">@mixin media-breakpoint-up($name, $breakpoints: $grid-breakpoints) {
+
+    // 获取与断点名相对应的最小宽度
+    $min: breakpoint-min($name, $breakpoints);
+
+    @if $min {
+        @media (min-width: $min) {
+            @content;
+        }
+    } @else {
+        @content;
+    }
+}
+</code></pre>
+<p>这个<code>@mixin</code>允许我们为不同尺寸的屏幕定义媒体查询。更方便的是，这个<code>@mixin</code>允许采用断点名来设置断点。</p>
+<h4>分栏定义</h4>
+<p>预定义的栅格栏数为12：</p>
+<pre><code class="language-SCSS">$grid-columns: 12 !default;
+</code></pre>
+<p>为了方便，定义的几个关键<code>@mixin</code>来创建容器、行、列：</p>
+<pre><code class="language-SCSS">@mixin make-container() {
+    width: 100%;
+    padding-right: ($grid-gutter-width / 2);
+    padding-left: ($grid-gutter-width / 2);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+@mixin make-row() {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: ($grid-gutter-width / -2);
+    margin-left: ($grid-gutter-width / -2);
+}
+
+@mixin make-col($size, $columns: $grid-columns) {
+    flex: 0 0 percentage($size / $columns);
+    // Add a `max-width` to ensure content within each column does not blow out
+    // the width of the column. Applies to IE10+ and Firefox. Chrome and Safari
+    // do not appear to require this.
+    max-width: percentage($size / $columns);
+}
+</code></pre>
+<h4>响应式栅格系统</h4>
+<p>要预定义样式，就是要指定每种栏在不同屏幕下的样式。显然，通过遍历<code>$grid-columns</code>和<code>$grid-breakpoints</code>即可完成:</p>
+<pre><code class="language-SCSS">@mixin make-grid-columns($columns: $grid-columns, $gutter: $grid-gutter-width, $breakpoints: $grid-breakpoints) {
+
+    // Common properties for all breakpoints
+    %grid-column {
+        position: relative;
+        width: 100%;
+        min-height: 1px; // Prevent columns from collapsing when empty
+        padding-right: ($gutter / 2);
+        padding-left: ($gutter / 2);
+    }
+
+    @each $breakpoint in map-keys($breakpoints) {
+
+        // Returns a blank string if smallest breakpoint, 
+        // otherwise returns the name with a dash infront
+        // eg : &quot;&quot; || &quot;-sm&quot;
+        $infix: breakpoint-infix($breakpoint, $breakpoints);
+
+        // Allow columns to stretch full width below their breakpoints
+        @for $i from 1 through $columns {
+            .col#{$infix}-#{$i} {
+                @extend %grid-column;
+            }
+        }
+
+        .col#{$infix}, .col#{$infix}-auto {
+            @extend %grid-column;
+        }
+
+        @include media-breakpoint-up($breakpoint, $breakpoints) {
+            // Provide basic `.col-{bp}` classes for equal-width flexbox columns
+            .col#{$infix} {
+                flex-basis: 0;
+                flex-grow: 1;
+                max-width: 100%;
+            }
+            .col#{$infix}-auto {
+                flex: 0 0 auto;
+                width: auto;
+                max-width: none; // Reset earlier grid tiers
+            }
+
+            @for $i from 1 through $columns {
+                .col#{$infix}-#{$i} {
+                    @include make-col($i, $columns);
+                }
+            }
+
+            .order#{$infix}-first {
+                order: -1;
+            }
+
+            @for $i from 1 through $columns {
+                .order#{$infix}-#{$i} {
+                    order: $i;
+                }
+            }
+
+            // `$columns - 1` because offsetting by the width of an entire row isn't possible
+            @for $i from 0 through ($columns - 1) {
+                @if not ($infix == &quot;&quot; and $i == 0) { // Avoid emitting useless .offset-0
+                    .offset#{$infix}-#{$i} {
+                        @include make-col-offset($i, $columns);
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+<p>最后，即可使用预设的样式类为不同尺寸的屏幕定义网格</p>
+<pre><code class="language-HTML">&lt;div class=&quot;container&quot;&gt;
+    &lt;div class=&quot;row&quot;&gt;
+        &lt;div class=&quot;col-sm&quot;&gt;
+            One of three columns
+        &lt;/div&gt;
+        &lt;div class=&quot;col-sm&quot;&gt;
+            One of three columns
+        &lt;/div&gt;
+        &lt;div class=&quot;col-sm&quot;&gt;
+            One of three columns
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<p>注意，这里采用的样式类是<code>col-sm</code>，而不是<code>col-sm-4</code>。由于采用<code>flexbox</code>实现，其宽度会自动设定。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

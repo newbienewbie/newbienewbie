@@ -1,0 +1,314 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/Rust-WASM/Rust与WebAssembly 2——stdweb.html">
+                    Rust与WebAssembly 2——stdweb
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在上一篇笔记里，记录了<code>Rust</code>如何编译到<code>WASM</code>，这一篇我们将重点放在<code>stdweb</code>编写一个<code>Hello,world</code>上。首先创建一个项目：</p>
+<pre><code>cargo new helloworld --bin
+</code></pre>
+<p>添加依赖：</p>
+<pre><code class="language-toml">[dependencies]
+stdweb =&quot;0.4&quot;
+</code></pre>
+<p>然后即可开始编码了。</p>
+<h2>如何控制浏览器</h2>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/Rust-WASM/Rust与WebAssembly 1——编译.html">
+                    Rust与WebAssembly 1——编译
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>如何编译到<code>WebAssembly</code></h2>
+<p>目前而言，<code>WebAssembly</code>并无<code>GC</code>，各种其他能力也还在蓬勃开发之中。根据<a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Concepts">Mozilla文档</a>，当下能靠谱的编译到<code>WebAssembly</code>尚只有三种语言：</p>
+<ol>
+<li><code>C</code></li>
+<li><code>C++</code></li>
+<li><code>Rust</code></li>
+</ol>
+<p>对于<code>Rust</code>而言，目前可以采用如下方案:</p>
+<ol>
+<li>Rust with Emscripten ：走<code>C/C++</code>一样的路线</li>
+<li>Rust without Emscripten : 2017年11月底的时候，<code>Rust</code>的<code>nightly</code>版本支持<code>target=wasm32-unknown-unkonwn</code>，可以无需<code>emscripten</code>直接编译<code>wasm</code></li>
+</ol>
+<h3>工具链和编译目标的安装</h3>
+<p>这里以编译到<code>wasm32-unknown-unknown</code>为例。编译目标设置为<code>wasm32-unknown-unnkown</code>，好处是不用再依赖<code>emscripten</code>，不过目前而言，此特性尚未加到<code>stable</code>中去，只能在<code>nightly</code>版本中使用(随着<code>Rust</code>官方在<code>WebAssembly</code>领域的持续发力，这个方案会越来越成熟)。首先当然是需要安装<code>nightly</code>版本：</p>
+<pre><code>rustup toolchain install nightly     
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/智能指针/Rust智能指针4——引用计数型智能指针.html">
+                    Rust智能指针4——引用计数型智能指针
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>智能指针并非什么新概念，<code>C++</code>里随处可见。所谓智能指针，其本身是一个数据结构，可以表现得像一个指针(得益于<code>Deref</code>)，往往还能自动析构资源(益于<code>Drop</code>)。</p>
+<p><code>Rust</code>在标准库中提供了很多种智能指针。这篇笔记要说的都是引用计数型指针，比如</p>
+<ol>
+<li><code>Rc&lt;T&gt;</code>(及<code>std::rc::Weak&lt;T&gt;</code>) : 引用计数型智能指针，适用于单线程场景的共享。</li>
+<li><code>Arc&lt;T&gt;</code>(及<code>std::sync::Weak&lt;T&gt;</code>) ：原子的引用计数型智能指针，适用于多线程场景的共享。</li>
+<li><code>RefCell&lt;T&gt;</code>等。</li>
+</ol>
+<h2><code>std::rc::Rc&lt;T&gt;</code>及<code>std::rc::Weak&lt;T&gt;</code></h2>
+<p>所谓<code>Rc</code>，意指<code>Reference Count</code>，也即“引用计数”。还记得 <a href="http://www.itminus.com/blog/2017/12/29/WindWhisper/Rust/%E6%89%80%E6%9C%89%E6%9D%83%E7%B3%BB%E7%BB%9F/%E6%89%80%E6%9C%89%E6%9D%83%E7%B3%BB%E7%BB%9F1%E2%80%94%E2%80%94%E4%B8%96%E7%95%8C%E8%A7%82/">所有权规则</a> 吗？</p>
+<blockquote>
+<ol>
+<li><code>Rust</code>中每个值都有一个相应的变量，称之为<code>owner</code>。</li>
+<li>一个值在一个时刻只能有一个<code>owner</code>。</li>
+<li>一旦到了作用域(<code>scope</code>)之外，与<code>owner</code>相应的值就会被丢弃(<code>drop</code>)。</li>
+</ol>
+</blockquote>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/智能指针/Rust智能指针3——引用、原始指针与内部可变性.html">
+                    Rust智能指针3——引用、原始指针与内部可变性
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>本文是正式开始智能指针之前的基础知识之三：引用、原始指针、与内部可变性。</p>
+<h2>引用和原始指针</h2>
+<p><code>Rust</code>中的引用在本质上就是指针，并没有什么黑魔法。对于原始指针和普通引用，在运行时，二者所指的内容完全一致。事实上，普通引用(<code>&amp;T</code>、<code>&amp;mut T</code>)都会被编译器隐式转化为原始指针(<code>*const T</code>、<code>*mut T</code>)，只不过这个转化是安全的。在<code>Rust</code>中，有两类原始指针：</p>
+<ol>
+<li><code>*const T</code> : 类似于 <code>&amp;T</code>引用，不可变</li>
+<li><code>*mut T</code>   : 类似于 <code>&amp;mut T</code>，可变</li>
+</ol>
+<p>以<code>*const T</code>为例，可以把<code>&amp;T</code>进行显式转换：</p>
+<pre><code class="language-Rust">let x = 42;
+let raw_pointer = &amp;x as *const i32;
+</code></pre>
+<p>或者可以写成这样：</p>
+<pre><code class="language-Rust">let x: i32 = 10;
+let raw_pointer: *const i32 = &amp;x;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/智能指针/Rust智能指针1——解引用.html">
+                    Rust智能指针1——解引用
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-27
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>本文是正式开始智能指针学习之前的基础知识之一：解引用。</p>
+<p><code>Deref</code>这个<code>trait</code>允许我们在一定形式上重载<code>*</code>操作符。换言之，通过智能指针实现<code>Deref</code>的方式，就能让智能指针被当作一个普通引用来使用：在那些需要操作引用的地方，我们也可以直接使用智能指针。</p>
+<h2><code>*</code>操作符的工作机制</h2>
+<p>在本质上，<code>Rust</code>中的常规引用是与<code>C</code>语言中的指针相等价的，而<code>*</code>操作符所做的就是解引用。以下这段<code>Rust</code>代码和<code>C</code>的指针用法完全一致：</p>
+<pre><code class="language-Rust">fn main() {
+    let x = 42;
+    let y = &amp;x;
+
+    assert_eq!(42, x);
+    assert_eq!(42, *y);
+}
+</code></pre>
+<p>在上述例子中，<code>y</code>是个常规引用，<code>*</code>操作符会顺着指针进行取值。事实上，如果一个任意类型实现了<code>Deref</code>，<code>Rust</code>编译器就会自动对<code>*</code>解引用操作进行替换：先进行<code>Deref</code>的<code>deref()</code>方法调用，然后再对返回值进行一个普通的解引用。</p>
+<p>举个例子，为了获取宇宙的终极奥秘，我们写一个任意类型：</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page8.html">
+          Previous
+        </a>
+        10 of 32
+        <a href="/posts/page10.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

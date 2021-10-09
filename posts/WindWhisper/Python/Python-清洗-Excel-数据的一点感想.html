@@ -1,0 +1,240 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Python/Python-清洗-Excel-数据的一点感想.html">
+                    Python 清洗 Excel 数据的一点感想
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-03
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这两年我是不大碰<code>Python</code>的，原因是我觉得搞网站、写爬虫、干自动化任务，用<code>Node.Js</code>编写速度更快、运行效率更高。但是最近在成都集中办公，作为数据组，主要工作就是要清洗数据，需要大量处理<code>Excel</code>，由于不太喜欢<code>VB</code>那啰嗦的语法，用<code>JScript</code>操作<code>Excel</code>又非常不得劲，于是不得不捡起<code>Python</code>：无他，简单，会得人多，库也就多。这两年<code>Python</code>在数据处理领域占据了绝对优势。</p>
+<p>吐槽一句，这么多年来，<code>Python</code>一直以优雅自居。但是缩进语法并非表面上那样优雅，起码面对多行匿名函数的时候，始终优雅不起来。</p>
+<h2>工具</h2>
+<ul>
+<li><code>IPython</code>是个非常有意思的工具，但是貌似不提供<code>VIM</code>的键盘模式，于是照例在<code>VSCode</code>中安装<code>Jupyter</code>插件，从而兼得编辑器和<code>IPython</code>。</li>
+<li>使用<code>xlwings</code>操作<code>Excel</code></li>
+</ul>
+<h2>Python 操作 Excel 的一个例子</h2>
+<p>需求：有一个<code>Excel</code>表，其中某个<code>Sheet</code>的结构为：</p>
+<ul>
+<li>井号</li>
+<li>分层单位</li>
+<li>层位</li>
+<li>...</li>
+</ul>
+<p>同一个井，不同的分层单位又不通的分层方案。总记录行数约为11万，其中有大量数据的层位数据有误，但是对于同一个分层单位对同一个井的分层方案，有目前以下规律：</p>
+<ol>
+<li>由于<code>T3h1</code>跟下层是整合关系，故其下伏层必定是应该<code>T3a4</code>或者<code>T3a</code>。</li>
+<li>如果<code>T3h1</code>之后是<code>T3a4</code>地层，且再之下的下伏层是<code>T3a</code>组内的，必定只能是<code>T3a3</code>，也就是说不能是<code>T3a1</code>或<code>T3a2</code>。</li>
+<li>类似的，<code>T3a3</code>下伏层出现的<code>T3a</code>组的地层，只能是<code>T3a2</code>；<code>T3a2</code>下伏层出现的<code>T3a</code>组的地层，只能是<code>T3a1</code>。</li>
+<li>任何一个层位<code>T3a${i}</code>（i=1,2,3）,都可以缺失掉，然后直接跳到其他组的层位.</li>
+</ol>
+<p>起初我觉得要修改的数据量不大，直接在<code>Excel</code>中手工修改，后来才发现严重低估了这个工作量，大约耗费了我20分钟，我才意识到要修改的记录量可能要到数万，于是采用编程解决。</p>
+<p>编程有两种思路：一、通过相关接口直接操作<code>Excel</code>表；二、读取<code>Excel</code>内容到内存或者数据库，然后修改后存回。由于其他字段有许多<code>Excel</code>样式，故直接采用思路一。</p>
+<h3>使用<code>Python</code>编写脚本</h3>
+<p>尽管层位出现的各类情况很多，但是经过思考就可以发现，只要按照分层单位、深度排序，层位<code>T3a${i}</code>只能出现在<code>T3h1</code>的后四个记录里。所以基本思路是找到层位字段值是<code>T3h1</code>的记录，然后向下搜寻四个，如果是<code>T3a</code>组的层段，则根据情况修改为对应的层位记录即可。</p>
+<p>起手式必然是应该打开<code>Excel</code>，读入数据：</p>
+<pre><code class="language-Python">import xlwings as xw
+
+
+book= xw.Book(r&quot;./地质研究_07地层分层信息 合表 201708.03.01-P2.xlsx&quot;)
+sht=book.sheets[&quot;合表&quot;]
+</code></pre>
+<p>顺带封装下获取相应列字段的函数：</p>
+<pre><code class="language-Python">def getWell(rowNumber):
+    return sht.range(&quot;B&quot;+str(rowNumber)).value
+
+def getLayerDept(rowNumber):
+    return sht.range(&quot;E&quot;+str(rowNumber)).value
+
+def getLayer(rowNumber):
+    return sht.range(&quot;G&quot;+str(rowNumber)).value
+
+
+</code></pre>
+<p>然后是对修改后续某偏移行的层位的帮助方法：</p>
+<pre><code class="language-Python">def modifyNext(well,layer_dept,currentRowNumber,offset=1,layer=&quot;T2a4&quot;):
+
+    # 偏移行的井名
+    _well= getWell(currentRowNumber+offset)
+    # 偏移行的分层单位
+    _layer_dept=getLayerDept(currentRowNumber+offset)
+    # 偏移行的层位
+    _layer=getLayer(currentRowNumber+offset)
+
+    # 如果偏移行的井名或分层单位和给定的井位及分层单位不匹配，则什么也不做
+    if(not well==_well or not layer_dept==_layer_dept):
+        return
+
+    if(_layer.startswith(&quot;T2a&quot;)):
+        sht.range(&quot;G&quot;+str(currentRowNumber+offset)).value=layer
+        sht.range(&quot;G&quot;+str(currentRowNumber+offset)).color=(254,226,239)
+</code></pre>
+<p>然后就是迭代搜查修改的主程序了：</p>
+<pre><code class="language-Python">arr=sht.range(&quot;G1&quot;).expand('down').value
+for (idx,value) in enumerate(arr) :
+    if(value==&quot;T3h1&quot;):
+        currentRowNumber=idx+1
+        # 检查下一行
+        if(arr[idx+1]==&quot;T2a&quot;):
+            pass
+        elif( arr[idx+1]==&quot;T2a4&quot; and arr[idx+2]==&quot;T2a3&quot;):
+            pass
+        else:
+            print(&quot;!发现可疑错误：G&quot;,idx,&quot;尝试修正后续4个层位...&quot;)
+            xw.Range(&quot;G&quot;+str(currentRowNumber)).color=(0,255,0)
+            well=getWell(currentRowNumber)
+            layer_dept=getLayerDept(currentRowNumber)
+            modifyNext(well,layer_dept,currentRowNumber,1,&quot;T2a4&quot;)
+            modifyNext(well,layer_dept,currentRowNumber,2,&quot;T2a3&quot;)
+            modifyNext(well,layer_dept,currentRowNumber,3,&quot;T2a2&quot;)
+            modifyNext(well,layer_dept,currentRowNumber,4,&quot;T2a1&quot;)
+
+print(&quot;done&quot;)
+</code></pre>
+<h2>一句话总结</h2>
+<p>库多真好。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

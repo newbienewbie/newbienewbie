@@ -1,0 +1,798 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/配置Symfony.html">
+                    Symfony配置
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>运行环境</h2>
+<p>如前所述，Symfony自带三种运行环境，prod、dev、和test。
+AppKernel会根据当前运行环境自动加载位于app/config/下的对应的配置文件,如</p>
+<ul>
+<li>config_dev.yml</li>
+<li>config_prod.yml</li>
+<li>config_test.yml</li>
+</ul>
+<p>这些配置文件的加载规则都非常简单，仅仅只是通过拼凑出<code>config_&lt;environment&gt;.yml</code>这样的配置文件名来实现的：</p>
+<pre><code class="language-PHP">   # app/AppKernel.php 
+
+    public function registerContainerConfiguration(LoaderInterface $loader) {
+        $loader-&gt;load($this-&gt;getRootDir().'/config/config_'.$this-&gt;getEnvironment().'.yml');
+    }
+
+</code></pre>
+<h2>配置文件的格式</h2>
+<p>Symfony支持各类配置格式,默认采用YAML。在YAML中，采用如下约定：</p>
+<ol>
+<li>imports: 类似于PHP的include，确保要导入的配置文件被优先加载。</li>
+<li>顶级entry: 为特定的bundle定义配置。</li>
+</ol>
+<p>借助于<code>imports</code>可以导入基准的config.yml文件，然后对部分需要修改的部分entry进行覆写操作。</p>
+<p>比如：<code>config_dev.yaml</code>结构为：</p>
+<pre><code class="language-YAML">imports:
+    - { resource: config.yml }
+
+framework:
+    router:
+        resource: &quot;%kernel.root_dir%/config/routing_dev.yml&quot;
+        strict_requirements: true
+    profiler: { only_exceptions: false }
+
+web_profiler:
+    # ...
+
+monolog:
+    # ...
+
+assetic:
+    # ...
+
+#swiftmailer:
+#    delivery_address: me@example.com
+</code></pre>
+<p>事实上，Symfony的配置文件都采用了类似的结构。通过这样的导入-覆写操作，可以保持代码独立、避免重复代码（DRY原则）。</p>
+<p>在命令行下可以用</p>
+<pre><code class="language-Bash">app/console config:dump-reference BundleName
+</code></pre>
+<p>导出某一个Bundle默认的配置。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony-Translation.html">
+                    Symfony Translation
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>翻译的过程可以理解为从消息<code>message</code>到译文<code>translation</code>的过程。Symfony/Translation这个组件的工作流程大致可以分为三步：</p>
+<ol start="0">
+<li>创建翻译器</li>
+<li>为翻译器添加资源: <code>source</code>到<code>target</code>的消息映射关系</li>
+<li>根据<code>domain</code>、<code>locale</code>及对应的<code>message</code>给出译文<code>translation</code>。</li>
+</ol>
+<h2>创建翻译器</h2>
+<p>翻译器的创建非常简单，仅需提供一个默认的<code>locale</code>值：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\Translator;
+
+$translator=new Translator('fr_FR');    #默认locale='fr_FR'
+</code></pre>
+<p>所谓<code>locale</code>，大致可以当成一个指代用户语言和国家/地区的字符串。推荐用
+<code>ISO639-1LanguageCode_ISO3166-1Alpha-2CountryCode&gt;</code>
+这样的格式来表示。比如：<code>fr_FR</code>。</p>
+<h2>翻译资源的加载</h2>
+<h3>Translation Resources</h3>
+<p>Translation Resources定义了一组从源(<code>source</code>)到目标<code>target</code>的消息映射关系。这种映射关系可以用不同的形式来表达，比如XML：</p>
+<pre><code class="language-XML">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xliff version=&quot;1.2&quot; xmlns=&quot;urn:oasis:names:tc:xliff:document:1.2&quot;&gt;
+    &lt;file source-language=&quot;en&quot; datatype=&quot;plaintext&quot; original=&quot;file.ext&quot;&gt;
+        &lt;body&gt;
+            &lt;trans-unit id=&quot;1&quot;&gt;
+                &lt;source&gt;Symfony is great&lt;/source&gt;
+                &lt;target&gt;J'aime Symfony&lt;/target&gt;
+            &lt;/trans-unit&gt;
+            &lt;trans-unit id=&quot;2&quot;&gt;
+                &lt;source&gt;symfony.great&lt;/source&gt;
+                &lt;target&gt;J'aime Symfony&lt;/target&gt;
+            &lt;/trans-unit&gt;
+        &lt;/body&gt;
+    &lt;/file&gt;
+&lt;/xliff&gt;
+</code></pre>
+<p>又如YAML：</p>
+<pre><code class="language-YAML">Symfony is great: J'aime Symfony
+symfony.great:    J'aime Symfony
+</code></pre>
+<p>再如PHP的Array：</p>
+<pre><code class="language-PHP">return array(
+    'Symfony is great' =&gt; 'J\'aime Symfony',
+    'symfony.great'    =&gt; 'J\'aime Symfony',
+);
+</code></pre>
+<p>当然，还支持JSON等其他形式——只要他们表达了这种映射关系，即可以被当做一个Translation Resources。</p>
+<h4>消息占位符</h4>
+<p>上面例子中的<code>%...%</code>这种表达（如<code>%name%</code>）是一种消息占位符。这种占位符机制可以动态映射一些message到translation。</p>
+<h4>复数形式</h4>
+<p>借助占位符和管道符可以很好的表达复数形式。</p>
+<pre><code>'There is one apple|There are %count% apples'
+</code></pre>
+<p>有时候我们需要借助于区间获取更多的控制：</p>
+<p>'{0} There are no apples|{1} There is one apple|]1,19] There are %count% apples|[20,Inf[ There are many apples'</p>
+<p>区间表达遵循<code>ISO 311-11</code>的记法规则,可以是两端(可以借助于-Inf和+Inf表达正负无穷)之间的数字，还可以是有限个数字的集合如:</p>
+<pre><code>{1,2,3}
+</code></pre>
+<h3>资源加载的过程：</h3>
+<ol>
+<li>设置资源加载器</li>
+<li>利用资源加载器加载资源</li>
+</ol>
+<p>Symfony支持不同的资源加载方法，:</p>
+<ul>
+<li>ArrayLoader</li>
+<li>CsvFileLoader</li>
+<li>IcuDatFileLoader</li>
+<li>PhpFileLoader</li>
+<li>XliffFileLoader</li>
+<li>JsonFileLoader</li>
+<li>YamlFileLoader</li>
+<li>...</li>
+</ul>
+<p>所有的加载器都实现了LoaderInterface接口，其load()方法返回一个catalog以用作将来的翻译。</p>
+<p>我们还可以设置定义自己的资源类型，比如采用</p>
+<pre><code>(source)(target)
+</code></pre>
+<p>这种形式，只要我们为之定义加载器：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\MessageCatalogue;
+use Symfony\Component\Translation\Loader\LoaderInterface;
+
+class MyFormatLoader implements LoaderInterface
+{
+    public function load($resource, $locale, $domain = 'messages')
+    {
+        $messages = array();
+        $lines = file($resource);
+
+        foreach ($lines as $line) {
+            if (preg_match('/\(([^\)]+)\)\(([^\)]+)\)/', $line, $matches)) {
+                $messages[$matches[1]] = $matches[2];
+            }
+        }
+
+        $catalogue = new MessageCatalogue($locale);
+        $catalogue-&gt;add($messages, $domain);
+
+        return $catalogue;
+    }
+
+}
+</code></pre>
+<p>加载Translation Resources的示例代码为:</p>
+<pre><code class="language-PHP">$translator-&gt;addLoader('xlf',new XliffFileLoader());
+$translator-&gt;addResource('xlf','message.fr.xlf','fr_FR');    # 默认domain为'messages'
+$translator-&gt;addResource('xlf','message.fr.xlf','fr_FR','admin');
+$translator-&gt;addResource('xlf','navigation.fr.xlf','fr_FR','navigation');
+
+</code></pre>
+<h2>翻译过程</h2>
+<p>翻译实际上是分成两步完成的：</p>
+<ol>
+<li>从translation resources中加载翻译好的message一览表(catalog)</li>
+<li>从catalog中定位message并返回对应的翻译。如果定位不到，则返回原始message。</li>
+</ol>
+<p>可以通过调用<code>ITranslator</code>接口提供两个关键的方法<code>trans()</code>或者<code>transChoice()</code>来执行这个过程。</p>
+<pre><code class="language-PHP">public function trans($id, array $parameters = array(), $domain = null, $locale = null);
+public function transChoice($id, $number, array $parameters = array(), $domain = null, $locale = null);
+</code></pre>
+<p>如果不提供locale，trans()方法在默认情况下会使用fallback的locale，</p>
+<pre><code class="language-PHP">$translator-&gt;trans('hello, %name%',array('name'=&gt;'Chicago'),'admin','fr_FR');
+
+$translator-&gt;transChoice(
+    '{0} There are no apples|{1} There is one apple|]1,Inf[ There are %count% apples',
+    10,
+    array('%count%' =&gt; 10),
+    'messages',
+    'fr_FR'
+);
+
+</code></pre>
+<h2>例子</h2>
+<p>来自官方文档的<a href="http://symfony.com/doc/current/components/translation/usage.html">一个例子</a>：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\Translator;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+
+$translator = new Translator('fr_FR');
+$translator-&gt;addLoader('array', new ArrayLoader());
+$translator-&gt;addResource('array', array(
+    'Symfony is great!' =&gt; 'J\'aime Symfony!',
+), 'fr_FR');
+
+var_dump($translator-&gt;trans('Symfony is great!'))
+</code></pre>
+<h2>在Symfony框架中使用翻译组件</h2>
+<p>Symfony框架集成了翻译功能，</p>
+<p>翻译资源的位置在以下位置寻找（按照以下优先级）：</p>
+<ul>
+<li><code>app/Resources/translations</code></li>
+<li><code>app/Resources/&lt;bundle name&gt;/translations</code></li>
+<li><code>Path/to/SomeBundle/Resources/translations/</code></li>
+</ul>
+<p>翻译资源文件的命名必须遵循这样的规则：</p>
+<p><code>domain.locale.loader</code></p>
+<p>domain是可选项；Symfony自带的loader包括xlf、php、yml等。例如：<code>FOSUserBundle.zh_CN.yml</code>、<code>validators.en.yml</code>等。</p>
+<p>设想用户的<code>locale</code>是<code>fr_FR</code>，当要翻译“Symfony is great” 时，会按照以下顺序寻找：</p>
+<ol>
+<li>尝试寻找<code>fr_FR</code>对应的翻译资源,例如messages.fr_FR.xlf;</li>
+<li>如果第一步没找到，则会寻找<code>fr</code>对应的翻译资源,例如messages.fr.xlf;</li>
+<li>如果还没找到，则使用<code>fallbacks</code>对应的资源。</li>
+</ol>
+<h2>在Symfony框架集成的Twig模板中使用翻译组件</h2>
+<p>绝大部分时候，我们都是在在Symfony框架的Twig中使用翻译组件。</p>
+<p>Twig提供了tags和filters支持翻译功能：</p>
+<p>tags：</p>
+<pre><code class="language-Twig">{% trans with {'%name%': 'Fabien'} f
+    rom &quot;app&quot; %}Hello %name%
+{% endtrans %}
+{% trans with {'%name%': 'Fabien'} from &quot;app&quot; into &quot;fr&quot; %}
+    Hello %name%
+{% endtrans %}
+{% transchoice count with {'%name%': 'Fabien'} from &quot;app&quot; %}
+    {0} %name%, there are no apples|{1} %name%, there is one apple|]1,Inf[ %name%, there are %count% apples
+{% endtranschoice %}
+</code></pre>
+<p>filters:</p>
+<pre><code class="language-Twig">{{ message|trans }}
+{{ message|transchoice(5) }}
+{{ message|trans({'%name%': 'Fabien'}, &quot;app&quot;) }}
+{{ message|transchoice(5, {'%name%': 'Fabien'}, 'app') }}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Config-Component.html">
+                    定义和处理配置文件
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>使用TreeBuilder定义Configuration Vaules的等级结构</h2>
+<p>TreeBuilder实例是被一个实现了<code>ConfigurationInterface</code>接口的定制的<code>Configuration</code>类返回的。</p>
+<pre><code class="language-PHP">namespace Acme\DatabaseConfiguration;
+
+use Symfony\Component\Config\Definition\ConfigurationInterface;
+use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+
+class DatabaseConfiguration implements ConfigurationInterface
+{
+    public function getConfigTreeBuilder()
+    {
+        $treeBuilder = new TreeBuilder();
+        $rootNode = $treeBuilder-&gt;root('database');
+
+        // ... add node definitions to the root of the tree
+
+        return $treeBuilder;
+    }
+}
+</code></pre>
+<h2>向Tree中增加节点定义</h2>
+<h3>NodeType</h3>
+<ul>
+<li>scalar      # 通用类型，包括了booleans,strings,intergers,floats,和null</li>
+<li>boolean</li>
+<li>interger</li>
+<li>float</li>
+<li>enum        # 有限集</li>
+<li>array</li>
+<li>variable    # 无验证</li>
+</ul>
+<h3>Numeric Node 约束</h3>
+<p>提供了<code>min()</code>和<code>max()</code></p>
+<pre><code class="language-PHP">$rootNode
+    -&gt;children()
+        -&gt;integerNode('positive_value')
+            -&gt;min(0)
+        -&gt;end()
+        -&gt;floatNode('big_value')
+            -&gt;max(5E45)
+        -&gt;end()
+        -&gt;integerNode('value_inside_a_range')
+            -&gt;min(-50)-&gt;max(50)
+        -&gt;end()
+    -&gt;end()
+;
+</code></pre>
+<h3>Enum Node</h3>
+<pre><code class="language-PHP">$rootNode
+    -&gt;children()
+        -&gt;enumNode('gender')
+            -&gt;values(array('male','female'))
+        -&gt;end()
+    -&gt;end()
+;
+</code></pre>
+<h3>Array Node</h3>
+<p>用以描述更深层次的等级结构,rootNode也算是这样一种数组结构：</p>
+<pre><code class="language-PHP">$rootNode
+    -&gt;children()
+        -&gt;arrayNode('connection')
+            -&gt;children()
+                -&gt;scalarNode('driver')-&gt;end()
+                -&gt;scalarNode('host')-&gt;end()
+                -&gt;scalarNode('username')-&gt;end()
+                -&gt;scalarNode('password')-&gt;end()
+            -&gt;end()
+        -&gt;end()
+    -&gt;end()
+;
+
+</code></pre>
+<p>在定义arrayNode的children之前，可以使用以下选项：</p>
+<ul>
+<li>useAttributeAsKey()</li>
+<li>requireAtLeastOneElememt()</li>
+<li>addDefaultsIfNotSet()</li>
+</ul>
+<h3>默认值和必填值</h3>
+<p>对于所有的node types，都可以设置默认值，并当一个节点有某些特定值的时候替换alues。</p>
+<ul>
+<li><code>defaultValue()</code></li>
+<li><code>isRequired()</code></li>
+<li><code>cannotBeEmpty()</code></li>
+<li><code>default*()</code>      #(null,true,false) <code>defaultValue()</code>的shortcut</li>
+<li><code>treat*Like()</code>    #(null,true,false) 当值是<code>*</code>的时候进行替换</li>
+</ul>
+<pre><code class="language-PHP">
+$rootNode
+    -&gt;children()
+
+        -&gt;arrayNode('connection')
+            -&gt;children()
+
+                -&gt;scalarNode('driver')
+                    -&gt;isRequired()
+                    -&gt;cannotBeEmpty()
+                -&gt;end()
+
+                -&gt;scalarNode('host')
+                    -&gt;defaultVaule('localhost')
+                -&gt;end()
+
+                -&gt;scalarNode('username')-&gt;end()
+                -&gt;scalarNode('password')-&gt;end()
+
+                -&gt;booleanNode()
+                    -&gt;defaultFalse()
+                -&gt;end()
+
+            -&gt;end()
+        -&gt;end()
+
+
+        -&gt;arrayNode('settings')
+            -&gt;addDefaultsIfNotSet()
+            -&gt;children()
+                -&gt;scalarNode('name')
+                    -&gt;isRequired()
+                    -&gt;cannotBeEmpty()
+                    -&gt;defaultValue('value')
+                -&gt;end()
+            -&gt;end()
+        -&gt;end()
+        
+    -&gt;end()
+;
+
+</code></pre>
+<h3>Documenting the option</h3>
+<p><code>info()</code>方法可以用来生成文档。<code>config:dump-reference</code></p>
+<h3>appending sections</h3>
+<p>如果有一个复杂的配置，Tree可能变得非常大，你或许想要把它分割成多个部分。你可以把一个section作为独立的节点append到main tree中。</p>
+<pre><code class="language-PHP">public function getConfigTreeBuilder(){
+
+    $TreeBuilder=new TreeBuilder;
+    $rootNode=$treeBuilder-&gt;root('database');
+
+
+    $rootNode
+        -&gt;children()
+            -&gt;arrayNode('connection')
+                -&gt;children()
+                    -&gt;scalarNode('driver')
+                        -&gt;isRequired()
+                        -&gt;cannotBeEmpty()
+                    -&gt;end()
+                    -&gt;scalarNode('host')
+                        -&gt;defaultValue('localhost')
+                    -&gt;end()
+                    -&gt;scalarNode('username')-&gt;end()
+                    -&gt;scalarNode('password')-&gt;end()
+                    -&gt;booleanNode('memory')
+                        -&gt;defaultFalse()
+                    -&gt;end()
+                -&gt;end()
+                -&gt;append($this-&gt;addParametersNode())
+            -&gt;end()
+        -&gt;end()
+    ;
+    return $treeBuilder;
+}
+
+public function addParametersNode(){
+
+    $builder = new TreeBuilder();
+    $node = $builder-&gt;root('parameters');
+
+    $node
+        -&gt;isRequired()
+        -&gt;requiresAtLeastOneElement()
+        -&gt;useAttributeAsKey('name')
+        -&gt;prototype('array')
+            -&gt;children()
+                -&gt;scalarNode('value')-&gt;isRequired()-&gt;end()
+            -&gt;end()
+        -&gt;end()
+    ;
+
+    return $node;
+}
+
+</code></pre>
+<h3>Normalization</h3>
+<p>标准化过程(normalization process)用于消除那些由于不同格式造成的不同，主要是YAML和XML。</p>
+<p>在YAML中，keys中的典型分隔符是<code>_</code> ,而XML中的是 <code>-</code> ，例如 在YAML中<code>auto_connect</code> 在XML中是 <code>auto-connect</code>。
+normalization 会把这些都变成<code>auto_connect</code>.</p>
+<p>另外一个YAML和XML之间的区别是数组取值的表示方法。</p>
+<p>YAML:</p>
+<pre><code class="language-YAML">twig:
+    extensions: ['twig.extension.foo', 'twig.extension.bar']
+</code></pre>
+<p>XML:</p>
+<pre><code class="language-XML">&lt;twig:config&gt;
+    &lt;twig:extension&gt;twig.extension.foo&lt;/twig:extension&gt;
+    &lt;twig:extension&gt;twig.extension.bar&lt;/twig:extension&gt;
+&lt;/twig:config&gt;
+</code></pre>
+<p>这种复数的区别可以通过fixXmlConfig来消除：</p>
+<pre><code class="language-PHP">$rootNode
+    -&gt;fixXmlConfig('extension')
+    -&gt;children()
+        -&gt;arrayNode('extensions')
+            -&gt;prototype('scalar')-&gt;end()
+        -&gt;end()
+    -&gt;end()
+;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/PHPCMS/PHPCMS分析1-基础架构分析.html">
+                    PHPCMS分析1-基础架构分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>PHPCMS整体设计思路，还是遵循基本的MVC模式。</p>
+<h2>路由功能与控制器的分离</h2>
+<p>PHPCMS访问index.php文件时，会加载phpcms/base.php文件，
+该base.php文件定义了一堆常量、和一个pc_base类。此pc_base类提供一系列静态方法，这些静态方法的功能大多都是用于加载与index.php同级目录下的phpcms/下的各个相关文件(load_config除外)，如：</p>
+<pre><code class="language-PHP">//加载系统类 位于phpcms/libs/classes/下
+pc_base::load_sys_class(&quot;类名&quot;,&quot;模块名&quot;,$initialize);
+//加载系统函数 位于phpcms/libs/functions/下 
+pc_base::load_sys_func('函数名');
+
+//加载模块下的类 位于phpcms/modules/模块/classes/下
+pc_base::load_app_class(&quot;类名&quot;,&quot;模块名&quot;,$initialize);
+//加载模块下的函数 位于phpcms/modules/模块/functions/下 
+pc_base::load_app_func();
+
+//加载数据模型 位于phpcms/model/下 
+$db=pc_base::load_model(&quot;文件名_无后缀&quot;);
+
+//加载配置 位于caches/下
+$v=pc_base::load_config($filename,$key);
+</code></pre>
+<p>在index.php加载完base.php后，又执行了pc_base::creat_app()函数。此函数定义为：</p>
+<pre><code class="language-PHP">public static function creat_app() {
+    return self::load_sys_class('application');
+}
+
+</code></pre>
+<p>此方法只是简单加载系统类application。
+从功能上说，application类起到了一个路由功能，其构造函数__construct()会调用init()方法，根据传入的相关URL参数去调用对应的module下相关controller的特定action方法。</p>
+<p>module、controller、action对应参数m、c、和a。如果不提供action参数，则会默认调用控制器的init()方法。</p>
+<p>例如url为<code>index.php?m=product&amp;c=index&amp;a=lists</code>会调用product模块下的index类中的lists方法。</p>
+<h2>数据模型加载</h2>
+<p>在控制器中利用语句</p>
+<pre><code class="language-PHP">$md=pc_base::load_model('your_model');
+</code></pre>
+<p>可以加载相关模型类，系统的模型类在libs/classes/model.class.php中定义，各模块下模型定义在model/文件下，并继承自系统的model类。</p>
+<h2>视图层模板加载</h2>
+<p>对于控制器模板，基本思路还是利用</p>
+<pre><code class="language-PHP">include $your_template_file_name;
+</code></pre>
+<p>但是PHPCMS根据前后台的不同，在自身文件结构目录上自定义两个求得路径的函数</p>
+<ul>
+<li>template($module,$file) 获取指定module前台模板</li>
+<li>admin_tpl($file,$module) 获取指定module下的后台模板（默认是获取当前module的后台模板）</li>
+</ul>
+<p>如后台模板经常会在顶部调用：</p>
+<pre><code class="language-PHP">include $this-&gt;admin_tpl('header', 'admin');
+</code></pre>
+<p>以此来加载admin/templates/header.tpl.php文件</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/misc/wordpress-ajax.html">
+                    WordPress Ajax机理分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>后台Ajax源码分析</h2>
+<p>WordPress Ajax功能的后台相关核心文件为<code>wp-admin/admin-ajax.php</code>。</p>
+<p>文件<code>wp-admin/admin-ajax.php</code>首先会加载一些基础文件：</p>
+<ul>
+<li><code>wp-load.php</code>文件、</li>
+<li><code>wp-admin/includes/admin.php</code>文件</li>
+<li><code>wp-admin/includes/ajax-actions.php</code>文件</li>
+</ul>
+<p>其次<code>wp-admin/admin-ajax.php</code>进入钩子注册阶段：</p>
+<ul>
+<li>预定义一系列核心<code>actions</code>名称用于Ajax操作，如<code>fetch-list</code>,<code>delete-post</code>,<code>add-meta</code>,<code>dashboard-widgets</code>,etc.如果客户端传递来的<code>action</code>参数（get或者post传递）在预定义的actions之中，则将客户端传来的<code>action</code>参数中的<code>-</code>转换为<code>_</code>后，冠以<code>wp_ajax_</code>前缀添加到action钩子中。</li>
+<li>预定义并注册心跳包钩子<code>wp_ajax_nopriv_heartbeat</code></li>
+<li>除了这些内置的<code>action</code>之外，还可以自定义其他<code>action</code>。当然，自定义的<code>action</code>钩子通常在其他地方注册过了(此处不应再次注册)。</li>
+</ul>
+<p>核心代码为:</p>
+<pre><code class="language-PHP">// wp-admin/admin-ajax.php 文件
+###@:注册核心ajax钩子
+if ( ! empty( $_GET['action'] ) &amp;&amp; in_array( $_GET['action'], $core_actions_get ) )
+    add_action( 'wp_ajax_' . $_GET['action'], 'wp_ajax_' . str_replace( '-', '_', $_GET['action'] ), 1 );
+
+if ( ! empty( $_POST['action'] ) &amp;&amp; in_array( $_POST['action'], $core_actions_post ) )
+    add_action( 'wp_ajax_' . $_POST['action'], 'wp_ajax_' . str_replace( '-', '_', $_POST['action'] ), 1 );
+
+### 注册心跳包
+add_action( 'wp_ajax_nopriv_heartbeat', 'wp_ajax_nopriv_heartbeat', 1 );
+
+</code></pre>
+<p>最后进入触发钩子阶段，如果当前用户处于未登陆状态，触发钩子<code>wp_ajax_nopriv_</code>,反之，则触发<code>wp_ajax_</code>钩子。</p>
+<pre><code class="language-PHP">
+// wp-admin/admin-ajax.php 文件
+
+###@:调用钩子
+if ( is_user_logged_in() ) {
+    do_action( 'wp_ajax_' . $_REQUEST['action'] );
+} else {
+    do_action( 'wp_ajax_nopriv_' . $_REQUEST['action'] );
+}
+die('0');
+
+</code></pre>
+<h2>注册自定义的Ajax钩子</h2>
+<p>从以上的<code>wp-admin/admin-ajax.php</code>源码分析可以得知,WordPress的Ajax响应动作是通过钩子实现的，显然用于Ajax响应的callable对象必须提前册成钩子才能被触发。对于内置的核心Ajax动作或者心跳包，WordPress已经替我们写好了相关代码，但是对于自定义的Ajax响应，还需我们自己注册钩子。引自<a href="http://codex.wordpress.org/AJAX_in_Plugins">wordPress.org</a>的一个例子:</p>
+<pre><code class="language-PHP">
+add_action( 'wp_ajax_my_action', 'my_action_callback' );
+function my_action_callback() {
+    global $wpdb; // this is how you get access to the database
+    $whatever = intval( $_POST['whatever'] );
+    $whatever += 10;
+    echo $whatever;
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
+
+</code></pre>
+<h2>前台调用接口</h2>
+<p>注册好钩子之后，即可在前端对<code>wp-admin/admin-ajax.php</code>发起Ajax请求了。引自<a href="http://codex.wordpress.org/AJAX_in_Plugins">wordPress.org</a>的一个例子:</p>
+<pre><code class="language-JavaScript">
+jQuery(document).ready(function($) {
+    var data = {
+        'action': 'my_action',
+        'whatever': ajax_object.we_value      // We pass php values differently!
+    };
+    // We can also pass the url value separately from ajaxurl for front end AJAX implementations
+    jQuery.post(ajax_object.ajax_url, data, function(response) {
+        alert('Got this from the server: ' + response);
+    });
+});
+
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page27.html">
+          Previous
+        </a>
+        29 of 32
+        <a href="/posts/page29.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

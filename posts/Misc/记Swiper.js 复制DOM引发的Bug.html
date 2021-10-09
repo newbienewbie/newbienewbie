@@ -1,0 +1,195 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/记Swiper.js 复制DOM引发的Bug.html">
+                    记 Swiper.js 复制DOM引发的Bug
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-27
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>最近接手了有个小项目，大致是做个类似于易企秀之类的前端页面。核心功能是，对于指定模板：</p>
+<ol>
+<li>在编辑模式下，可以对文字、图片进行在线编辑，点击保存后提交相应数据到服务器</li>
+<li>在浏览模式下，向服务器请求数据，渲染生成个性页面</li>
+</ol>
+<p>在我之前已经有个前端做好的各屏样式、动效。但是他写的在线可编辑功能是用纯手工的<code>input name=&quot;&quot;</code>做的，这导致在线编辑基本是废的——因为每个模板都有很多不同的可编辑部分，不可能全靠手工完成；而且一到渲染环节就抓瞎。</p>
+<h2>解决方案</h2>
+<p>本想用<code>HTML5</code>的<code>content-editable</code>做，不过这货在移动端的监听内容改变比较操蛋；而且对于图片无能为力。</p>
+<p>好在在编程中，没有什么纸老虎是不能用加一层抽象解决的；如果有，那就再加一层。为此，我写了一个叫做<code>ItminusEditor</code>的<code>JavaScript</code>库，提供三类常用的可编辑组件：<code>EditableInput</code>、<code>EditableTextarea</code>、<code>EditableImage</code>。在此基础上，实现了以下功能： <!--more--></p>
+<ol>
+<li>根据<code>HTML</code>标记，自动创建可编辑组件，当组件内容变化，会同步到<code>JavaScript</code>对象<code>itEditor</code>中。也就是说，在特定的DOM对象和<code>itEditor</code>之间建立联系。</li>
+<li><code>itEditor</code>对象提供了一系列方法，重点包括：
+<ul>
+<li>注册可编辑组件方法：<code>registerEditableItem(item)</code></li>
+<li>从组件中取值：<code>getValues()</code></li>
+<li>为组件设置值：<code>setValues(obj)</code></li>
+<li>禁用可编辑功能：<code>setUneditable()</code></li>
+<li>启用可编辑功能：<code>setEditable()</code></li>
+</ul>
+</li>
+<li>每次用户点击保存后，会通过<code>itEditor.getValues()</code>获取所有可编辑组件对应的值</li>
+<li>当需要渲染时候，可以通过<code>itEditor.setValues()</code>完成所有可编辑组件的渲染工作</li>
+</ol>
+<h2>Bug的发现与处理</h2>
+<p>在单独测试的时候，我写的<code>ItminusEditor</code>库并未发现什么问题。然后在项目中配合<code>Swiper.js</code>联合使用的时候，总是发现一些诡异的错误。比如，第一屏滚回最后一屏再滚回第一屏，会导致原本不可编辑状态的<code>EditableImage</code>变成了可编辑状态。</p>
+<p>然后我开始了漫长的调试过程，我反复检查了我的代码，然后又在浏览器里反复调试，寻找Bug产生的原因。不知道过了多久，我突然意识到<code>DOM</code>里总是有冗余的一屏的<code>DOM</code>：原来只有5屏代码，为了实现循环，<code>Swiper.js</code>却在背后悄悄的复制产生了相同DOM，形成了事实上的6屏(视觉上是5屏)。</p>
+<p>问题就出在这里，我的代码是根据相关<code>HTML</code>标记自动创建可编辑组件，然后在相关DOM与<code>JavaScript</code>对象<code>itEditor</code>之间建立了双向关联，而<code>Swiper.js</code>复制出的<code>DOM</code>并不会与<code>itEditor</code>有关联，所以才导致了这个Bug。</p>
+<p>由于是我第一次使用<code>Swiper.js</code>，想去官网看下文档，结果百度满屏都是<code>Swiper.js</code>中文网的资料，我还以为是国人开发的开源库。于是以关键词<code>Swiper.js</code>、<code>复制DOM</code>、<code>事件</code>中文关键词搜索，结果并未发现什么有意义的答案。去论坛搜下也没发现有意义的答案。我看到中文网上写的&quot;开源&quot;，点击下载，却跳转到了百度云，这让我隐约觉得有点不靠谱，随即我对看这个网站上提供的文档失去了耐心——我很愚蠢的丧失了一次可能及早发现Bug的机会：事实上，在<a href="http://www.swiper.com.cn/api/loop/22.html">文档</a>中指出了<code>loop</code>会复制<code>slide</code>。</p>
+<p>尽管如此，此时再换掉<code>Swiper.js</code>代价过大，然后我开始尝试写兼容代码，</p>
+<ol>
+<li>比如为了<code>Swiper.js</code>组件悄悄创建的DOM也能受到不可编辑约束，我改了代码，让注册组件时不再检测是否已经有重复组件被注册</li>
+<li>但是采用第1步，带来了问题，多个重复的组件设置时会互相覆盖，带来数据不一致问题</li>
+<li>为了解决第2点中问题，又强制每次可编辑组件改变时同广播到所有组件，这样即使有同名组件，也会相互间保持一致。</li>
+<li>解决前三点问题，又发现<code>EditableImage</code>的点击事件代码经常无法触发，而且由于广播造成效率较低，偶尔还能看到抖动。</li>
+</ol>
+<p>最后，我开始意识到问题并不简单，这样搞下去很可能会把问题的复杂程度大幅提高，延误工期。于是我重新以英文关键词<code>Swiper.js</code>、<code>loop</code>、<code>duplication</code>检索，试图找出<code>Swiper.js</code>不复制<code>DOM</code>的方法，终于发现了<code>github</code>上有个官方仓库，还有个哥们提了类似的<a href="https://github.com/nolimits4web/swiper/issues/2588">问题</a>。顺带找到了真正的官方网站，按照文档描述，设置<code>loop:false</code>，终于不再有各种诡异的BUG了。</p>
+<h2>小结</h2>
+<ol>
+<li>当试图捆绑DOM组件和JavaScript对象，在二者之间建立联系，如果第三方库悄悄在背后复制、修改、替换DOM，就要警惕会不会有Bug。</li>
+<li>务必认真阅读文档</li>
+<li>如果一个中文网站起名叫XX中文网，域名十分令人相信是官方网站（诸如xxx.com.cn），也集成了论坛、文档，且其上提供的库号称开源，却要去百度云下载源代码，记得第一时间去<code>GitHub</code>搜相关仓库，因为该网站极有可能是个中文推广网站。</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

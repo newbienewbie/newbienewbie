@@ -1,0 +1,391 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Python/也说Python对象、函数参数的传递方式与闭包.html">
+                    也说Python对象、函数参数的传递方式与闭包
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>关于Python里闭包概念，查了很多中文网站，发现很多人的理解有失偏颇，比如《Python参考手册》第四版 ，比如http://blog.csdn.net/marty_fu/article/details/7679297。——他们认为子函数对与外围变量同名的变量修改不能影响外围。鉴于我不认同他们的观点，自己从头理了下对象的概念。本文第3.1部分，那里将对网上和一些教材的观点进行勘误。</p>
+<p><code>凡下所述，悉皆胡扯，人生百味，聊以自娱耳。</code></p>
+<h2>对象可变之禅</h2>
+<p>起这个小标题可能多少有故弄玄需之嫌，然而Levy(1984)黑客准则第一条就明确提出</p>
+<blockquote>
+<p>Access to Computers - and anything which might teach you something about the way the world works – should be unlimited and total</p>
+</blockquote>
+<p>程序的运作和这个世界的运作方式是统一的。</p>
+<h3>变，或者不变</h3>
+<p>在父母长辈看来，对象就是另一半；在Pythoner看来，万物皆对象，对象或止或动，必居二者其一。</p>
+<p>在许多编程语言里，比如Python，比如C#，人们把对象不可变叫immutable，例如int类对象、string类对象、etc；可变叫mutable，例如list对象、自定义的Class对象、etc。对象是否是mutable，很重要——To be,or not ,that is a question。</p>
+<p>在一般的面向对象的语言里，比如C++，对象必须经过实例化才会存在,实例化的过程是从类型的精神抽象到具体对象的过程，这一过程会分配一段内存来表示对象。
+在Python中万物皆对象，类也是对象。问题是，类创建对象，类也是对象，类由什么创建——答案是类由元类创建。关于这一点，具体请参见stackoverflow上e-satis对一篇<a href="http://stackoverflow.com/questions/100003/what-is-a-metaclass-in-python">《What is a metaclass in Python?》的提问的回复</a>。</p>
+<p>不管怎么说，对象依托内存而存在。对于一个对象，一旦被分配了一段内存，即代表其生命周期开始，这段内存的内容在对象生存期间不可变化的即是immuable对象，反之，则称之为mutable。</p>
+<h3>对象本无名</h3>
+<p>对象标识符——或者叫对象的称谓，可以简单当成是程序员为了表示晦涩难记的内存地址的精神创造——在Python的世界里，对象名表示用来指代对象，仅此而已，对象名是彻彻底地的人为的附加到对象上的东西。</p>
+<p>一个对象本身并没有名字，只是后来这个世界有了OOP程序员，对象这才有了名字；即使你要称呼他，你也可以按你的意愿叫她女朋友，叫honey，darling，或者妖魔仙佛、洪水猛兽，叫什么的权利在你——但是，这只是你附加给这个对象的，并不影响对象自身。</p>
+<p>对象原本并没有名字——注意措辞“原本”两个字，因为现在我们会强加给对象一个名字——理解这点很重要。</p>
+<p>名字只是代号，正如同有人有姓名、乳名、昵称、绰号，这些不同的代号可能是同一个人；另一种情况是，尽管我们提倡在给对象命名的啥时候尽量做到“望文生义”，但是没人能阻止我们起个不太合适的名字——正如同如花和秋香从字面意义上来说都是很美的名字，但是，唐伯虎在没见过这两个人的时候是无法仅凭名字就分别出谁是美女的，因为对象名和对象的固有属性无关。</p>
+<h3>mutable对象——名字只是代号</h3>
+<h4>同一段内存，同一个对象</h4>
+<p>假定如花的真正闺名叫aList，而秋香则叫bList：</p>
+<pre><code class="language-Python">#同一段内存，便是同一个对象
+aList=[1,2,3,4,5] #首先我们有一个list对象[1,2,3,4,5]，嗯，就叫它aList
+bList=aList # 然后我再给他起个名字，叫bList
+bList.append(6) #在bList追加一个6
+print(&quot;aList is :&quot;,aList)
+print(&quot;id of aList is :&quot;,id(aList))
+print(&quot;id of bList is :&quot;,id(bList))
+</code></pre>
+<p>输出结果类似于：</p>
+<pre><code class="language-Python">aList is : [1, 2, 3, 4, 5, 6]
+id of aList is : 3068653132
+id of bList is : 3068653132
+</code></pre>
+<p>很好理解，bList，aList都是我们对于[1,2,3,4,5]这一同一个列表对象的称呼，我们改变bList和改变aList效果是一样的。对于mutable对象名a，赋值给另一个对象名b，则意味这让b指代a所指代的对象——两个名称对应于同一个对象id。
+ps：如果你Class了一Beauty类，qiuXiang和ruHua都是Beauty类对象，并在执行上面类似的操作，会得到类似的结果，因为Class出来的类型也是mutable。</p>
+<h4>一元操作符、二元操作符、以及属性方法对对象地址的影响</h4>
+<p>上面是以list类对象的append()方法进行分析的，调用前后，mutable对象的地址未发生变化。于是，我以前想当然认为mutable对象在诸如aList=aList+bList也不会发生变化，但是经过一次偶然的测试发现，事实真不是这样。</p>
+<pre><code class="language-Python">#测试不同的修改方式对对象地址造成的影响
+cList=[&quot;1&quot;,&quot;2&quot;] #cList是个list对象，下面会用不同的修改方式对其进行测试
+dList=[&quot;Attention!&quot;] #用于追加到cList后面的list对象
+eList=[&quot;ATTENTION!&quot;] #用于追加到cList后面的list对象
+fStr=&quot;Yeah&quot;#用于追加到cList后面的list对象
+print(&quot;cList is : &quot;,cList,&quot;，id is &quot;,id(cList)) #修改之前的cList信息
+cList=cList+dList
+print(&quot;cList is : &quot;,cList,&quot;，id is &quot;,id(cList)) #以二元操作修改后的cList信息
+cList+=eList
+print(&quot;cList is : &quot;,cList,&quot;，id is &quot;,id(cList)) #以一元操作修改后的cList信息
+cList.append(fStr)
+print(&quot;cList is : &quot;,cList,&quot;，id is &quot;,id(cList)) #以对象方法修改后的cList信息
+</code></pre>
+<p>输出结果类似于</p>
+<pre><code class="language-Python">cList is : ['1', '2'] ，id is 3068251724
+cList is : ['1', '2', 'Attention!'] ，id is 3068248844
+cList is : ['1', '2', 'Attention!', 'ATTENTION!'] ，id is 3068248844
+cList is : ['1', '2', 'Attention!', 'ATTENTION!', 'Yeah'] ，id is 3068248844
+</code></pre>
+<p>结果分析：一个list，用二元操作符修改，虽然修改前后都叫同一个名字，但是返回的地址变了；用一元操作符是在原地址上进行，返回地址不变，还是同一对象；以append()方法返回的list还是原对象。</p>
+<h3>imutable对象——去年今日此门中，人面桃花相印红：</h3>
+<p>immutable对象最大的特点就是不变。但是我刚接触这个的时候很疑惑，因为我发现：</p>
+<p><code>一个叫a_int的int变量确实可以赋值为1，再赋值为2，而且没有语法错误提示！</code></p>
+<p>当时是在C#里被这个问题困惑住的，然后自己实践后分析结果就恍然大悟 。
+在Python里，不妨分析这一个例子：</p>
+<pre><code class="language-Python">aInt=1#首先我们有一个int对象，嗯，就叫它aInt
+bInt=aInt # 然后我再给他起个名字，叫bInt
+print(&quot;before modified:&quot;)
+print(&quot;\taInt is :&quot;,aInt,&quot;id of aInt is :&quot;,id(aInt))
+print(&quot;\tbInt is :&quot;,bInt,&quot;id of bInt is :&quot;,id(bInt))
+bInt=4#修改bInt
+print(&quot;after modified:&quot;)
+print(&quot;\taInt is :&quot;,aInt,&quot;id of aInt is :&quot;,id(aInt))
+print(&quot;\tbInt is :&quot;,bInt,&quot;id of bInt is :&quot;,id(bInt))
+</code></pre>
+<p>输出类似于：</p>
+<pre><code class="language-Python">before modified:
+aInt is : 1 id of aInt is : 137396000
+bInt is : 1 id of bInt is : 137396000
+after modified:
+aInt is : 1 id of aInt is : 137396000
+bInt is : 4 id of bInt is : 137396048
+</code></pre>
+<p>这一过程中，我首先让bInt=aInt,然后我改变试图bInt指代的对象的值为4，但是bInt指代的是个immutable对象，怎么办？为了最大限度满足我的需求，系统就生成了一个新的int对象，值为4，然后用bInt指代了这个新生成的值为4的int对象。和修改值之前的bInt相比，二者虽然都叫做bInt，但是已经不是指代的同一个对象了（可以看到，二者的id发生了变化）。</p>
+<p>同样的环境，同样的名字，只是对象已经不是以前的对象了——去年今日此门中，人面桃花相映红。</p>
+<p>这个过程用充满哲学意味的话可以表述为<code>现在的你已然不是昨天的你</code>.《金刚经》通篇都充斥这种思想。</p>
+<p>ps：大约是受奶茶5月新出的专辑《亲爱的路人》影响吧，这几句话现在说起来多少有些感慨。多年前，写了一个偈子：佛即非佛，我亦非我，不见真相，不见真我。只言片语，权作掩耳。</p>
+<h2>值传递，还是引用传递</h2>
+<p>函数参数传递方式对于C/C++者来说，容不得半点模糊。Python里，这也是个重要的问题。不过经过本文第一部分Python里对象可变之禅的分析，函数参数传递方式非常容易理解。这里仅仅以一小段测试代码简单分析下。</p>
+<pre><code class="language-Python">def ChangeValue(aInt,bList):
+    #测试改变参数
+    aInt+=1
+    bList.append(&quot;Someone remains in yr heart forever&quot;)
+
+aInt=1
+bList=[&quot;someone comes&quot;,&quot;someone goes&quot;]
+
+print(&quot;before calling&quot;)
+print(&quot;\taInt is : &quot;,aInt)
+print(&quot;\tbList is : &quot;,bList)
+
+ChangeValue(aInt,bList)
+print(&quot;after calling&quot;)
+print(&quot;\taInt is : &quot;,aInt)
+print(&quot;\tbList is : &quot;,bList)
+</code></pre>
+<p>输出类似为：</p>
+<pre><code class="language-Python">before calling
+	aInt is :  1
+	bList is :  ['someone comes', 'someone goes']
+after calling
+	aInt is :  1
+	bList is :  ['someone comes', 'someone goes', 'Someone remains in yr heart forever']
+</code></pre>
+<ul>
+<li>对于aInt,由于是不可变变量，在ChangeValue函数内部，会重新生成一个新的aInt；外围变量未收到影响</li>
+<li>对于bList，由于是可变变量，在ChangeVaule函数内部，改变以bList名字命名的对象</li>
+</ul>
+<p>但是，其中奥妙仅此而已嘛？</p>
+<h2>函数对外围变量的影响</h2>
+<h3>局部变量对外围变量的影响</h3>
+<p>上面是通过参数传递给函数的，要是函数直接调用外部变量会有什么后果？很多人说函数对外围同名函数操作没有直接影响，这中理解是不完全正确的。</p>
+<p>在函数内部，如果一个对象先以先左值出现，且没有用“.”指定，则系统会试图优先把它解释为在函数内部的局部变量，以相应的语句对其初始化。显然，正常情况下，局部变量不会影响外围变量。</p>
+<p>但千万不要以为非左值出现的对象就是右值，就不能改变原对象。因为左值、右值都是针对赋值而言的。要修改一个对象，除了赋值，还可以利用某些非赋值表达式。有两个典型反例就是，</p>
+<ul>
+<li>一个对象或许可以通过一元操作符修改自身，</li>
+<li>一个对象可以通过调用相关方法修改自身。（参见本文1.2.1的第二部分）</li>
+</ul>
+<p>对于一个局部变量，即使有与其同名的外围变量，这二者也毫无关系。不要因为存在了外围同名变量的初值而忽视局部变量的初始化。</p>
+<p>总而言之，<code>笼统的说子函数的变量变化不影响外围变量是不负责任的。</code></p>
+<p>假定某个子函数的某一个变量，在函数之外，还存在一个同名的外围变量:</p>
+<ul>
+<li>如果它是immutable,不管它是不是以左值出现，都能肯定它和外围变量指代的并不是同一个对象；</li>
+<li>而如果这是个mutable变量，则这二者可能是或者可能不是是同一对象——这取决于这个子函数之中，是否有这样一种情况：这个对象以某种方式，修改一个新对象到原来对象名上。
+网上一些技术贴的作者认为：<br />
+<code>如果子函数里那些和外围变量同名的变量的发生变化，结果并不会改变外围变量</code>
+其实这句话是有失偏颇的。测试代码与分析见下：</li>
+</ul>
+<pre><code class="language-Python">
+def ParentFoo():
+''''测试子函数对父函数的局部变量的影响父函数有两个对象， aInt：int类对象；aList：list类对象。'''
+    aInt=1234567
+    aList=[&quot;a&quot;,&quot;b&quot;,&quot;c&quot;,&quot;d&quot;]
+    print(&quot;the ParentFoo Before Calling SubFoo : &quot;)
+    print(&quot;\taInt is &quot;,aInt,&quot;,id is &quot;,id(aInt))
+    print(&quot;\taList is &quot;,aList,&quot;，id is &quot;,id(aList))
+
+    def SubFoo():
+'    ''子函数，用于测试子函数里局部变量修改对外围变量的影响 '''
+        print(&quot;Calling SubFoo : &quot;)#提示子函数已经开始调用
+
+        #Step1：测试对父函数里的aInt的影响
+        print(&quot;\tStep1:测试子函数对aInt的影响&quot;)
+        #下面建立一个局部变量aInt，同时初始化
+        #如果没有这一步，则后面aInt不能以左值出现!!
+        aInt=1234567#这个局部变量和外围变量同名并不会造成任何影响
+        print(&quot;\t\taInt is &quot;,aInt,&quot;,id is &quot;,id(aInt))
+        aInt+=1
+        print(&quot;\t\taInt is &quot;,aInt,&quot;,id is &quot;,id(aInt))
+
+        #Step2：测试对父函数里的aList的影响
+        print(&quot;\tStep2:测试子函数对aInt的影响&quot;)
+        #很多人——很多中文网站贴出来的技术贴的作者认为：
+        # 如果子函数里那些和外围变量同名的变量的发生变化，结果并不会改变外围变量
+        #其实这句话是有失偏颇的。
+        #反例：以非左值出现，同时调用其能修改自身的方法
+        #这种修改外围变量的操作方式很隐蔽！很变态！很危险！
+        aList.append(&quot;e&quot;) #子函数在没有以参数传递的情况下偷偷改变了外围变量！
+        print(&quot;\t\taList is &quot;,aList,&quot;，id is &quot;,id(aList))
+        bList=aList #建立一个局部变量——但实际上此时这两个变量指代的是同一个对象
+        print(&quot;\t\tbList is &quot;,bList,&quot;，id is &quot;,id(bList))
+        bList=bList+[&quot;Attention!&quot;] #注意id(bList)变化了!
+        print(&quot;\t\tbList is &quot;,bList,&quot;，id is &quot;,id(bList))
+
+    SubFoo() #调用子函数
+    #子函数调用结束后打印父函数里相关对象的信息
+    print(&quot;the ParentFoo After Calling SubtFoo : &quot;)
+    print(&quot;\taInt is &quot;,aInt,&quot;,id is &quot;,id(aInt))
+    print(&quot;\taList is &quot;,aList,&quot;，id is &quot;,id(aList))
+
+ParentFoo() #调用父函数
+</code></pre>
+<p>输出类似于：</p>
+<pre><code class="language-Python">the ParentFoo Before Calling SubFoo :
+aInt is 1234567 ,id is 3069037696
+aList is ['a', 'b', 'c', 'd'] ，id is 3068358220
+Calling SubFoo :
+Step1:测试子函数对aInt的影响
+aInt is 1234567 ,id is 3068098400
+aInt is 1234568 ,id is 3068054080
+Step2:测试子函数对aInt的影响
+aList is ['a', 'b', 'c', 'd', 'e'] ，id is 3068358220
+bList is ['a', 'b', 'c', 'd', 'e'] ，id is 3068358220
+bList is ['a', 'b', 'c', 'd', 'e', 'Attention!'] ，id is 3068363564
+the ParentFoo After Calling SubtFoo :
+aInt is 1234567 ,id is 3069037696
+aList is ['a', 'b', 'c', 'd', 'e'] ，id is 3068358220
+</code></pre>
+<h3>闭包</h3>
+<p>关于闭包，cnbolgs的Vamei老兄的说法很透彻了，我就不狗尾续貂了，但是出于知识完备、日后备忘和便于查找的原因，把关键部分粘贴到这里。本部分定义和例子引自http://www.cnblogs.com/vamei/archive/2012/12/15/2772451.html,略有删改。
+一个函数和它的外围变量合在一起，就构成了一个闭包(closure)。在Python中，所谓的闭包是一个包含有外围变量取值的函数对象。外围变量取值被保存在函数对象的__closure__属性中。
+例如：</p>
+<pre><code class="language-Python">def line_conf():
+    b = 15
+    defline(x):
+        return2*x+b
+    return line # return a function object
+
+b = 5
+my_line = line_conf()
+print(my_line.__closure__)
+print(my_line.__closure__[0].cell_contents)
+</code></pre>
+<p>输出类似于：</p>
+<pre><code class="language-Python">(&lt;cell at 0xb6df2764: int object at 0x8308000&gt;,)
+15
+</code></pre>
+<p>一个实际例子：</p>
+<pre><code class="language-Python">def line_conf(a, b):
+    defline(x):
+        return a*x + b	#原文误作return ax+b
+    return line
+
+line1 = line_conf(1, 1)
+line2 = line_conf(4, 5)
+print(line1(5), line2(5))
+</code></pre>
+<p>输出结果类似于：</p>
+<pre><code class="language-Python">6 25
+</code></pre>
+<p>如果没有闭包，我们需要每次创建直线函数的时候同时说明a,b,x。实际上，利用闭包，我们创建了泛函。这个函数的一些方面已经确定(比如必须是直线形式)，但另一些方面(比如a和b）参数待定。随后，我们根据line_conf传递来的参数，通过闭包的形式，将最终函数确定下来。</p>
+<p>(snplou注：更一般的，如果有一类性质相似的动作，其中每一个动作都需要共N个参数，我们可以考虑建立一个泛函——动作配置函数用以表示和生成这一类动作，不妨暂时称之为ActConfig，首先我们需要从动作需要的N个参数里选取K个作为动作配置函数的参数，记作ActConfig(p1,p2,...,pK),而把剩下的N-K个参数放到动作配置函数的子函数Act的参数里，记作Act(pK_1,pK_2,...,pN_K)，并子函数Act()里规定对这N 个参量的操作行为，而父函数则返回子函数，这样每次指定p1,p2,...,pK后，都会生成一个新的Act(pK_1,pK_2,...,pN)函数。实际执行某一个具体动作的时候，只需调用Act(pK_1,pK_2,...,pN)即可)</p>
+<p>闭包有效的减少了函数所需定义的参数数目。这对于并行运算来说有重要的意义。在并行运算的环境下，我们可以让每台电脑负责一个函数，然后将一台电脑的输出和下一台电脑的输入串联起来。最终，我们像流水线一样工作，从串联的电脑集群一端输入数据，从另一端输出数据。这样的情境最适合只有一个参数输入的函数。闭包就可以实现这一目的。
+另外，闭包还能延迟计算。</p>
+<h2>结论</h2>
+<p>当你希望修改外围变量，在3.x里，最好显式的用nonlocal声明。尽量不要用本文测试代码里涉及的方法。
+而如果你不希望修改外围变量：
+尽量不要给子函数直接传递mutable对象参数；
+也尽量不要在子函数里直接操作与外围变量同名的mutble对象——即使有，尤其需要注意某些一元操作符和某些特殊的能返回原地址对象的方法，因为这非常可能会在你不注意之中修改外围变量。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

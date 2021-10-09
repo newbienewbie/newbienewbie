@@ -1,0 +1,232 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Java/spring/AOP-与-Spring.html">
+                    AOP 与 Spring
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-10-21
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>AOP 与装饰器</h2>
+<p>照例先说需求，我们经常需要扩展某一个或者某一些操作。</p>
+<p>在<code>Python</code>中可以通过<a href="http://www.itminus.com/2015/04/10/WindWhisper/Python/Python%E5%87%BD%E6%95%B0%E8%A3%85%E9%A5%B0%E5%99%A8%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">装饰器</a>动态创建一个包装函数来实现，
+在<code>Java</code>中，可以通过反射技术创建动态代理，拦截对目标<code>Bean</code>的方法调用，从而扩展目标<code>Bean</code>的功能。</p>
+<h2>Spring 对 AOP 的支持</h2>
+<p>Spring AOP 是基于代理实现的(纯Java) 。</p>
+<p>Spring AOP 目前仅支持 method execution join points (advising the execution of methods on Spring beans).
+尽管不必打破Spring AOP 核心 API 就可以做到支持，但是Spring AOP 并未实现 Field 拦截 。如果需要,可以考虑诸如 AspectJ 之类的语言。</p>
+<h3>Maven 依赖</h3>
+<h4>IoC 模块的依赖：</h4>
+<pre><code>GroupId:    org.springframework
+ArtifactId: spring-context
+</code></pre>
+<p>如果要使用JCP标准注入注解，还需要的Maven依赖：</p>
+<pre><code>GroupId:       javax.inject
+ArtifactId:    javax.inject
+</code></pre>
+<h4>AOP 模块的依赖</h4>
+<pre><code>GroupId:    org.springframework
+ArtifactId: spring-aop
+</code></pre>
+<p>集成AspectJ</p>
+<pre><code>GroupId:    org.springframework
+ArtifactId: spring-aspects
+</code></pre>
+<h3>注解配置</h3>
+<p>现有某一个<code>Bean</code>注解为组件：</p>
+<pre><code class="language-Java">@Named
+public class BraveKnight implements Knight {
+
+	private Quest quest;
+
+	@Inject
+	public BraveKnight(Quest quest) {
+		this.quest = quest;
+	}
+
+	@Override
+	public void embarkOnKnight() {
+		quest.embark();
+	}
+}
+</code></pre>
+<p>针对该<code>Bean</code>组件建立切面<code>Aspect</code>：</p>
+<pre><code class="language-Java">@Aspect
+public class BraveKnightAspect {
+
+	@AfterReturning(
+			pointcut = &quot;execution(* com.mycompany.knights.Knight.embarkOnKnight(..))&quot;,
+			returning= &quot;result&quot;)
+	public void log(){
+		System.out.println(&quot;Hello,this is advice&quot;);
+	}
+	
+}
+</code></pre>
+<p>在配置类中使用建立的切面：</p>
+<pre><code class="language-Java">@Configuration
+@EnableAspectJAutoProxy
+@ComponentScan
+public class KnightConfig {
+
+	@Bean
+	public Knight braveKnight (){
+		return new BraveKnight(quest());
+	}
+
+	@Bean
+	public Quest quest() {
+		return new Quest();
+	}
+
+	//required，将Aspect标记为Bean
+	@Bean
+	public BraveKnightAspect braveKnightAspect(){
+		return  new BraveKnightAspect();
+	}
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

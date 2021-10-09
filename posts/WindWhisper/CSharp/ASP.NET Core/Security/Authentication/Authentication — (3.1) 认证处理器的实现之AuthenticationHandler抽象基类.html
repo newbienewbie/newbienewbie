@@ -1,0 +1,278 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (3.1) 认证处理器的实现之AuthenticationHandler抽象基类.html">
+                    Authentication — (3.1) 认证处理器的实现之AuthenticationHandler抽象基类
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>前文说到，<code>AspNet/HttpAbstractions</code>项目中定义了<code>IAuthenticationHandler</code>接口，负责针对每个请求进行认证处理，包含了初始化、认证、质询、和禁止访问4个功能：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandler
+{
+    Task InitializeAsync(AuthenticationScheme scheme, HttpContext context);
+    Task&lt;AuthenticateResult&gt; AuthenticateAsync();
+    Task ChallengeAsync(AuthenticationProperties properties);
+    Task ForbidAsync(AuthenticationProperties properties);
+}
+</code></pre>
+<p>在<code>AspNet/Security</code>项目中，提供了一个抽象类<code>AuthenticationHandler&lt;TOptions&gt;</code>作为<code> IAuthenticationHandler</code>的基础实现：</p>
+<pre><code class="language-csharp">public abstract class AuthenticationHandler&lt;TOptions&gt; : IAuthenticationHandler 
+    where TOptions : AuthenticationSchemeOptions, new()
+{
+     // ...
+}
+</code></pre>
+<p>其中，初始化只是简单地设置模式、<code>HttpContext</code>，创建事件处理器等：<!-- more --></p>
+<pre><code class="language-csharp">    // 初始化，设置scheme，context ，事件等
+    public async Task InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+    {
+        // ...
+        
+        Scheme = scheme;
+        Context = context;
+
+        Options = OptionsMonitor.Get(Scheme.Name) ?? new TOptions();
+        Options.Validate(Scheme.Name);
+
+        await InitializeEventsAsync();
+        await InitializeHandlerAsync();
+    }
+</code></pre>
+<p>而其余三个关键的接口方法分别负责认证、质询、和禁止，三者的处理逻辑都是先进行<strong>转发检测</strong>，判断是否要转发给其他认证模式。如果需要转发，则转而调用<code>HttpContext</code>上的认证服务处理；否则，就会调用自身的处理认证、处理质询、和处理禁止方法。</p>
+<p>转发检测是通过<code>ResolveTarget(scheme)</code>这个函数完成的，该函数非常简单，只是根据当前认证处理器的配置选项，解析需要转发给哪个目标认证模式：</p>
+<pre><code class="language-csharp">    protected virtual string ResolveTarget(string scheme)
+    {
+        var target = scheme ?? Options.ForwardDefaultSelector?.Invoke(Context) ?? Options.ForwardDefault;
+
+        // Prevent self targetting
+        return string.Equals(target, Scheme.Name, StringComparison.Ordinal)
+            ? null
+            : target;
+    }
+</code></pre>
+<p>可以看到获取目标模式的优先级为：</p>
+<ol>
+<li>如果配置了<code>ForwardDefaultSelector</code>函数，则调用此函数来获取转发模式，</li>
+<li>如果结果为空，则尝试用<code>ForwardDefault</code>选项来设置</li>
+</ol>
+<h3>认证</h3>
+<p>如果想把认证过程转发给其他认证模式，则转而调用<code>HttpContext</code>的认证服务进行处理；否则，则使用自己的逻辑进行处理，并返回认证结果。当然，为了避免同一次请求过程中反复计算<code>AuthenticationResult</code>，需要把结果缓存下来，也即调用<code>await HandleAuthenticateOnceAsync();</code>来避免反复计算:</p>
+<pre><code class="language-csharp">    public async Task&lt;AuthenticateResult&gt; AuthenticateAsync()
+    {
+        // target scheme string
+        var target = ResolveTarget(Options.ForwardAuthenticate);
+        if (target != null)
+        {
+            return await Context.AuthenticateAsync(target);
+        }
+
+        // Calling Authenticate more than once should always return the original value.
+        var result = await HandleAuthenticateOnceAsync();
+        // ... log
+        return result;
+    }
+</code></pre>
+<p><code> HandleAuthenticateOnceAsync()</code>函数只是简单的调用自身的<code>HandleAuthenticateAsync()</code>进行处理，这里的<code>HandleAuthenticateAsync()</code>是一个抽象方法，留待子类实现；在当次请求过程中，第一次认证结束后的认证结果会缓存下来，当次请求过程中如果还有后续认证需求的话，直接从当前缓存中返回认证结果：</p>
+<pre><code class="language-csharp">    protected Task&lt;AuthenticateResult&gt; HandleAuthenticateOnceAsync()
+    {
+        if (_authenticateTask == null)
+        {
+            _authenticateTask = HandleAuthenticateAsync();
+        }
+
+        return _authenticateTask;
+    }
+    
+    protected abstract Task&lt;AuthenticateResult&gt; HandleAuthenticateAsync();
+</code></pre>
+<h3>质询</h3>
+<p>和认证方法类似，质询也是优先判断是否要转发给其他模式质询，如果没有的话，再调用自身的抽象方法<code>HandleChallengeAsync</code>处理质询过程：</p>
+<pre><code class="language-csharp">    public async Task ChallengeAsync(AuthenticationProperties properties)
+    {
+        var target = ResolveTarget(Options.ForwardChallenge);
+        if (target != null)
+        {
+            await Context.ChallengeAsync(target, properties);
+            return;
+        }
+
+        properties = properties ?? new AuthenticationProperties();
+        await HandleChallengeAsync(properties);
+        Logger.AuthenticationSchemeChallenged(Scheme.Name);
+    }
+</code></pre>
+<p>这里默认的处理质询过程只是返回一个<code>401</code></p>
+<pre><code class="language-csharp">    protected virtual Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 401;
+        return Task.CompletedTask;
+    }
+</code></pre>
+<h3>禁止</h3>
+<p>至于禁止方法，同样还是优先判断是否要转发给其他模式禁止。如果不需要，则由<code>HandleForbiddenAsync()</code>方法自身处理禁止过程：</p>
+<pre><code class="language-csharp">    public async Task ForbidAsync(AuthenticationProperties properties)
+    {
+        var target = ResolveTarget(Options.ForwardForbid);
+        if (target != null)
+        {
+            await Context.ForbidAsync(target, properties);
+            return;
+        }
+
+        properties = properties ?? new AuthenticationProperties();
+        await HandleForbiddenAsync(properties);
+        Logger.AuthenticationSchemeForbidden(Scheme.Name);
+    }
+</code></pre>
+<p>默认禁止只是返回一个<code>403</code> :</p>
+<pre><code class="language-csharp">    protected virtual Task HandleForbiddenAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 403;
+        return Task.CompletedTask;
+    }
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

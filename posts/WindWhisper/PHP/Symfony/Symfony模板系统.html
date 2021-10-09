@@ -1,0 +1,285 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony模板系统.html">
+                    Symfony 模板系统
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>Template的逻辑命名和Controller的类似，模板的逻辑名称遵循这样的约定：</p>
+<p><code>BundleName:ControllerName:TemplateName</code></p>
+<p>一般会被映射会这样的物理地址：</p>
+<ol>
+<li><code>app/Resources/{BundleName}/views/ControllerName/TemplateName</code></li>
+<li><code>{path/to/BundleName/}Resources/views/ControllerName/TemplateName</code></li>
+</ol>
+<p>当第1个地址找不到对应的模板时，会继续查找第2个位置的模板。</p>
+<h2>Template Services</h2>
+<p>Symfony模板系统的核心是模板引擎(服务)，</p>
+<p>从控制器渲染模板：</p>
+<pre><code class="language-PHP">return $this-&gt;render('article/index.html.twig');
+</code></pre>
+<p>与直接使用服务是等价的：</p>
+<pre><code class="language-PHP">use Symfony\Component\HttpFoundation\Response;
+$engine=$this-&gt;container-&gt;get('templating');
+$content=$engine-&gt;render('article/index.html.twig');
+$return $response=new Response($content);
+</code></pre>
+<p>Symfony的模板引擎可以在<code>app/config/config.yml</code>中配置：</p>
+<pre><code class="language-YAML">framework: 
+    #...
+    templating: { engines: ['twig']}
+</code></pre>
+<h2>Twig模板</h2>
+<p>Twig模板的语法和Django模板语法非常相似。Twig提供了三种语法：</p>
+<ol>
+<li>says sth</li>
+</ol>
+<pre><code class="language-Twig">{{ ... }}
+</code></pre>
+<ol start="2">
+<li>does sth</li>
+</ol>
+<pre><code class="language-Twig">// does sth
+{% ... %}
+</code></pre>
+<ol start="3">
+<li>comment sth</li>
+</ol>
+<pre><code class="language-Twig">
+{# ... #}
+</code></pre>
+<h3>Twig链接：</h3>
+<pre><code class="language-HTML">&lt;a href=&quot;{{ path(routeName,context) }} &quot; &gt; home &lt;/a&gt;
+&lt;img src=&quot;{{ assets(images/logo.png) }}&quot;/&gt;
+&lt;link href=&quot;{{ assets(css/blog.css) }}&quot; rel='stylesheet' type='text/css' /&gt;
+</code></pre>
+<h3>Twig filters:</h3>
+<pre><code class="language-PHP">{{ title|upper }}
+
+</code></pre>
+<h3>Twig模板嵌入</h3>
+<p>为了代码复用，Twig提供了include:</p>
+<pre><code class="language-PHP">{% include() %}
+</code></pre>
+<h3>Twig模板继承与重载:</h3>
+<pre><code class="language-PHP">{% extends 'baseTemplateName' %}
+
+{% block XX  %}
+    {{ parent() }}
+    {# overwrite here #}
+{% endblock  %}
+</code></pre>
+<p>一种常用的模板继承是三层方案。</p>
+<ol>
+<li>为整个网站创建基础模板<code>app/Resources/views/base.html.twig</code></li>
+<li>为某一类特定功能创建模板<code>spec/layout.html.twig</code>(继承自第1层模板)</li>
+<li>为每一个单独的页面创建模板 (继承自第2层模板)</li>
+</ol>
+<h3>Twig模板嵌入其他控制器</h3>
+<p>此外，还可以嵌入其他控制器的渲染结果</p>
+<pre><code class="language-PHP">{{ render(Controller(&quot;LogicalContrllerName&quot;,context)) }}
+</code></pre>
+<p>配合hinclude.js，还可以实现异步加载：</p>
+<pre><code class="language-PHP">{{ render_hinclude(controller('...')) }}
+{{ render_hinclude(url('...')) }}
+</code></pre>
+<h3>Twig Template转义</h3>
+<p>twig系统自带转义，如需原始输出，可以利用raw 过滤函数</p>
+<pre><code class="language-PHP">{{ article|raw  }}
+</code></pre>
+<p>PHP模板，可以使用</p>
+<pre><code class="language-PHP">&lt;?php echo $view-&gt;escape($name)?&gt;
+</code></pre>
+<p>进行转义。</p>
+<h3>Twig Macro</h3>
+<p><a href="http://twig.sensiolabs.org/doc/templates.html">Twig Macro</a>是非常强大的HTML代码复用手段，它的功能非常类似于C语言的宏：</p>
+<pre><code class="language-Twig">{% macro input(name, value = &quot;&quot;, type = &quot;text&quot;, size = 20) %}
+    &lt;input type=&quot;{{ type }}&quot; name=&quot;{{ name }}&quot; value=&quot;{{ value|e }}&quot; size=&quot;{{ size }}&quot; /&gt;
+{% endmacro %}
+</code></pre>
+<p>Twig Macro可以在其他单独的文件中定义，然后导入到当前的模板文件中：</p>
+<pre><code class="language-Twig">{# 导入整个宏定义文件 #}
+{% import &quot;forms.html&quot; as forms %}
+{{ forms.input('username') }}
+
+{# 从宏文件中导入某个单独的Macro #}
+{% from 'forms.html' import input as input_field %}
+{{ input_field('username') }}
+
+</code></pre>
+<h3>Twig Use Statement</h3>
+<p>Twig的模板继承只支持单继承，Twig还提供了use以帮助我们实现更大程度的代码复用。</p>
+<p>use语句告诉Twig去把在某个文件中定义的block块导入到当前模板中。</p>
+<pre><code class="language-Twig">{% use &quot;blocks.html&quot; %}
+</code></pre>
+<p>这一功能类似于对于Macro的import语句，但是use只对block块有效，而且，想use的模板必须满足</p>
+<ol>
+<li>不extends其他模板。</li>
+<li>不定义宏</li>
+<li>body为空</li>
+</ol>
+<p>和针对Macros的import类似，use也支持了导入一部分代码段的功能，同时还提供别名机制来避免命名冲突：</p>
+<pre><code class="language-Twig">{% extends &quot;base.html&quot; %}
+
+{% use &quot;blocks.html&quot; with sidebar as base_sidebar, title as base_title %}
+
+{% block sidebar %}{% endblock %}
+{% block title %}{% endblock %}
+{% block content %}{% endblock %}
+</code></pre>
+<h2>Template的全局变量</h2>
+<p>不管是Twig模板，还是纯PHP模板，Symfony都为之提供了一个变量<code>app</code></p>
+<ul>
+<li>app.security  #deprecated since 2.6</li>
+<li>app.user</li>
+<li>app.request</li>
+<li>app.session</li>
+<li>app.environment</li>
+<li>app.debug</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

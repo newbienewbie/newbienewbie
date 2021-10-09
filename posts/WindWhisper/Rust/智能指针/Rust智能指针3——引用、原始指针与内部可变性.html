@@ -1,0 +1,261 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/智能指针/Rust智能指针3——引用、原始指针与内部可变性.html">
+                    Rust智能指针3——引用、原始指针与内部可变性
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>本文是正式开始智能指针之前的基础知识之三：引用、原始指针、与内部可变性。</p>
+<h2>引用和原始指针</h2>
+<p><code>Rust</code>中的引用在本质上就是指针，并没有什么黑魔法。对于原始指针和普通引用，在运行时，二者所指的内容完全一致。事实上，普通引用(<code>&amp;T</code>、<code>&amp;mut T</code>)都会被编译器隐式转化为原始指针(<code>*const T</code>、<code>*mut T</code>)，只不过这个转化是安全的。在<code>Rust</code>中，有两类原始指针：</p>
+<ol>
+<li><code>*const T</code> : 类似于 <code>&amp;T</code>引用，不可变</li>
+<li><code>*mut T</code>   : 类似于 <code>&amp;mut T</code>，可变</li>
+</ol>
+<p>以<code>*const T</code>为例，可以把<code>&amp;T</code>进行显式转换：</p>
+<pre><code class="language-Rust">let x = 42;
+let raw_pointer = &amp;x as *const i32;
+</code></pre>
+<p>或者可以写成这样：</p>
+<pre><code class="language-Rust">let x: i32 = 10;
+let raw_pointer: *const i32 = &amp;x;
+</code></pre>
+<p>但是，如果程序员手工使用原始指针，编译器并没有办法保证原始指针所指向的内存的有效性。正因为如此，<code>Rust</code>中大部分直接使用原始指针的场景都要加上<code>unsafe</code>： <!--more--></p>
+<pre><code class="language-Rust">let x_value= unsafe { *raw_pointer };
+</code></pre>
+<p>由引用向原始指针转换是安全的，因为编译器确保了引用的有效性；但是反过来，则是不安全的，这也是我们在 <code>*</code>解引用时加上<code>unsafe{}</code>块的原因。也就是说，编译器认为这段解引用原始指针的代码不安全，不过程序员对编译器做出了承诺：“我知道这段代码可能不安全，但是编译器你别管了，我以程序员的名义起誓，我确信这段代码没问题”。</p>
+<p>此外，原始指针也不会自动清理内存，原始指针就是纯粹的数，也不会<code>move</code>所有权。</p>
+<h2>引用和内部可变性</h2>
+<p>还记得还记得我们在所有权系统中描述的<a href="http://www.itminus.com/blog/2017/12/29/WindWhisper/Rust/%E6%89%80%E6%9C%89%E6%9D%83%E7%B3%BB%E7%BB%9F/%E6%89%80%E6%9C%89%E6%9D%83%E7%B3%BB%E7%BB%9F1%E2%80%94%E2%80%94%E4%B8%96%E7%95%8C%E8%A7%82/">借用规则</a> 吗？</p>
+<blockquote>
+<ol>
+<li>在任何时间，可以有一个可变引用，也可以有任意数量的不可变引用，但是不能同时拥有这两种情况。</li>
+<li>引用在其存活时间内必须总是有效的。</li>
+</ol>
+</blockquote>
+<p>规则1 有效地确保了内存安全、避免了数据竞争，但是带来好处的同时也会在一些情况下捆住了我们的手脚，我们只能在 <em>不可变的共享引用</em> 和 <em>唯一的可变引用</em> 中二选一，一旦编写了存在其他情况的代码，就会触发编译期错误。</p>
+<p>现在有一个场景是，对于借出的多个不可变引用，我们并不想改变整个引用的对象(这显然时违反内存安全的)，而是想只改变其中一个字段(完整地)，也就是要做字段级别的可变性控制，是否可行？类似于其他语言中字段级的<code>const</code>，不过<code>Rust</code>中默认都是<code>immutable</code>，所以要做的不是声明其不可变，而是指示某个字段其可变。在这种机制下，我们可以通过一个不可变结构的引用修改其中的一个字段，这称之为 <em>内部可变性</em> (<code>interior mutability</code>)</p>
+<h2><code>Cell&lt;T&gt;</code></h2>
+<p>简单的说，我们需要的是这样一种东西：我们可以利用对象的不可变引用，改变其中一个字段。<code>Cell&lt;T&gt;</code>允许我们通过在类型定义时将相关字段声明为<code>Cell&lt;T&gt;</code>类型来实现。不过<code>Cell&lt;T&gt;</code>要求相关字段是<code>Copy</code>(不包含指针等)，比如，是简单的整数类型，所以对其读写只需要简单的内存复制就行。</p>
+<p>这种需求场景及使用方式非常容易理解，例如<a href="https://doc.rust-lang.org/std/cell/struct.Cell.html">官方文档中的例子</a> ：</p>
+<pre><code class="language-Rust">use std::cell::Cell;
+
+struct SomeStruct {
+    regular_field: u8,
+    special_field: Cell&lt;u8&gt;,
+}
+
+let my_struct = SomeStruct {
+    regular_field: 0,
+    special_field: Cell::new(1),
+};
+
+let new_value = 100;
+
+// ERROR, because my_struct is immutable
+// my_struct.regular_field = new_value;
+
+// WORKS, although `my_struct` is immutable, field `special_field` is mutable because it is Cell
+my_struct.special_field.set(new_value);
+assert_eq!(my_struct.special_field.get(), new_value);
+</code></pre>
+<h3><code>Cell&lt;T&gt;</code>的API</h3>
+<p>乍一看，<code>Cell</code>本身相当简单，就是包装一下<code>value</code>，然后提供几个<code>API</code>：</p>
+<pre><code class="language-Rust">pub struct Cell&lt;T&gt; {
+    value: UnsafeCell&lt;T&gt;,
+}
+</code></pre>
+<p>但是，且慢，<code>UnsafeCell</code>是个什么鬼？</p>
+<blockquote>
+<p>The <code>UnsafeCell&lt;T&gt;</code> type is the only legal way to obtain aliasable data that is considered mutable.</p>
+</blockquote>
+<p>所有的具有内部可变性特点的类型，都必须要基于<code>UnsafeCell&lt;T&gt;</code>来实现。为什么要有这个规定呢？我们直接通过原始指针 <code>*const T</code>转换为<code>*mut T</code>，然后再在根据原始指针在指定位置写入相关值不就解决问题了？例如：</p>
+<pre><code class="language-Rust">unsafe {
+    let p = &amp;(self.value) as *const T as *mut T;
+    *p = v;
+}
+</code></pre>
+<p>然而，这种操作可能在一些情况下(比如涉及内存被回收的时候)产生悬空引用问题。作为把内存安全看得比程序员的命还重要的语言，<code>Rust</code>绝不会这样简单采用原始指针进行转换的方式。所以，提供了<code>UnsafeCell&lt;T&gt;</code>这个类型，该类型使用了编译器的内部黑魔法，确保了内存操作的安全性。而<code>Cell&lt;T&gt;</code>以此为基础，才能实现内存安全的内部可变性。<code>Cell</code>暴露的几个重要方法为：</p>
+<p><code>#new(value)</code> ：</p>
+<pre><code class="language-Rust">pub const fn new(value: T) -&gt; Cell&lt;T&gt; {
+    Cell {
+        value: UnsafeCell::new(value),
+    }
+}
+</code></pre>
+<p><code>get()</code>会返回所包含值的一个拷贝：</p>
+<pre><code class="language-Rust">pub fn get(&amp;self) -&gt; T {
+    unsafe{ *self.value.get() }
+}
+</code></pre>
+<p><code>get_mut()</code>会返回对底层数据的可变引用：</p>
+<pre><code class="language-Rust">pub fn get_mut(&amp;mut self) -&gt; &amp;mut T {
+    unsafe {
+        &amp;mut *self.value.get()
+    }
+}
+</code></pre>
+<p><code>set()</code>则会对旧值进行整体替换：</p>
+<pre><code class="language-Rust">pub fn set(&amp;self, val: T) {
+    let old = self.replace(val);
+    drop(old);
+}
+
+pub fn replace(&amp;self, val: T) -&gt; T {
+    mem::replace(unsafe { &amp;mut *self.value.get() }, val)
+}
+</code></pre>
+<h3><code>Cell</code>的特点与限制</h3>
+<p>通过观察上面的源码可以知道：</p>
+<ol>
+<li><code>Cell&lt;T&gt;</code>每次<code>get()</code>、<code>set()</code>调用其实都是做简单地拷贝，这也是<code>Cell&lt;T&gt;</code>要求<code>T</code>类型实现<code>Copy</code>的原因。</li>
+<li><code>Cell</code>没有运行时的额外性能损失，因为对于<code>Copy</code>类型，哪怕是<code>C</code>语言，也是进行类似<code>memcpy</code>的操作。</li>
+</ol>
+<p><code>Cell</code>成功的绕开了编译期关于继承不变性的约束，让我们可以使用不可变引用来修改其中的一个字段。事实上，下一篇笔记要说的引用计数型智能指针<code>Rc&lt;T&gt;</code>就要用到<code>Cell&lt;usize&gt;</code>来实现内部可变性。</p>
+<p>另一方面，<code>Cell&lt;T&gt;</code>是基于<code>T</code>是<code>Copy</code>的前提设计的，要针对不具备<code>Copy</code>能力的字段使用内部可变性，可以使用<code>RefCell&lt;T&gt;</code>。显然，<code>RefCell&lt;T&gt;</code>的内部实现要比<code>Cell&lt;T&gt;</code>麻烦的多，它必须自行在运行时维护进行<code>借用检查</code>，<code>borrow_mut()</code>和<code>borrow()</code>的使用必须符合 <em>引用规则</em> 。如果我们违反了这一点，就会在运行时触发<code>panic</code>。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/wordpress-plugin-dev/Administration.html">
+                    WordPress Plugin Administration Screens
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>菜单页面函数概要</h2>
+<p>与后台管理菜单相关的函数如下：</p>
+<p>通用菜单页面管理函数</p>
+<ul>
+<li>Menu Pages
+<ul>
+<li><code>add_menu_page()</code>       # Add a top level menu page</li>
+<li><code>remove_menu_page()</code>    # Remove a top level menu page</li>
+<li><code>add_object_page()</code>     # Add a top level menu page at the 'object' level</li>
+<li><code>add_utility_page()</code>    # Add a top level menu page at the 'utility' level</li>
+</ul>
+</li>
+<li>SubMenu Pages
+<ul>
+<li><code>add_submenu_page()</code>    # Add a submenu page.</li>
+<li><code>remove_submenu_page()</code> # Remove a submenu page</li>
+</ul>
+</li>
+</ul>
+<p>其中，
+<code>add_object_page</code>  :在object级别增加一个顶级菜单。新菜单会出现在Posts, Media, Links, Pages 和Comments组中。
+<code>add_utility_page</code> :在utility级别增加一个顶级菜单。新菜单会出现在Appearance, Plugins, Users, Tools 和Settings组中。</p>
+<p>原型为：</p>
+<pre><code class="language-PHP">//三个增加顶级菜单的函数
+add_menu_page   ( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
+add_object_page ( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url ); 
+add_utility_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url );
+
+//移除菜单的函数
+remove_menu_page( $menu_slug )
+</code></pre>
+<p>除了增加顶级菜单，还增加/移除子菜单：</p>
+<pre><code class="language-PHP">//增加子菜单管理页面
+add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $function );
+//移除子菜单管理页面
+remove_submenu_page( $menu_slug, $submenu_slug );
+</code></pre>
+<p>为简化调用，除了直接调用<code>add_submenu_page()</code>外，WordPress还提供了以下函数：</p>
+<ul>
+<li><code>add_dashboad_page()</code>   # Add submenu page to the <code>Dashboard</code> menu</li>
+<li><code>add_posts_page()</code>      # Add submenu page to the <code>Comments</code> menu</li>
+<li><code>add_media_page()</code>      # Add submenu page to the <code>Comments</code> menu</li>
+<li><code>add_comments_page()</code>   # Add submenu page to the <code>Comments</code> menu</li>
+<li><code>add_theme_page()</code>      # Add submenu page to the <code>Appearance</code> menu</li>
+<li><code>add_plugins_page()</code>    # Add submenu page to the <code>Plugins</code> menu</li>
+<li><code>add_users_page()</code>      # Add submenu page to the <code>Users</code> or <code>Profile</code> menu</li>
+<li><code>add_management_page()</code> # Add submenu page to the <code>Tools</code> menu</li>
+<li><code>add_options_page()</code>    # Add submenu page to the <code>Settings</code> menu.</li>
+</ul>
+<p>这些函数可以方便地在相应内置的顶级菜单下添加子菜单页面。如<code>add_options_page()</code>原型为：</p>
+<pre><code class="language-PHP">add_options_page( $page_title, $menu_title, $capability, $menu_slug, $function); 
+</code></pre>
+<p>可以在设置菜单下添加相应的子菜单页面。</p>
+<h2>钩子</h2>
+<p>根据WordPress官方文档的描述，要创建一个菜单页面，必须要做三件事：</p>
+<ol>
+<li>创建一个用于创建menu的函数。</li>
+<li>创建当这个菜单被点击时的输出(类似菜单被点击时的回调函数)。</li>
+<li>把这个menu创建函数注册到动作型钩子<code>admin_menu</code>上。</li>
+</ol>
+<p>对于PHP5.3以上的版本，使用匿名函数可以更清除的表示菜单页面的概念：</p>
+<pre><code class="language-PHP">
+add_action( 'admin_menu', 'my_plugin_menu' );
+
+function my_plugin_menu() {
+
+    //在Options下添加子菜单
+    add_options_page( 
+        'My Plugin Options',     // page title
+        'My Plugin',             // menu title
+        'manage_options',        // capability
+        'my-unique-identifier',  // menu slug
+        function(){              // 当菜单被点击后,调用此函数，输出内容将作为管理界面的右部子界面
+            if ( !current_user_can( 'manage_options' ) )  {
+                wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+            }
+            echo '&lt;div class=&quot;wrap&quot;&gt;';
+            echo '&lt;p&gt;Here is where the form would go if I actually had options.&lt;/p&gt;';
+            echo '&lt;/div&gt;';
+        }
+    );
+    
+    //...
+
+}
+
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

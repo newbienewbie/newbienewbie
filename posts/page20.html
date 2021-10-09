@@ -1,0 +1,555 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Java/Activiti/Activiti-极速入门1——基本概念与用法.html">
+                    Activiti 极速入门1——基本概念与用法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-13
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>基本概念</h2>
+<p>首先思考这样一个业务场景：一种特定级别的公文审批需要经过保存、提交、科长审核、处长审核、局长审核这几个环节。
+我们可以使用 <code>BPMN2.0</code> 规范描述这个流程。</p>
+<p>需要分清两个概念：</p>
+<ul>
+<li><code>process definition</code>：是某个业务的<code>BPMN 2.0</code>流程定义在<code>Java</code>中的对等部分</li>
+<li><code>process instance</code>：每次<code>process definition</code>执行，都会产生一个<code>process instance</code>，一个<code>process definition</code>可能有多个<code>process instance</code>。比如对一个费用报销审批流程，可能有多个人同时在申请报销。</li>
+</ul>
+<p><code>Activiti Engine</code>是一个状态机，可以用来执行流程。一个<code>BPMN 2.0</code>流程定义由元素组成:</p>
+<ul>
+<li><code>event</code></li>
+<li><code>task</code></li>
+<li><code>gateway</code></li>
+<li><code>sequence flows</code></li>
+</ul>
+<p>当流程定义被发布并开始一个新的<code>process</code>实例，<code>BPMN 2.0</code>的元素就可以被逐个执行。</p>
+<h2>流程部署和启动</h2>
+<p>在一切开始之前，需要创建一个流程引擎：</p>
+<pre><code class="language-Java">ProcessEngineConfiguration cfg = new StandaloneProcessEngineConfiguration()
+        .setJdbcUrl(&quot;jdbc:h2:mem:activiti;DB_CLOSE_DELAY=1000&quot;)
+        .setJdbcUsername(&quot;sa&quot;)
+        .setJdbcPassword(&quot;&quot;)
+        .setJdbcDriver(&quot;org.h2.Driver&quot;)
+        .setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
+ProcessEngine processEngine = cfg.buildProcessEngine();
+</code></pre>
+<p>然后就可以使用<code>RepositoryService</code>部署流程了：</p>
+<pre><code class="language-Java">RepositoryService repositoryService = processEngine.getRepositoryService();
+Deployment deployment = repositoryService.createDeployment()
+    .addClasspathResource(&quot;main.bpmn20.xml&quot;)
+    .deploy();
+</code></pre>
+<p>然后就可以使用<code>RuntimeService</code>启动具体的流程实例了：</p>
+<pre><code class="language-Java">RuntimeService runtimeService = processEngine.getRuntimeService();
+ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(&quot;onboarding&quot;);
+</code></pre>
+<h2>流程相关服务</h2>
+<p><code>RepositoryService</code>和<code>RuntimeService</code>的区别在于前者处理静态信息，而后者处理流程运行时信息。</p>
+<p>通过流程引擎还可以获取一系列服务，比如<code>TaskService</code>、<code>FormService</code>、<code>HistoryService</code>：</p>
+<pre><code class="language-Java">TaskService taskService = processEngine.getTaskService();
+FormService formService = processEngine.getFormService();
+HistoryService historyService = processEngine.getHistoryService();
+</code></pre>
+<p>所有的服务都是无状态的，这些服务都可以通过流程引擎来获取：</p>
+<pre><code>// 
+
+          [ProcessEngineConfiguration]◄----[activiti.ctg.xml]
+                       |
+                       |       
+                       |            ------------►[HistoryService]
+                       |            |
+                       |            ------------►[IdentityService]
+                       ▼            |
+       --------------------------------
+       [          ProcessEngine       ]---------►[FormService]
+       --------------------------------
+              /        |       \    |
+             /         |        \   ------------►[ManagementService]
+            /          |         \
+           /           |          \
+          /            ▼           \
+         ◣                          ◢    
+[RepositoryService] [RuntimeService] [TaskService]
+</code></pre>
+<p><code>TaskService</code>负责处理用户任务的相关服务：</p>
+<pre><code class="language-Java">// 根据用户来获取潜在的任务
+List&lt;Task&gt; tasks = taskService.createTaskQuery().taskCandidateUser(&quot;kermit&quot;).list();
+
+// 根据用户组来获取潜在的任务
+List&lt;Task&gt; tasks = taskService.createTaskQuery().taskCandidateGroup(&quot;accountancy&quot;).list();
+
+
+// 领取任务：
+taskService.claim(task.getId(), &quot;fozzie&quot;);
+// The task is now in the personal task list of the one that claimed the task.
+List&lt;Task&gt; tasks = taskService.createTaskQuery().taskAssignee(&quot;fozzie&quot;).list();
+
+// 完成任务：
+taskService.complete(task.getId());
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/build-in/ES2015-迭代协议.html">
+                    ES2015 迭代协议
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-09
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>正如<code>Python</code>中的<code>iterable</code>和<code>iterator</code>一样，<code>JavaScript</code>也有自己的<code>iterable</code>和<code>iterator</code>。一旦一个对象遵循这些规则，就可以实现迭代。迭代协议分为两部分：</p>
+<ul>
+<li><code>iterable</code> 协议</li>
+<li><code>iterator</code> 协议</li>
+</ul>
+<h2>iterable</h2>
+<p><code>iterable</code>：如果一个对象（或者它的原型链上）实现了<code>@@iterator</code> 方法，调用后返回一个<code>iterator</code>，则这样的对象称之为<code>iterable</code>，比如<code>Array</code>和<code>Map</code>对象实例。</p>
+<p>当一个对象需要被遍历的时候（比如开始用于一个<code>for..of</code>循环中），它的<code>@@iterator</code>方法就被调用，然后返回一个<code>iterator</code>。</p>
+<h2>iterator</h2>
+<p><code>迭代器</code>：一个对象实现了一个<code>next()</code>的方法，该方法调用后返回一个对象，拥有两个属性：</p>
+<ul>
+<li><code>done</code>：<code>true</code>或<code>false</code>。</li>
+<li><code>value</code>：迭代器返回的值。<code>done</code>为<code>true</code>时可省略。</li>
+</ul>
+<p><code>Array</code>对象的<code>entries()</code>方法返回的就是一个<code>iterator</code>：</p>
+<pre><code class="language-JavaScript">const arr = [1, 2, 3];
+const iter = arr.entries();
+</code></pre>
+<p>一些内置的语法结构，比如 <code>spread operator</code>，内部也使用了同样的迭代协议：</p>
+<pre><code class="language-JavaScript">[...someString]
+</code></pre>
+<h2>生成器：</h2>
+<p>生成器既是<code>iterable</code>也是<code>iterator</code>。生成器可以中断函数执行：</p>
+<pre><code class="language-JavaScript">function* makeSimpleGenerator(array){
+    var nextIndex = 0;
+    
+    while(nextIndex &lt; array.length){
+        yield array[nextIndex++];
+    }
+}
+
+var gen = makeSimpleGenerator(['yo', 'ya']);
+
+console.log(gen.next().value); // 'yo'
+console.log(gen.next().value); // 'ya'
+console.log(gen.next().done);  // true
+</code></pre>
+<p>另外一个优点是可以惰性求值：</p>
+<pre><code class="language-JavaScript">function* idMaker(){
+    var index = 0;
+    while(true)
+        yield index++;
+}
+
+var gen = idMaker();
+
+console.log(gen.next().value); // '0'
+console.log(gen.next().value); // '1'
+console.log(gen.next().value); // '2'
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/electron/electron-主进程和渲染器进程通信.html">
+                    Electron 主进程和渲染器进程通信
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-27
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在使用<code>Electron</code>开发中，经常有这样一种需求场景：</p>
+<ol>
+<li>用户点击网页界面中的<code>button</code>元素</li>
+<li>触发<code>Electron</code>执行一些系统操作，比如调用外部的系统命令、执行<code>Node.js</code>程序，</li>
+<li>执行完程序后再将结果反馈到网页中。</li>
+</ol>
+<p>为解决此类文件，需要使用<code>IPC</code>通讯。</p>
+<p>首先定义两种进程：</p>
+<ul>
+<li>把运行<code>package.json</code>的<code>main</code>脚本的进程称之为<code>Main Process</code>;</li>
+<li>每一个网页都运行在独立的进程里，称之为<code>Renderer Process</code>。</li>
+</ul>
+<h2>Main Process 和 Renderer Process</h2>
+<p><code>Main Process</code>通过创建<code>BrowserWindow</code>实例来创建网页。每一个<code>BrowserWindow</code>实例都在独立的<code>Renderer Process</code>里运行网页。每当<code>BrowserWindow</code>实例被销毁，相应的<code>Renderer Process</code>也会终止。<code>Main Process</code>负责管理所有的网页和相应的<code>Renderer Processes</code>,每一个<code>Renderer Process</code>都相互独立。
+<code>Main Process</code>和<code>Renderer Process</code>之间可以采用<code>IPC</code>机制通讯。</p>
+<h2>ipcMain 和 ipcRenderer</h2>
+<p><code>ipcMain</code>模块、<code>ipcRenderer</code>模块都是<code>EventEmitter</code>的一个实例，
+<code>ipcMain</code>会处理来自于<code>Renderer Process</code>的异步消息和同步消息。<code>Renderer Process</code>发来的消息会被提交到这个模块。
+<code>ipcRenderer</code>可以发送以同步或者异步的方式从渲染进程到主进程发送消息。也可以利用它从主进程接收消息。</p>
+<ul>
+<li>和<code>EventEmitter</code>那样，<code>ipcMain</code>和<code>ipcRenderer</code>进程都利用<code>.on(eventName,(event,arg)=&gt;{})</code>方法响应事件(处理消息)。</li>
+<li><code>ipcRenderer</code>进程利用<code>.send(eventName,msgObj)</code>将消息发送给<code>ipcMain</code>进程。</li>
+<li>可以使用<code>event.sender.send(...)</code>异步的把消息回发给发送人</li>
+</ul>
+<pre><code class="language-JavaScript">ipcMain.on(eventName,(event,arg)=&gt;{
+    event.sender.send('eventName','ping');
+});
+</code></pre>
+<h2>示例</h2>
+<p>主进程：</p>
+<pre><code class="language-JavaScript">const path=require('path');
+const {app,ipcMain,BrowserWindow}=require('electron');
+
+ipcMain.on('asynchronous-message', (event, arg) =&gt; {
+    console.log(arg)  // prints &quot;ping&quot;
+    event.sender.send('asynchronous-reply', 'pong')
+})
+
+
+const INDEX_HTML_PATH=path.join(__dirname,&quot;dist&quot;,&quot;views&quot;,&quot;index.html&quot;);
+let win;
+app.on('ready',function(){
+    win=new BrowserWindow();
+    win.openDevTools();
+    win.loadURL(`file://${INDEX_HTML_PATH}`);
+    win.on('closed',()=&gt;{
+        win=null;
+    });
+
+});
+app.on('window-all-closed', function(){
+    app.quit();
+});
+</code></pre>
+<p>主进程将要创建的网页的<code>HTML</code>页面代码为：</p>
+<pre><code class="language-HTML">&lt;html&gt;
+&lt;head&gt;&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;app&quot;&gt;
+        hello,world
+    &lt;/div&gt;
+    &lt;script src=&quot;../js/index.js&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html
+</code></pre>
+<p>此页面<code>script</code>加载的<code>index.js</code>代码为：</p>
+<pre><code class="language-JavaScript">const {ipcRenderer} = require('electron')
+
+ipcRenderer.on('asynchronous-reply', (event, arg) =&gt; {
+  console.log(arg) // prints &quot;pong&quot;
+})
+ipcRenderer.send('asynchronous-message', 'ping')
+</code></pre>
+<p>则最终会在运行主程序的控制台、和<code>Electron</code>的开发工具控制台中分别输出消息，如下图所示：</p>
+<p>{% asset_img &quot;electron运行效果截图.jpg&quot; &quot;electron运行效果截图&quot;%}</p>
+<h2>使用<code>webpack</code>编译<code>Electron</code>网页部分的代码</h2>
+<p>在使用<code>webpack</code>打包<code>Electron</code>网页部分的程序代码中，经常遇到这种情况:</p>
+<ol>
+<li>需要在渲染器进程中通过<code>const {ipcRenderer}=require('electron')</code>引入<code>ipcRenderer</code></li>
+<li>然而<code>webpack</code>默认情况下会尝试把<code>electron</code>模块也编译来来，触发报错——找不到<code>fs</code>之类的模块。</li>
+</ol>
+<p>由于<code>webpack</code>默认的编译目标是浏览器环境，直接套用默认情况然然是不合理的。我们编译后的文件并非在浏览器中执行，而是在<code>Electron</code>的<code>Renderer Process</code>中进行，这里直接把<code>webpack</code>的编译<code>target</code>设置为<code>electron-renderer</code>即可解决问题:</p>
+<pre><code class="language-JavaScript">module.exports={
+
+    // for electron renderer process
+    target:'electron-renderer', 
+
+    entry:{
+        // ... 省略
+    },
+    output:{
+        // ... 省略 
+    },
+    module:{
+        // ... 省略 
+    },
+};
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/NoSQL/LDAP/LDAP、AD、和目录服务.html">
+                    LDAP、AD、和目录服务
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-22
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>LDAP</code> 全称为: <code>Lightweight Directory Access Protocol</code>，正如名字描述的那样，这是一套关于目录访问的协议。</p>
+<h2>Directory Service</h2>
+<p>一个 <code>Directory Service</code>基本上要包括这些：</p>
+<ul>
+<li><code>directory</code> 本质上<code>条目树</code>（ <code>a tree of entries</code>）</li>
+<li>每个<code>entry</code>都有一个<code>唯一名字</code>（<code>Distinguished Name</code>，<code>DN</code>）</li>
+<li><code>entry</code>是一个<code>属性集合</code>（<code>a set of attributes</code>），可以类比于<code>table</code>和<code>column</code>的关系</li>
+<li>一个<code>attribute</code>是一个<code>key-value</code>对</li>
+</ul>
+<p>一个可视化表示：</p>
+<pre><code># Directory Service 的表示
+
+                o=org
+              /       \
+         ou=users     ou=groups
+        /      |         |     \
+    cn=wang  cn=lee    cn=dep1  cn=dep2
+    /
+keyid=foo
+</code></pre>
+<p>比如我们要访问记录 <code>cn=wang</code>，其<code>DN</code>为：</p>
+<pre><code>dn: cn=wang, ou=users, o=org
+</code></pre>
+<p>注意，最右边的  <code>o=org</code> 是 这个<code>Directory Service</code>的<code>root</code>。</p>
+<h2>LDAP 和 AD</h2>
+<ul>
+<li><code>LDAP</code> 就是和 <code>Directory Tree</code> 进行交互的协议，比如<code>search</code>、<code>add</code>、<code>update</code>、<code>delete</code>。可以把<code>LDAP</code>视作<code>NoSQL/document store</code>。</li>
+<li><code>Active Directory</code>是一个 Windows 环境下的数据库系统，提供<code>authentication</code>, <code>directory</code>, <code>policy</code>和其他服务。</li>
+</ul>
+<p>简单的说，<code>AD</code>是一个<code>directory services</code>数据库, and <code>LDAP</code> 是其中一种可以用于与之对话的协议。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/yeoman/yeoman-与文件系统交互.html">
+                    yeoman 与文件系统交互
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>.yo-rc.json</code>文件定义了一个<code>yeoman</code>项目的根目录（<code>root</code>）。 这个文件允许用户运行在子目录里运行命令。</p>
+<h2>两个 context</h2>
+<p><code>yeoman</code>文件功能都是基于这样一个简单设想：在磁盘上，你总是有两个 <code>location contexts</code>。大部分情况下是从一个地方读，然后向另一个地方写。</p>
+<h3>destination context</h3>
+<p><code>destination context</code>被定义为当前工作目录或者最近一级包含<code>.yo-rc.json</code>文件的父目录。</p>
+<ul>
+<li>使用<code>destinationRoot()</code>方法获取<code>destination path</code></li>
+<li>使用<code>.destinationPath('sub/path')</code>方法来连接一个<code>path</code></li>
+</ul>
+<h3>template context</h3>
+<p><code>template context</code>是存放模板文件的地方。<code>template context</code>默认定义为<code>./templates/</code>。可以通过使用调用<code>sourceRoot('new/template/path')</code>方法覆盖这个默认值。</p>
+<ul>
+<li>使用<code>sourceRoot()</code>方法获取<code>path</code>值。</li>
+<li>使用<code>.templatePath('app/index.js')</code>连接一个<code>path</code></li>
+</ul>
+<h2>in-memory file System 和 文件功能</h2>
+<p>由于异步<code>API</code>难以使用, <code>yeoman</code>提供了同步的<code>file-system API</code>，将所有的文件都写到<code>in-memory</code>文件系统，当<code>yeoman</code>完成运行后，再写到磁盘。<code>in-memory</code>文件系统在所有的<code>composed generators</code>之间共享.
+<code>Generator</code>通过<code>this.fs</code>暴露所有的文件方法，<code>this.fs</code>是<code>mem-fs editor</code>的一个实例。</p>
+<h3>拷贝模板文件</h3>
+<p>使用<code>copyTpl()</code>方法来拷贝模板，此方法使用<code>ejs</code>模板语法：</p>
+<pre><code class="language-HTML">&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+  &lt;/head&gt;
+&lt;/html&gt;
+</code></pre>
+<p>调用的时候只要像渲染视图文件那样进行就可以了：</p>
+<pre><code class="language-JavaScript">class extends Generator {
+  writing() {
+    this.fs.copyTpl(
+      this.templatePath('index.html'),
+      this.destinationPath('public/index.html'),
+      { title: 'Templating with Yeoman' }
+    );
+  }
+}
+</code></pre>
+<h3>更新已经存在的文件内容</h3>
+<p>更新已经存在的文件内容是很复杂的工作，最可靠的方法是把文件解析为<code>AST</code>，然后编辑之。一些流行的<code>AST parser</code>包括：</p>
+<ul>
+<li><code>Cheerio</code>：解析<code>HTML</code>。</li>
+<li><code>Esprima</code>：解析<code>JavaScript</code>。</li>
+<li>对于<code>JSON</code>文件，使用原生的<code>JSON</code>对象方法。</li>
+<li>对于<code>Gruntfile</code>，使用<code>Gruntfile Editor</code>。</li>
+</ul>
+<p>使用<code>Regex</code>解析一个代码文件是邪道。</p>
+<h2>通过流转换输出文件</h2>
+<p><code>Generator</code>系统允许对每一个文件使用定制的<code>filter</code>,比如美化文件等。一旦<code>yeoman</code>通过<a href="https://github.com/gulpjs/vinyl">vinyl</a>处理完，再把每一个修改过的文件写入磁盘。</p>
+<p>通过调用<code>registerTransformStream()</code>方法即可注册一个新的修改器：</p>
+<pre><code class="language-JavaScript">var beautify = require('gulp-beautify');
+this.registerTransformStream(beautify({indentSize: 2 }));
+</code></pre>
+<p>需要注意的是，每一个文件都会被这个<code>stream</code>处理。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page19.html">
+          Previous
+        </a>
+        21 of 32
+        <a href="/posts/page21.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

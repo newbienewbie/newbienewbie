@@ -1,0 +1,1071 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Python/Python迭代器、生成器、生成器表达式.html">
+                    Python 迭代器、生成器、生成器表达式
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h1>从iter()和next()两个内置函数说起</h1>
+<p>迭代过程的本质是循环，为了回归本质，考虑一个最简单的C语言for循环</p>
+<pre><code class="language-C">for(int i=0;i&lt;10；i++){
+    printf(“%d\n”,i);
+}
+</code></pre>
+<p>这个循环过程是通过循环变量控制的：</p>
+<ul>
+<li>首先i=0，执行循环语句；</li>
+<li>然后i=1，执行循环语句；</li>
+<li>…</li>
+<li>然后i=9，执行循环语句；</li>
+<li>然后i=10，终止循环。</li>
+</ul>
+<p>可以发现，在这个循环过程中，循环过程控制变量i有个初值，然后每一次循环之后这个循环控制变量都要变化到另一个值以控制下一次循环。
+循环过程控制变量的概念可以类比到迭代器上，迭代器就是迭代过程控制器。和循环控制过程一样，要实现迭代控制，迭代器必须也有个初值，然后在每一个迭代过程都要能按一定规律变化到另一个值。因此，一个对象要成为迭代器，必须拥有两个能力：</p>
+<ul>
+<li>能给定自己的初始状态</li>
+<li>能把迭代器对象从当前状态变化到后续状态</li>
+</ul>
+<p>Python3.x提供了2个内置函数来实现这一控制。</p>
+<ul>
+<li>iter()：利用一个可迭代对象生成迭代器，即iter(iterable)==&gt; iterator ，此内置函数会调用iterable.<strong>iter</strong>()方法。</li>
+<li>next()：把一个迭代器从当前状态变化到后续状态，即next(iterator[, default])==&gt;the next item from the iterator. 可以调用iterator.<strong>next</strong>()方法 。（注意，原Python2.7里iterator .next()的调用方式在3.x里已经被移除）</li>
+</ul>
+<p>这里有两个关键的概念是iterable和iterator。</p>
+<h1>iterable和iterator</h1>
+<p>此部分翻译自官网文档，并加入一些自己的理解</p>
+<blockquote>
+<p>iterable：可迭代对象。一种能够一次返回其一个member的object（”An object capable of returning its members one at a time”）。这句话读起来很拗口，不准确的说，iterable代表了序列、集合和其他类似集合的对象，他们是可以迭代的，他们是一系列item的整体。 iterables例子包括所有的sequence types（比如list，str, and tuple）和一些如dict、file以及一些你定义了__iter__()或__getitem__()方法的Class的非序列类型 。iterable能被用于for循环和其他需要一个sequence的场景。可以用iter(iterable)返回一个iterator。当使用iterables，通常没必要自己亲自调用iter()或者处理iterator 对象。for语句会帮我们自动创建未命名的临时变量来容纳loop持续期间的iterator。</p>
+</blockquote>
+<blockquote>
+<p>iterator：迭代器。一种代表了一系列数据的对象（An object representing a stream of data）. 在这一系列数据的对象中，会重复调用iterator's的__next__()方法，并返回成功了的items。当没有合适数据的时候会引发StopIteration 异常 。所有迭代器都要求实现一个能返回自身iterator对象的__iter__() 方法 ，所以每一个iterator都是一个iterable，并且能被用在很多能接受iterables地方。值得注意的是，每次将container object传递给iter()，或者在for-loop里调用，都会产生一个崭新的iterator。</p>
+</blockquote>
+<p>不准确的说，对于Python</p>
+<ul>
+<li>如果一个对象，拥有__iter__()方法（可以给定自己初始状态），则其为iterable。</li>
+<li>如果一个对象，拥有__iter__()和__next__()方法（可以给定自己的初始状态+可以从一个状态变化到另一个后续状态），则其为迭代器。</li>
+</ul>
+<p><code>注意：不要以为Python的序列类型（如list,tuple,str）是迭代器，实际上它们只是可迭代对象</code>。如果你直接对调用next(list)就会发现系统提示你list object is not an iterator。对于一个list对象a_list，可以通过iter(a_list)生成一个迭代对象，也可以通过生成器表达式或者生产器函数得到一个迭代器。参见生成器</p>
+<p>那么为什么要区分一个可迭代对象和迭代器对象呢？其理由和Java中的iterable、iterator一样。
+简单的说，</p>
+<ul>
+<li>iterable更多的是代表了一个包含若干items的整体，这类整体是可以进行迭代(遍历)的；</li>
+<li>而iterator则更多表达了一个拥有当前状态的iterable对象，这个iterator对象会经过next()对其自身的状态进行变更。
+比如，一个列表对象(iterable)是包含若干items的sequence，但是列表对象(iterable)并不应该标记当前状态是哪一个item——这个工作应该交给一个与iterable相关的迭代器对象（iterator）来处理（通过iter(iterable)得到）。</li>
+</ul>
+<h1>Python for...in...的本质</h1>
+<p>Python的for...in...循环语法和bash shell的for...in...语法有一定程度的类似。一个简单的Python for语句如下：</p>
+<pre><code class="language-Python">a_list = ['a', 'b', 'mpilgrim', 'z', 'example']
+for i in a_list:
+    print(i)
+</code></pre>
+<p>其过程可以理解为迭代之初，Python自动调用了iter(a_list)生成一个iterator对象，不妨暂时称之为iterInstance（实际上这是个未命名的变量），过程可以描述为：iterInstance=iter(a_list),然后在循环过程中一路next(iterInstance)，直至抛出StopIteration。
+这两个内置函数iter()、 next()是和迭代器内部的__iter__()和__next__()两个方法是对应的。</p>
+<p>这一点和PHP的<code>foreach($iter as $k=&gt;$v)</code> 不同，PHP中，foreach操作的是iterator，而Python中for in 操作的则是iterable。</p>
+<h1>自定义的Python iterator类</h1>
+<p>根据Python官网PEP-0234，一个Class想要变成一个迭代器，应该实现两个方法：
+一是__next__()方法（原文是next()方法，但是在最新的Python3.x此方法被移除了，统一表示为__next__()方法，还增加了个和iter()对应的内置函数next()），<strong>next</strong>()方法要么返回本次迭代过程的the next value ,要么引发一个StopIteration表示本次迭代终止。
+二是实现一个__iter__() 方法，会返回自身这个迭代器。
+以下代码引自《深入 Python 3》第七章：</p>
+<pre><code class="language-Python">class Fib:
+    def __init__(self, max):
+        self.max = max
+
+    def __iter__(self):
+        self.a = 0
+        self.b = 1
+        return self
+
+    def __next__(self):
+        fib = self.a
+        if fib &gt; self.max:
+            raise StopIteration
+        self.a, self.b = self.b, self.a + self.b
+        return fib
+for n in Fib(1000):
+    print(n,)
+</code></pre>
+<p>for循环过程为:</p>
+<ul>
+<li>Fib(1000)调用__init__()生成一个fib对象（即一个Instance of Fib）,对应的fib.max=1000，</li>
+<li>然后调用iter(fib)通过fib.<strong>iter</strong>()得到了一个fibIterator，也即为上述for循环里的n，不过为了清楚表示这是个Fib类的迭代器，不妨暂时称之为fibIterator，于是对应的fibIterator.a=0，fibIterator.b=1。</li>
+<li>fibIterator循环体执行（此处即为由print打印）后，后台调用next(fibIterator),通过fibIterator.<strong>next</strong>()得到下一个fibIterator。</li>
+</ul>
+<h1>生成器（Genenrator）与生成器表达式</h1>
+<p>使用iterable或者iterator对象，有时候会遇到的问题是，一次性产生一系列元素会有些不划算。比方说，有一个很大的a_list对象，我们需要对其每一个元素都以f(x)的映射关系生成中间变量temp_list对象，后面再对，一个思路是列表解析：</p>
+<pre><code class="language-Python">temp_list=[f(i) for i in a_list ]
+</code></pre>
+<p>但是这样比较耗费内存，生成器可以解决这一问题。</p>
+<p>仅从字面意义上说，生成器Generator就是指能生成多个对象的对象。生成器是迭代器的一个派生类。在函数内部，通过使用yield使函数挂起（suspend），并生成（yield）了相应对象，当下一次运行的该函数的时候，该函数会从原来挂起的地方继续运行。</p>
+<p>我们可以通过在函数内部使用一系列yield来使函数对象表现出迭代器的性质。yield提供了非常便利的迭代方式。
+我们也可以用生成器表达式来生成迭代器。
+例如：</p>
+<pre><code class="language-Python"> for i in a_list:
+        yield f(i)
+</code></pre>
+<p>或者：</p>
+<pre><code class="language-Python">（f(i) for i in a_list）
+</code></pre>
+<p>都可以从a_list映射出一个新的迭代器</p>
+<p>注意！<code>生成器表达式的值是迭代器（iterator）！生成器表达式的值具有一次性使用的特点！</code>换言之，如果这个生成器表达式的值已经在之前遍历结束，再次遍历的时候迭代器并不会自动重新开始！如果需要多次使用，务必重新产生一个生成器！</p>
+<pre><code class="language-Python">&gt;&gt;&gt; a_dict={'a':1,'b':2,'c':3,'d':4,'e':5}
+&gt;&gt;&gt; x_gen=((a,b) for a,b in a_dict.items())
+&gt;&gt;&gt; for item in x_gen:
+...      print(item)
+... 
+('b', 2)
+('c', 3)
+('a', 1)
+('d', 4)
+('e', 5)
+&gt;&gt;&gt; for item in x_gen:    #这里x_gen在上一步已经遍历结束了！继续遍历的什么结果都没有！
+...       print(item)
+... 
+&gt;&gt;&gt; 
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony架构分析.html">
+                    Symfony架构分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>接触到的第一个PHP 框架就是CodeIgniter。轻巧，入门简单,概念清晰。</p>
+<p>然而我快发现，我很难复用CodeIgniter的代码--代码耦合度太高了，所以我开始试着写了一个自己的MVC框架 <a href="https://github.com/newbienewbie/Bamboo">Bamboo</a>。我想包装自己的类和模块，这样我就可以搭积木一样搭建各种网站了。当然，我只写了个基本框架，下面的重头戏是把所有的模块都自己实现。比如，Logger，Security，Upload，etc.我开始意识到这是个浩大的工程，然后计划搁浅了。</p>
+<p>直到有一天,我在Laravel里看到了它使用了Symfony组件的时候，我才发现，原来我在视图造一个很大的轮子。Symfony是可复用的,是组件化的。</p>
+<h2>Request-Response模型</h2>
+<p>从本质上来说，HTTP协议实际上描述了一个Request-Response模型。与之相关的PHP代码实际上都在做着<code>解释请求、生成响应</code>的工作，Symfony则更进一步的将Request和Response对象化了。</p>
+<p>Request-Response模型是整个Symfony的基础模型，可以毫不夸张的说，整个Symfony都构筑在这个基础模型之上(参见Front Controller部分)。</p>
+<h3>Request对象</h3>
+<p>Request类很简单，封装了原生PHP的各大超全局输入变量:</p>
+<pre><code class="language-PHP">use Symfony\Component\HttpFoundation\Request
+
+
+$request = Request::createFromGlobals();
+
+$request-&gt;getPathInfo();    //the URI being requested (e.g. /about) minus any query parameters
+$request-&gt;query-&gt;get('foo');    //$_GET 
+$request-&gt;request-&gt;get('bar', 'default value if bar does not exist');    /$_POST
+$request-&gt;server-&gt;get('HTTP_HOST');    //$_SERVER
+$request-&gt;files-&gt;get('foo');     //retrieves an instance of UploadedFile identified by foo
+$request-&gt;cookies-&gt;get('PHPSESSID');   //$_COOKIE 
+$request-&gt;headers-&gt;get('host');
+$request-&gt;headers-&gt;get('content_type');
+$request-&gt;getMethod();    //GET, POST, PUT, DELETE, HEAD
+$request-&gt;getLanguages(); // an array of languages the client accepts
+</code></pre>
+<h3>Response对象</h3>
+<p>Response类也非常简单，用来代替原生PHP的echo(),header():</p>
+<pre><code class="language-PHP">Symfony\Component\HttpFoundation\Response
+
+$response = new Response();
+
+$response-&gt;setContent('&lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello world!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;');
+$response-&gt;setStatusCode(Response::HTTP_OK);
+$response-&gt;headers-&gt;set('Content-Type', 'text/html');
+// prints the HTTP headers followed by the content
+
+$response-&gt;send();
+</code></pre>
+<h2>Front Controller</h2>
+<p><img src="#" alt="Symfony分层架构图" /></p>
+<p>说来惭愧，第一次看到Front Controller的概念还是在PHPWind的9.x的源代码里看到的，当时还天真的以为它是PHPWind9.x的开发人员想出来的名词。后来看Symfony也有这个概念，这才发现原来自己是多么的孤陋寡闻。当然，我们一直都在使用这个东西，只是不知道那就叫FrontController.</p>
+<p>一般情况下，代码会以各个独立的模块分层存在。为了根据请求的不同调用合适的功能代码，一些如CodeIgniter的框架(包括我自己写的Bamboo)都有一个统一入口文件(index.php)负责这项工作。
+在Symfony等一些框架(其他如PHPWind9.x以后的版本)中，单独抽象出了Front Controller的概念。和CodeIgniter中的index.php一样，Front Controller是一个统一入口，一切发到我们Application的请求都会由其处理，然后根据接收到的Request不同，按照配置的Route规则加载对应的Controller的Action。
+处理请求之后，生成响应对象并send()到客户端。</p>
+<p>根据环境的不同，Symfony自带有两个Front Controller：</p>
+<ul>
+<li><code>web/app.php</code>    #生产环境</li>
+<li><code>web/app_dev.php</code>  #开发环境</li>
+</ul>
+<p>之所以没有测试环境对应的前端控制器，是因为测试环境可以通常只在单元测试时使用。</p>
+<p>当然console工具也提供了能在任意环境下运行的Front Controller。</p>
+<p>Symfony中的Front Controller非常简单，遵循的逻辑可以概括为&quot;<code>处理请求，发送响应</code>&quot;,这也是整个Symfony框架对Request-Response模型的实现：</p>
+<pre><code class="language-PHP">// web/app.php
+
+require_once __DIR__.'/../app/bootstrap.php';
+require_once __DIR__.'/../app/AppKernel.php';
+use Symfony\Component\HttpFoundation\Request;
+
+//初始化一个prod环境、非debug模式运行的AppKernel
+$kernel = new AppKernel('prod', false);
+
+$kernel-&gt;handle(Request::createFromGlobals())    //处理请求
+        -&gt;send();    //发送响应
+</code></pre>
+<p>至此，针对Request-Response模型的处理流程已经总体规划完毕了。</p>
+<p>对于一个Symfony项目<code>myproj</code>,为了方便起见，假设整个文件夹都位于<code>/var/www/</code>下,当我们在浏览器中访问：</p>
+<p><code>localhost/myproj/web/some_route</code></p>
+<p>实际上是在调用Front Controller来执行与some_route对应的代码。事实上，上面这个URL在默认情况下等效于：</p>
+<p><code>localhost/myproj/web/app.php/some_route</code></p>
+<p>当然，在开发模式下，可以访问：</p>
+<p><code>localhost/myproj/web/app_dev.php/some_route</code></p>
+<p>激活debug工具并能自动重建缓存。</p>
+<p>正是由于Front Controller已经实现了Request-Response这样的基本流程，在Symfony中为一个基本组件（Bundle）添加页面只需要要遵循两步：</p>
+<ol>
+<li>创建Controller    #定义如何根据Response生成Response对象</li>
+<li>配置Route    #配置URL和Controller的映射关系</li>
+</ol>
+<p>当然，为了避免组织混乱、保持结构清晰，实际中，Route、Controller等等都是以Bundle来设计的。</p>
+<h2>Bundle</h2>
+<p>Bundle从PHP的角度而言，可以视作一个命名空间。一旦一个PHP命名空间添加了Bundle Class，就成为Bundle。这个Bundle Class的命名必须遵循以下规则：</p>
+<ul>
+<li>只使用字母和下划线</li>
+<li>使用CamelCased命名风格</li>
+<li>使用descriptive和short的名字</li>
+<li>以vender名为prefix</li>
+<li>以&quot;Bundle&quot;为suffix</li>
+</ul>
+<p>Bundle Class的getClass()方法返回这个类名。</p>
+<p>Bundle是Symfony的基本组件。Bundle存放了与某个特性相关的一切文件(比如PHP类、配置、甚至是css文件和JavaScript文件)的目录。
+事实上，Symfony的Bundle和PHPCMS里的module作用相当，类似于模块、插件。但是相较于PHPCMS之类其他的框架，Symfony的Bundle具有更好的抽象和实现。</p>
+<p>一个Bundle，通常位于src/VenderOfBundle/BundleName之下,其中的目录结构多为：</p>
+<pre><code>Vender/
+    YourBundle/
+        VenderYourBundle.php
+        Controller/               #控制器
+            Spec1Controller.php
+            Spec2Controller.php
+        DependencyInjection/      #DI
+        Resources/
+            config/
+            views/
+        Tests/                    #测试
+</code></pre>
+<p>想要添加一个Bundle，应该先创建以上目录，然后修改app/Kernel.php文件，为registerBundles()方法添加一个该Bundle的实例：</p>
+<pre><code class="language-PHP">// app/AppKernel.php
+
+public function registerBundles(){
+
+    $bundles=array(
+        //...
+        new Vender\YourBundle\VenderYourBundle();
+    );
+
+    //...
+
+    return $bundles;
+}
+</code></pre>
+<p>以上两步可以归纳为：</p>
+<ol>
+<li>创建Bundle</li>
+<li>注册Bundle</li>
+</ol>
+<p>当然，添加Bundle的这些步骤可以用一个命令代替：</p>
+<pre><code class="language-bash">    php app/console generate:bundle --namespace=Vender/YourBundle --format=yml
+</code></pre>
+<h2>Route</h2>
+<p>Route是指从Request（如URL路径,HTTP Method)到控制器(具体到Action)的映射。所以， 一条路由规则有两个要素组成：</p>
+<ol>
+<li>URL Path</li>
+<li>与URL Path匹配的Controller</li>
+</ol>
+<p>我们还可以为这条路由规则起一个独一无二的名字，这样我们就能用于生成URL了。</p>
+<p>路由层的作用就是把输入进来的URL转换为要执行的Controller。</p>
+<p>Symfony会从一个单独的路由配置文件中加载所有的路由规则。这个路由配置文件通常是</p>
+<p><code>app/config/routing.yml</code></p>
+<p>,当然，Symfony支持高度定制，我们可以把默认的路由文件配置成其他任意其他文件(包括XML和PHP文件)。如：</p>
+<pre><code class="language-YAML"># app/config/config.yml
+framework
+    # ....
+    router: { resource: &quot;%kernel.root_dir%/config/routing.yml&quot;}
+</code></pre>
+<p>当然，从URL到控制器动作，参数匹配是必不可少的。Symfony的路由系统支持:</p>
+<ul>
+<li>URL匹配         #通过@Route()设置
+<ul>
+<li>必选参赛    #通过占位符来设置</li>
+<li>可选参数    #通过占位符和设置defaults来设置</li>
+<li>正则匹配    #通过requirements设置</li>
+</ul>
+</li>
+<li>HTTP Method匹配 #通过@Method()</li>
+</ul>
+<pre><code class="language-PHP">/**
+ *@Route(&quot;/blog/{page}&quot;,defaults={&quot;page&quot;: 1},requirements={
+ *    &quot;page&quot;: &quot;\d+&quot;
+ *})
+ *@Method(&quot;GET&quot;)
+ */
+public function indexAction($page){
+    //...
+}
+</code></pre>
+<p>当然，威力更巨大的是condition属性，支持无限可能的定制。</p>
+<pre><code class="language-YAML">contact:
+    path: /contact
+    defaults: { _controller: AcmeDemoBundle:Main:contact}
+    condition: &quot;context.getMethod() in ['GET','HEAD'] and request.headers.get('User-Agent') matches '/firefox/i' &quot;
+</code></pre>
+<p>这个配置会被转换为以下的PHP代码：</p>
+<pre><code class="language-PHP">if(rtrim($pathinfo,&quot;/contact&quot;)===''&amp;&amp;
+    (
+        in_array($context-&gt;getMethod(),array(0=&gt;'GET',1=&gt;'HEAD')) &amp;&amp;
+        preg_match('/firefox/i',$request-&gt;headers-&gt;get(&quot;User-Agent&quot;))
+    )
+    
+){
+    //....
+}
+</code></pre>
+<h3>一个Bundle中的Route</h3>
+<p>要让合适的Controller和Action发生调用，必须建立url与之的映射。</p>
+<pre><code class="language-PHP">#src/Vender/YourBundle/Resources/config/routing.yml
+
+specController:
+    path: /specController/{limit}
+    defaults: { _controller: VenderYourBundle:specController:yourAction}
+
+</code></pre>
+<h3>app级Route</h3>
+<p>尽管所有的路由配置规则是从一个单独的文件中读取的，大家在实际中还是会通过<code>resource</code>导入其他路由规则。比如，使用Annotation格式的路由配置应设置:</p>
+<pre><code class="language-YAML">app: 
+    resource: &quot;@AppBundle/Controller&quot;
+    type: annotation  #使用Annotation reader来读取resource变量
+</code></pre>
+<p>如果我们手工添加了一个Bundle，我们可以把它自身包含的Route规则导入app level的配置中，即应该在app/config/routing.yml中添加配置：</p>
+<pre><code class="language-YAML"># app/config/routing.yml
+
+vender_yourbundlename
+    resource: &quot;@VenderYourBundle/Resources/config/routing.yml&quot;
+    prefix: /
+    
+</code></pre>
+<p>当然，如果是用<code>php app/console generate:bundle</code>命令生成的bundle，那么这一步已经由Symfony替我们做好了。</p>
+<h3>双向映射</h3>
+<p>Route提供了bidirectional System:</p>
+<ol>
+<li>match($URL)      #返回匹配到的控制器及参数构成的数组</li>
+<li>generate($RouteName,$paramsArray)       #生成URL</li>
+</ol>
+<h2>Controller</h2>
+<p>我们知道，每一个Route规则都有一个<code>_controller</code>对象，我们当然可以用</p>
+<p><code>完全限定名的ClassName::ActionName</code></p>
+<p>的形式来引用一个Controller，比如：</p>
+<p><code>AppBundle\Controller\BlogController::ShowAction </code>。</p>
+<p>但实际上这样的表达是有冗余信息的，最起码还要指出BlogController位于的命名空间Controller是没必要的，所以Symfony还支持对Controller的逻辑命名, 一条指定Controller的Action的逻辑命名通常遵循这样的约定：</p>
+<p><code>BundleName:ControllerName:ActionName</code></p>
+<p>通常这样的逻辑名称会被映射为</p>
+<p><code>path/to/BundleName/Controller/ControllerName.php</code>文件中的<code>ActionName</code>方法</p>
+<p>比如：</p>
+<p><code>AcmeDemoBundle:Random:Index</code></p>
+<p>这个控制器通常会会映射为：</p>
+<p><code>Acme\DemoBundle\Controller\RandomController</code>类中的<code>indexAction</code>方法。</p>
+<p>另外值得注意的是，Symfony中Controller的Action 与CodeIgniter之类的框架并完全一样:</p>
+<ol>
+<li>CodeIgniter中的控制器直接输出响应，而Symfony中则是必须返回Response对象;</li>
+<li>Symfony支持从Route和Request定制Action方法的参数。而且对于Action方法声明，参数顺序并不重要。</li>
+</ol>
+<pre><code class="language-PHP">
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @Route(&quot;/hello/{firstName}/{lastName}&quot;,name=&quot;hello&quot;)
+ */
+public function indexAction($lastName,$firstName,Request $request){
+
+    //$firstName和$lastName等参赛顺序并不重要
+    //可以直接使用$request
+    $page=$request-&gt;query-&gt;get(&quot;page&quot;,1);
+}
+</code></pre>
+<p>此外，Symfony\Bundle\FrameworkBundle\Controller\Controller提供了一系列helper方法。</p>
+<ul>
+<li>Redirecting
+<ul>
+<li>generateUrl($route)</li>
+<li>redirect($absUrl)</li>
+<li>redirectToRoute($route)   # new RedirectResponse($this-&gt;generateUrl($route))</li>
+</ul>
+</li>
+<li>Rendering Templates
+<ul>
+<li>render($pathOrLogicalTemplateName,$array)    #render a template and return a Response object</li>
+</ul>
+</li>
+<li>Accessing other Services
+<ul>
+<li>get('templating')</li>
+<li>get('router')</li>
+<li>get('mailer')</li>
+</ul>
+</li>
+<li>Exception</li>
+<li>FlashMessage
+<ul>
+<li>addFlash()</li>
+</ul>
+</li>
+<li>Forwarding</li>
+</ul>
+<h2>Symfony目录结构</h2>
+<p>Symfony的基本架构便如上文所述，十分清晰。与架构相对应，Symfony的目录结构也是非常清晰的。默认的结构组织形式为：</p>
+<pre><code>app/    #application config ,cache,
+src/    #project源码
+vender/ #第三方依赖,由composer独占管理权
+web/    #包含了公共访问文件,比如Front Controller和静态文件
+</code></pre>
+<p><code>web/</code>目录类似于网站的根目录，一切的公开访问都是从这里开始的，其下的Front Controller文件如<code>app.php</code>和<code>app_dev.php</code>是整个网站的入口管理文件。其他一些静态资源也会以一定的结构组织在这个目录下。</p>
+<p><code>app/</code>目录是Application级的一些文件存放地。如<code>app/console</code>、<code>app/config</code>，<code>app/cache</code></p>
+<p><code>src/</code>目录是针对网站各个功能的源码存放地，其中文件一般以各个Vender提供的Bundle分别组织。</p>
+<p>尽管拥有如此清晰的文件结构，Symfony也支持任意定制目录结构。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Service-Container.html">
+                    Symfony Service Container
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>SOA(service-oriented architecture)是个比较有意思的想法。但是如何实例化这些服务类？直接在需要使用的地方实例化会产生严重的依赖，造成类与类之间的过度耦合。</p>
+<p>更一般的讲，当需要在一个类C中使用另外一个类S对象的时候，OOP的新手常常会在类C中直接实例化类S的对象或者寻找S的类对象(可称之为<code>依赖解析</code>)，从而产生了强烈的耦合关系。</p>
+<p>IoC(Invention of Control)是一种能更好地解决这类问题的思路:</p>
+<p>在C中只针对S声明一个接口对象,类C只负责接口编写逻辑代码,把对S的依赖解析过程从C中分离出去，交给第三方负责。</p>
+<p>对比着两种思路，前者是C直接控制了S的实例化，然后再使用S;后者是只声明了SInterface接口对象，然后编写业务逻辑，并不负责S类依赖解析，甚至不管是不是S类(只针对接口编程)，换言之，是把对S依赖解析的控制权交给了第三方去完成。</p>
+<p>这就是所谓的控制反转。根据IoC原则，我们需要把对Service类依赖解析的控制权及义务交给第三方(即IoC Container)去完成,而具体服务的使用者只是负责服务的使用。</p>
+<p>IoC有三种常见实现方案，工厂模式是非常蛋疼的方式，这里只专注于DI。</p>
+<h2>Dependency Injection</h2>
+<p>很显然，IoC这个概念本身是要求服务的使用方不要做依赖解析的事儿，因为依赖解析是IoC容器的职责。那么IoC容器是怎么实现依赖解析的？</p>
+<p>考虑一个new新建对象的过程：PHP、Java之类的语言，要new一个类对象，最简单的大致都是采用类似于</p>
+<pre><code class="language-PHP">$obj=new 类名(构造器的参数列表);
+</code></pre>
+<p>这种形式，而Python的语法则是:</p>
+<pre><code class="language-Python">obj=类名(构造器的参数列表)
+</code></pre>
+<p>抛开这些语言本身的语法差异不谈，这类new过程都会而且只会提供两个信息：</p>
+<ol>
+<li>类名</li>
+<li>构造器参数</li>
+</ol>
+<p>也就是说，我们新建一个对象，只要一个类名和相应的构造器参数列表就够了。但是类名是一种硬编码，实现了同一个接口的不同实现会有不同的类名，为了屏蔽这种差异、消除过度耦合，我们可以对服务类绑定相关字符串，这样每次我们需要这个这个服务类对象的时候，只要利用这个字符串就可以了。</p>
+<p>Symfony提供了DependencyInjection组件来负责依赖注入事宜。</p>
+<p>对于一个类，</p>
+<pre><code class="language-PHP">class Mailer{
+
+
+    private $transport;
+    public function __construct($transport){
+
+        $this-&gt;transport=$transport;
+    }
+
+}
+</code></pre>
+<p>可以利用这样的方法进行获得其服务对象：</p>
+<pre><code class="language-PHP">use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+
+$sc=new ContainerBuilder();
+$sc-&gt;register('mailer',&quot;Mailer&quot;)
+    -&gt;addArgument('sendmail');
+</code></pre>
+<p>对于已经注册为服务的类，可以用作其他服务的创建参数：</p>
+<pre><code class="language-PHP">use Symfony\Component\DependencyInjection\Reference;
+
+
+$sc-&gt;register(&quot;newsletter_mgr&quot;,&quot;NewsLetterMgr&quot;)
+    -&gt;addArgument(new Reference('mailer'))
+</code></pre>
+<p>除了构造器注入，还支持setter注入：</p>
+<pre><code class="language-PHP">
+$sc-&gt;register('newsletter_mgr','NewsLetterMgr')
+    -&gt;addMethodCall('setMailer',array(new Reference('mailer')));
+
+
+</code></pre>
+<p>当然Symfony还支持Property injection,不过这可能带来一些问题。</p>
+<p>通过容易获取注册的服务对象很简单,利用get()即可：</p>
+<pre><code class="language-PHP">$svr=$sc-&gt;get('srv_name');
+</code></pre>
+<h2>用配置文件定义依赖注入</h2>
+<p>很显然，容器的实现原理不局限于PHP这门语言，Java、Python或任意的支持OOP的语言都可以采用类似的思路。把以上DI用PHP代码实现并不是唯一可选方案，我们还可以使用跨语言的配置文件（如XML、YAML）来定义服务。当然，这样一来，我们就需要依赖Symfony/Config组件了。</p>
+<p>表达上述DI信息的配置文件格式类似于；</p>
+<pre><code class="language-YAML">parameters: 
+    #...
+    mailer.transport: sendmail
+
+services: 
+    mailer: 
+        class: Mailer
+        arguments: [&quot;%mailer.transport%&quot;]
+    newsletter_mgr: 
+        class: NewsLetterMgr    #contruction injection
+        calls:                  #setter injection
+            -[setMailer,[&quot;%mailer%&quot;]]
+        properties:             #perperty injection
+            #...
+
+</code></pre>
+<p>加载XML配置文件：</p>
+<pre><code class="language-PHP">use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Symfony\Config\FileLocator;
+
+
+$sc=new ContainerBuilder();
+$loader=new XmlFileLoader($sc,new FileLocator(__DIR__));
+$Loader-&gt;load('services.xml');
+
+</code></pre>
+<p>加载YAML配置文件：</p>
+<pre><code class="language-PHP">use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Config\FileLocator;
+
+
+$sc=new ContainerBuilder();
+$loader=new YamlFileLoader($sc,new FileLocator(__DIR__));
+$Loader-&gt;load('services.yaml');
+
+</code></pre>
+<p>如果确实想用PHP来创建服务：</p>
+<pre><code class="language-PHP">use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Symfony\Config\FileLocator;
+
+
+$sc=new ContainerBuilder();
+$loader=new PhpFileLoader($sc,new FileLocator(__DIR__));
+$Loader-&gt;load('services.php');
+
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony模板系统.html">
+                    Symfony 模板系统
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>Template的逻辑命名和Controller的类似，模板的逻辑名称遵循这样的约定：</p>
+<p><code>BundleName:ControllerName:TemplateName</code></p>
+<p>一般会被映射会这样的物理地址：</p>
+<ol>
+<li><code>app/Resources/{BundleName}/views/ControllerName/TemplateName</code></li>
+<li><code>{path/to/BundleName/}Resources/views/ControllerName/TemplateName</code></li>
+</ol>
+<p>当第1个地址找不到对应的模板时，会继续查找第2个位置的模板。</p>
+<h2>Template Services</h2>
+<p>Symfony模板系统的核心是模板引擎(服务)，</p>
+<p>从控制器渲染模板：</p>
+<pre><code class="language-PHP">return $this-&gt;render('article/index.html.twig');
+</code></pre>
+<p>与直接使用服务是等价的：</p>
+<pre><code class="language-PHP">use Symfony\Component\HttpFoundation\Response;
+$engine=$this-&gt;container-&gt;get('templating');
+$content=$engine-&gt;render('article/index.html.twig');
+$return $response=new Response($content);
+</code></pre>
+<p>Symfony的模板引擎可以在<code>app/config/config.yml</code>中配置：</p>
+<pre><code class="language-YAML">framework: 
+    #...
+    templating: { engines: ['twig']}
+</code></pre>
+<h2>Twig模板</h2>
+<p>Twig模板的语法和Django模板语法非常相似。Twig提供了三种语法：</p>
+<ol>
+<li>says sth</li>
+</ol>
+<pre><code class="language-Twig">{{ ... }}
+</code></pre>
+<ol start="2">
+<li>does sth</li>
+</ol>
+<pre><code class="language-Twig">// does sth
+{% ... %}
+</code></pre>
+<ol start="3">
+<li>comment sth</li>
+</ol>
+<pre><code class="language-Twig">
+{# ... #}
+</code></pre>
+<h3>Twig链接：</h3>
+<pre><code class="language-HTML">&lt;a href=&quot;{{ path(routeName,context) }} &quot; &gt; home &lt;/a&gt;
+&lt;img src=&quot;{{ assets(images/logo.png) }}&quot;/&gt;
+&lt;link href=&quot;{{ assets(css/blog.css) }}&quot; rel='stylesheet' type='text/css' /&gt;
+</code></pre>
+<h3>Twig filters:</h3>
+<pre><code class="language-PHP">{{ title|upper }}
+
+</code></pre>
+<h3>Twig模板嵌入</h3>
+<p>为了代码复用，Twig提供了include:</p>
+<pre><code class="language-PHP">{% include() %}
+</code></pre>
+<h3>Twig模板继承与重载:</h3>
+<pre><code class="language-PHP">{% extends 'baseTemplateName' %}
+
+{% block XX  %}
+    {{ parent() }}
+    {# overwrite here #}
+{% endblock  %}
+</code></pre>
+<p>一种常用的模板继承是三层方案。</p>
+<ol>
+<li>为整个网站创建基础模板<code>app/Resources/views/base.html.twig</code></li>
+<li>为某一类特定功能创建模板<code>spec/layout.html.twig</code>(继承自第1层模板)</li>
+<li>为每一个单独的页面创建模板 (继承自第2层模板)</li>
+</ol>
+<h3>Twig模板嵌入其他控制器</h3>
+<p>此外，还可以嵌入其他控制器的渲染结果</p>
+<pre><code class="language-PHP">{{ render(Controller(&quot;LogicalContrllerName&quot;,context)) }}
+</code></pre>
+<p>配合hinclude.js，还可以实现异步加载：</p>
+<pre><code class="language-PHP">{{ render_hinclude(controller('...')) }}
+{{ render_hinclude(url('...')) }}
+</code></pre>
+<h3>Twig Template转义</h3>
+<p>twig系统自带转义，如需原始输出，可以利用raw 过滤函数</p>
+<pre><code class="language-PHP">{{ article|raw  }}
+</code></pre>
+<p>PHP模板，可以使用</p>
+<pre><code class="language-PHP">&lt;?php echo $view-&gt;escape($name)?&gt;
+</code></pre>
+<p>进行转义。</p>
+<h3>Twig Macro</h3>
+<p><a href="http://twig.sensiolabs.org/doc/templates.html">Twig Macro</a>是非常强大的HTML代码复用手段，它的功能非常类似于C语言的宏：</p>
+<pre><code class="language-Twig">{% macro input(name, value = &quot;&quot;, type = &quot;text&quot;, size = 20) %}
+    &lt;input type=&quot;{{ type }}&quot; name=&quot;{{ name }}&quot; value=&quot;{{ value|e }}&quot; size=&quot;{{ size }}&quot; /&gt;
+{% endmacro %}
+</code></pre>
+<p>Twig Macro可以在其他单独的文件中定义，然后导入到当前的模板文件中：</p>
+<pre><code class="language-Twig">{# 导入整个宏定义文件 #}
+{% import &quot;forms.html&quot; as forms %}
+{{ forms.input('username') }}
+
+{# 从宏文件中导入某个单独的Macro #}
+{% from 'forms.html' import input as input_field %}
+{{ input_field('username') }}
+
+</code></pre>
+<h3>Twig Use Statement</h3>
+<p>Twig的模板继承只支持单继承，Twig还提供了use以帮助我们实现更大程度的代码复用。</p>
+<p>use语句告诉Twig去把在某个文件中定义的block块导入到当前模板中。</p>
+<pre><code class="language-Twig">{% use &quot;blocks.html&quot; %}
+</code></pre>
+<p>这一功能类似于对于Macro的import语句，但是use只对block块有效，而且，想use的模板必须满足</p>
+<ol>
+<li>不extends其他模板。</li>
+<li>不定义宏</li>
+<li>body为空</li>
+</ol>
+<p>和针对Macros的import类似，use也支持了导入一部分代码段的功能，同时还提供别名机制来避免命名冲突：</p>
+<pre><code class="language-Twig">{% extends &quot;base.html&quot; %}
+
+{% use &quot;blocks.html&quot; with sidebar as base_sidebar, title as base_title %}
+
+{% block sidebar %}{% endblock %}
+{% block title %}{% endblock %}
+{% block content %}{% endblock %}
+</code></pre>
+<h2>Template的全局变量</h2>
+<p>不管是Twig模板，还是纯PHP模板，Symfony都为之提供了一个变量<code>app</code></p>
+<ul>
+<li>app.security  #deprecated since 2.6</li>
+<li>app.user</li>
+<li>app.request</li>
+<li>app.session</li>
+<li>app.environment</li>
+<li>app.debug</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony-EventDispatcher.html">
+                    Symfony EventDispather
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Event和EventDispatcher</h2>
+<p>Event是什么？</p>
+<p>其实很简单，Event是用于描述“what happens?” 的东西。正因为此，Event对象中通常包含了一些数据，用来表示发生了什么。事实上，事件对象只是在描述发生了什么—准确的说，事件对象提供了一个接口，让别人知道发生了什么。</p>
+<p>Symfony/EventDispather 提供了Event基础类来描述“What Happens”，这个基础类非常简单，只是对以下信息进行抽象：</p>
+<ul>
+<li>Event调度器是谁？（dispatcher属性及getter/setter）</li>
+<li>Event是否还能传播？（propagationStopped属性及getter/setter）</li>
+<li>Event叫什么名字？（deprecated:name属性及getter/setter））</li>
+</ul>
+<p>对于包含特殊信息的特定事件，可以继承自Event类，再添加自己对该类事件的特殊属性的抽象。比如：</p>
+<pre><code class="language-PHP">class FilterOrderEvent extends Event{
+
+    protected $order;
+	public function __construct(){
+	    $this-&gt;order=$order;
+	}
+	
+	public function getOrder(){
+	    return $this-&gt;getOrder();
+	}
+
+}
+</code></pre>
+<p>这样，FilterOrderEvent事件除了包含Event基础类中那些对发生了什么的描述，还增加了对order这类信息的描述（提供了getOrder()接口让其他人获取Order对象）。</p>
+<p>再比如，Symfony/Form组件中的FormEvent类，除了基础的Event属性外，还添加了两个额外属性:</p>
+<pre><code class="language-PHP">class FormEvent extends Event
+{
+    private $form;
+    protected $data;
+    
+    public function __construct(FormInterface $form, $data)
+    {
+        $this-&gt;form = $form;
+        $this-&gt;data = $data;
+    }
+    
+    //....
+}
+</code></pre>
+<p>一个是实现了FormInterface的表单对象$form，代表与当前事件相关的是哪个表单;一个是混合类型的$data参数，用于对特定数据的动态修改，如modelData之类。</p>
+<p>很多时候，我们并不仅仅想知道发生了什么，我们还想根据发生了什么做出相应的动作。关于这一点，可以参见Wiki给出的Event定义：</p>
+<blockquote>
+<p>In computing, an event is an action or occurrence detected by the program that may be handled by the program</p>
+</blockquote>
+<p>这段话说明了一点很重要的东西：事件应当可以被检测、处理。通常由事件监听器(event listener)或者说事件处理器(event handle)来完成这一工作。</p>
+<p>Symfony/EventDispather组件提供了这类对事件发布、调度、监听的功能。</p>
+<p>EventDispather对象的dispatch()方法会根据某一个事件对应的Listeners,按优先级逐一进行调用。EventDispather支持两套风格事件处理程序的绑定。最常用的是addListener(),这是一种快速编码的回调风格，类似于JavaScript中的回调函数。还有一种使用Subscriber对象的风格。</p>
+<h2>使用具有回调风格的Listener</h2>
+<p>添加监听器的方法原型为：</p>
+<pre><code class="language-PHP">addListener($eventName,$listener,$priority=0)
+</code></pre>
+<p>这一方法的关键特征是:传递给addListener的第二个参数是一个callable对象。这十分类似于JavaScript的回调函数:</p>
+<pre><code class="language-PHP">
+$dispather-&gt;addListener(
+    'foo.action',
+    array($listener,'onFooAction')       //a PHP callable
+);
+
+$dispather-&gt;addListener(
+    'bar.action',
+    function(Event $event){              //a PHP callable
+        //...
+    }
+);
+</code></pre>
+<h2>使用EventSubscriber对象</h2>
+<p>EventDispather还支持另外一种风格的监听绑定：</p>
+<pre><code class="language-PHP">addSubscriber(EventSubscriberInterface $subscriber);
+</code></pre>
+<p>此方法接受一个实现了EventSubscriberInterface接口的对象作为参数。该接口非常简单：</p>
+<pre><code class="language-PHP">interface EventSubscriberInterface
+{
+    public static function getSubscribedEvents();
+}
+</code></pre>
+<p>接口方法getSubscribedEvents()返回一个数组，该数组可以是三种方式中的一种：</p>
+<ul>
+<li>array('eventName' =&gt; 'methodName')</li>
+<li>array('eventName' =&gt; array('methodName', $priority))</li>
+<li>array('eventName' =&gt; array(array('methodName1', $priority), array('methodName2'))</li>
+</ul>
+<p>addSubscriber()方法会自动检测接收到的$subscriber对象并解析出合适的方法名，再通过过addListener()方法完成事件绑定监听。其源码及实现分析如下：</p>
+<pre><code class="language-PHP">
+    public function addSubscriber(EventSubscriberInterface $subscriber)
+    {
+        foreach ($subscriber-&gt;getSubscribedEvents() as $eventName =&gt; $params) {
+
+            //$subscripter-&gt;getSubscribedEvents   返回的数组类似于: 
+            //    array(
+            //        'eventName'=&gt;&quot;methodName&quot;,
+            //         //... 
+            //    )
+            if (is_string($params)) {
+                $this-&gt;addListener($eventName, array($subscriber, $params));
+            }
+
+            //$subscripter-&gt;getSubscribedEvents   返回的数组类似于: 
+            //    array(
+            //        'eventName'=&gt;array(&quot;methodName&quot;,$priority),
+            //         //... 
+            //    )
+             elseif (is_string($params[0])) {      
+                $this-&gt;addListener($eventName, array($subscriber, $params[0]), isset($params[1]) ? $params[1] : 0);
+             } 
+
+            //$subscripter-&gt;getSubscribedEvents   返回的数组类似于: 
+            //    array(
+            //        'eventName'=&gt;array(
+            //            array(&quot;methodName1&quot;,$priority)
+            //            array(&quot;methodName22&quot;)
+            //         ),
+            //        //... 
+            //    )
+             else {
+                foreach ($params as $listener) {
+                    $this-&gt;addListener($eventName, array($subscriber, $listener[0]), isset($listener[1]) ? $listener[1] : 0);
+                }
+            }
+        }
+    }
+</code></pre>
+<p>可以看到，addSubscriber()始终都是把形如<code>array($subscriber,$methodName)</code>这样的callable传递给addListener。显而易见，一个Subscrber应该有如下的类似形式：</p>
+<pre><code class="language-PHP">class StoreSubscriber implements EventSubscriberInterface{
+    
+    public static function getSubscribedEvents(){
+        return array(
+            'kernel.repsonse'=&gt;array(
+                array('onKernelResponsePre',10),
+                array('onKernelResponseMid',5),
+                array('onKernelResponsePost',0),
+            ),
+            'store.order'=&gt;array('onStoreOrder',0)
+        );
+    }
+
+
+    public static function onKernelResponsePre{
+        //...
+    }
+
+    public static function onKernelResponseMid{
+        //...
+    }
+
+    public static function onKernelResponsePost{
+        //...
+    }
+
+    public static function onStoreOrder{
+        //...
+    }
+}
+</code></pre>
+<p>这种十分类似于Java Swing中事件监听接口，比如MouseListener类：</p>
+<pre><code class="language-Java">button.addMouseListener(new MouseListener() {
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        System.out.println(&quot;mouseClicked&quot;);
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        System.out.println(&quot;鼠标被按住&quot;);
+    }
+
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        System.out.println(&quot;鼠标被释放&quot;);
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+        System.out.println(&quot;鼠标被进入&quot;);
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+        System.out.println(&quot;鼠标被退出&quot;);
+    }
+});
+</code></pre>
+<p>Symfony中的EventSubscriber对象为一组事件监听器提供了良好的组织形式，使得代码更具有可读性。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page26.html">
+          Previous
+        </a>
+        28 of 32
+        <a href="/posts/page28.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Protocol/MQTT/MQTT 协议与实现 1.html">
+                    MQTT 协议与实现 1  —— 协议概要
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-02-09
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><a href="http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html"><code>MQTT</code> 协议</a>是连接物与物(<code>M2M</code>)的协议，该协议规定了一系列用于物与<code>Broker</code>之间相互交换的控制报文。总体来说，一个控制报文结构分为三个部分：</p>
+<ol>
+<li>固定头(<code>Fixed Header</code>) : 所有 MQTT Control Packets 的固定存在的报头</li>
+<li>可选头(<code>Variable Header</code>) : 某些  MQTT Control Packets 会包含的报头</li>
+<li>负载(<code>Payload</code>) : 某些 MQTT Control Packets 会有传输 <code>Payload</code></li>
+</ol>
+<p>其中，首字节的前四个比特规定了共<code>$2^4=16$</code>种可能的控制报文类型，后4个字节则是一些标志位组合，可以在一定程度上视作为对报文类型的补充。<code>MQTT</code>报文的基本格式为：</p>
+<pre><code class="language-math">%% KaTex
+\overbrace{\color{orange}\text{报文类型}}^{\text{4 bits}} \enspace \overbrace{\color{green}\text{标志位}}^{\text{4 bits}} \enspace \overbrace{\color{blue} \text{剩余长度} }^{\text{1..4 Bytes}} \enspace \overbrace{\color{yellow} \text{可变头}}^{\text{...}} \enspace \overbrace{\color{skyblue} \text{Payload}}^{\text{...}}
+</code></pre>
+<h3>固定头</h3>
+<p>固定头的由两部分组成：首字节及剩余长度。正如上文所述，首字节的前四个比特位代表了不同的控制报文类型。从功能上说，控制报文主要分为以下两大类：</p>
+<!-- more -->
+<ul>
+<li>连接管理类：
+<ul>
+<li>连接控制型：连接、连接确认；断开连接</li>
+<li>心跳控制型：<code>Ping</code>请求、<code>Ping</code>相应</li>
+</ul>
+</li>
+<li>消息管理类：
+<ul>
+<li>消息订阅型：订阅、订阅确认；取消订阅、取消订阅确认</li>
+<li>消息发布型：发布、发布确认、发布收到、发布释放、发布完成</li>
+</ul>
+</li>
+</ul>
+<p>具体来说，各类型的编码如下：</p>
+<ul>
+<li>连接类
+<ul>
+<li><code>CONNECT</code>: <code>1</code> , 客户端请求连接到服务器</li>
+<li><code>CONNACK</code> : <code>2</code>, 连接确认 ，由服务端发往客户端</li>
+</ul>
+</li>
+<li>消息发布 (均为双向消息，即可从客户端发到服务器，也可由服务器发往客户端)
+<ul>
+<li><code>PUBLISH</code>: <code>3</code> , 发布消息</li>
+<li><code>PUBACK</code> : <code>4</code> , 发布确认</li>
+<li><code>PUBREC</code> : <code>5</code> , 发布收到 (delivery part 1)</li>
+<li><code>PUBREL</code> : <code>6</code> , 发布释放 (delivery part 2)</li>
+<li><code>PUBCOMP</code>: <code>7</code> , 发布完成 (delivery part 3)</li>
+</ul>
+</li>
+<li>消息订阅
+<ul>
+<li><code>SUBSCRIBE</code> : <code>8</code> , Client subscribe request  (Client to Server )</li>
+<li><code>SUBACK</code> : <code>9</code>, Subscribe acknowledgment ( Server to Client)</li>
+<li><code>UNSUBSCRIBE</code> : <code>10</code> , Unsubscribe request (Client to Server)</li>
+<li><code>UNSUBACK</code> : <code>11</code> , Unsubscribe acknowledgment  ( Server to Client)</li>
+</ul>
+</li>
+<li>心跳
+<ul>
+<li><code>PINGREQ</code> : <code>12</code>, PING request  (Client to Server)</li>
+<li><code>PINGRESP</code> : <code>13</code> , PING response  (Server to Client )</li>
+</ul>
+</li>
+<li>断开连接
+<ul>
+<li><code>DISCONNECT</code> : <code>14</code> , Client is disconnecting (Client to Server)</li>
+</ul>
+</li>
+<li><code>0</code> ,<code>15</code> : 保留。</li>
+</ul>
+<p>剩余长度则代表了当前报文的剩余字节数（包括可选头及负载两部分的总长度）。该长度采用可变长编码，即第一个字节的低7位表示0~127，最高位如果为1则表示还有后续字节；如此类似，最多不超过4个字节。</p>
+<h2>可变头和负载</h2>
+<p>某些类型的报文包含了可变头，而且每种报文的可变头都不一样；此外，也并不是每种报文都有<code>Payload</code>部分:</p>
+<table>
+<thead>
+<tr>
+<th>连接管理类型报文</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Connect</code></td>
+<td><strong>必含</strong></td>
+</tr>
+<tr>
+<td><code>CONNACK</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>DISCONNECT</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PINGREQ</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PINGRESP</code></td>
+<td>必无</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>消息管理类型报文</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PUBLISH</code></td>
+<td><strong>可选</strong></td>
+</tr>
+<tr>
+<td><code>PUBACK</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PUBREC</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PUBREL</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PUBCOMP</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>SUBSCRIBE</code></td>
+<td><strong>必含</strong></td>
+</tr>
+<tr>
+<td><code>SUBACK</code></td>
+<td><strong>必含</strong></td>
+</tr>
+<tr>
+<td><code>UNSUBSCRIBE</code></td>
+<td><strong>必含</strong></td>
+</tr>
+<tr>
+<td><code>UNSUBACK</code></td>
+<td>必无</td>
+</tr>
+</tbody>
+</table>
+<h3>连接功能</h3>
+<p><code>Connect</code>报文的可变头和负载相对复杂一些。</p>
+<ul>
+<li><code>Variable header</code>: 协议名(6 Bytes)+协议级别(1 Byte)+连接标志(1 Byte)+保持连接(2 Bytes)</li>
+<li><code>Payload</code>: Client Identifier +  Will Topic + Will Message + User Name + Password</li>
+</ul>
+<p>其中，<code>Variable Header</code>分为：</p>
+<ul>
+<li>协议名：长度(2个字节，值为<code>4</code>)+<code>MQTT</code>(4个字节)</li>
+<li>协议级别：1个字节，值为<code>0x04</code>代表版本号为<code>3.1.1</code>的协议</li>
+<li>连接标志：1个字节，即<code>清理会话标志|遗嘱标志|遗嘱QoS标志|遗嘱保留标志|用户名标志|密码标志</code></li>
+<li>保持连接：2个字节，表示一个客户端从结束到开始发送下一个控制包的最大时间间隔(秒)</li>
+</ul>
+<p>而<code>Payload</code>部分则分为：</p>
+<ul>
+<li>客户端标识符：这是<code>Payload</code>中的第一个字段</li>
+<li>遗嘱主题和遗嘱消息：如果<code>Variable Header</code>中的<code>遗嘱标志</code>被设置为1，那么<code>Payload</code>中的接下来的字段就是<code>Will Topic</code>和<code>Will Message</code>。</li>
+<li>用户名：如果<code>Variable Header</code>中的用户名标志被设置为1，那么接下来的字段就是用户名</li>
+<li>密码：用户<code>Variable Header</code>中的密码标志被设置为1，那么接下来的字段就是密码。</li>
+</ul>
+<p>服务器收到<code>CONNECT</code>报文后，需要发送一个<code>CONNACK</code>进行连接确认。<code>CONNACK</code>报文的可变头由两个部分构成： 连接确认标志(1 Byte) + 返回码(1 Byte) 。其中返回码的编码为：</p>
+<table>
+<thead>
+<tr>
+<th><code>CONACK</code>返回码</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0x00</code></td>
+<td>连接接受</td>
+</tr>
+<tr>
+<td><code>0x01</code></td>
+<td>连接拒绝（不被接受的协议版本）</td>
+</tr>
+<tr>
+<td><code>0x02</code></td>
+<td>连接拒绝（客户端标识符拒绝）</td>
+</tr>
+<tr>
+<td><code>0x03</code></td>
+<td>连接拒绝（服务器服务不可用）</td>
+</tr>
+<tr>
+<td><code>0x04</code></td>
+<td>连接拒绝（用户名或者密码错误）</td>
+</tr>
+<tr>
+<td><code>0x05</code></td>
+<td>连接拒绝（未授权）</td>
+</tr>
+<tr>
+<td><code>0x06</code>-<code>0xFF</code></td>
+<td>预留</td>
+</tr>
+</tbody>
+</table>
+<p>注意<code>CONNACK</code>报文无<code>Payload</code>部分。</p>
+<h3>发布消息及响应</h3>
+<p>消息发布可由客户端发往服务器，也可以由服务器发往客户端，其中<code>PUBLISH</code>报文的可变头和负载格式为：</p>
+<ul>
+<li><code>Variable Header</code>: 主题名 + 包标识符（2个字节）</li>
+<li><code>Payload</code>:  即所发布的消息</li>
+</ul>
+<p>而<code>PUBLISH</code>消息的接收者将根据<code>QoS</code>级别的不同，分别有如下响应行为：</p>
+<table>
+<thead>
+<tr>
+<th>QoS Level</th>
+<th>期待响应</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QoS 0</td>
+<td>None</td>
+</tr>
+<tr>
+<td>QoS 1</td>
+<td>PUBACK</td>
+</tr>
+<tr>
+<td>QoS 2</td>
+<td>PUBREC</td>
+</tr>
+</tbody>
+</table>
+<p>此外，对于<code>QoS 2</code>的消息发布，当接收方收到<code>PUBREC</code>后，会响应以<code>PUBREL</code>；而发布方收到<code>PUBREL</code>后，会再返回以<code>PUBCOMP</code>，作为<code>QoS</code>中发布消息控制报文的最后一次消息交换 :</p>
+<pre><code>+-------+              +-------+
+|       | (1) PUBLISH  |       |
+|       +--------------&gt;       |
+|       |              |       |
+|       | (2) PUBACK   |       |
+|       &lt;--------------+       |
+|       |              |       |
+|   A   | (3) PUBREL   |   B   |
+|       +--------------&gt;       |
+|       |              |       |
+|       | (4) PUBCOMP  |       |
+|       &lt;--------------+       |
+|       |              |       |
++-------+              +-------+
+</code></pre>
+<h3>订阅消息</h3>
+<h4>订阅</h4>
+<p>和消息发布不同，<code>SUBSCRIBE</code> 是由客户端发往服务端来创建订阅的报文。每个<code>SUBSCRIBE</code>报文都注册了一个客户端对一个或者多个主题的兴趣。</p>
+<p><code>SUSBSCRIBE</code>报文固定头第一个必须字节必须是：<code>$\color{orange}1000\enspace \color{green}0010$</code>；负载必须至少包含一个<code>Topic Filter/Requested QoS</code>对，其中，每个<code>Topic Filter/Requested QoS</code>对类似于：</p>
+<pre><code>Topic Filter = Length (Byte 1-2) + Filter(Byte 3...N)
+Requested QoS  = 0x000000XX (Byte N+1)
+</code></pre>
+<p>同一个<code>SUBSCRIBE</code>报文下，各个<code>Topic Filter/Requested QoS</code>对连续堆叠。</p>
+<p>而当服务端收到<code>SUBSCRIBE</code>消息时，必须响应一个<code>SUBACK</code>报文。<code>SUBACK</code>报文的<code>Payload</code>将针对各个订阅逐一给出响应码，每个响应码占一个字节：</p>
+<table>
+<thead>
+<tr>
+<th>响应码</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x00</td>
+<td>Success - Maximum QoS 0</td>
+</tr>
+<tr>
+<td>0x01</td>
+<td>Success - Maximum QoS 1</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>Success - Maximum QoS 2</td>
+</tr>
+<tr>
+<td>0x80</td>
+<td>Failure</td>
+</tr>
+</tbody>
+</table>
+<p>也即<code>SUBACK</code>报文的<code>Payload</code>是由一系列响应码构成的字节数组。</p>
+<h3>取消订阅</h3>
+<p>类似的，<code>UNSUBSCRIBE</code>是由客户端发往服务端来取消订阅的报文。<code>UNSUSBSCRIBE</code>报文固定头第一个必须字节必须是：<code>$\color{orange}1010\enspace \color{green}0010$</code>。</p>
+<p>但是和<code>SUBSCRIBE</code>不同的是，<code>UNSUBSCRIBE</code>的<code>Payload</code>并非由各个<code>Topic Filter/Requested QoS</code>对连续堆叠而成，而是一个由<code>Topic Filter</code>所组成的列表。</p>
+<p>此外，<code>UNSUBACK</code>报文并没有<code>Payload</code>。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

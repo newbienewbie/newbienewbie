@@ -1,0 +1,619 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/JScript/JScript-与自动化.html">
+                    JScript 与自动化
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-24
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>JScript</code>实现的<code>ECMAScript Edition 3</code>，也是<code>IE8</code>使用的引擎。然而，随着<code>V8</code>大放光彩，微软放弃了之前规划的托管<code>JavaScript</code>计划（同期规划的<code>VB</code>变身为<code>VB.NET</code>活了下来），<code>JScript</code>开发组另起炉灶搞了<code>Chakra</code>与<code>Node.js</code>一争长短，这也是<code>IE9</code>之后使用的<code>JS</code>引擎。
+按理说，<code>JScript</code>这玩意儿停止开发这么多年了，早应该寿终正寝了。然而我一想到时不时要帮女票和朋友们批量修改<code>Excel</code>，我就觉得未来很久一段时间内仍然不得不去求助于这货。说起来，我对<code>VB</code>/<code>VBA</code>实在无爱——尽管这是我高中学的第一门编程语言，而且在当年干物资的确实帮我省了大量的时间。加之目前使用<code>Web</code>技能开发<code>Office Addin App</code>貌似生态还不成熟、开发起来也不简便，毕竟对于一些临时任务单独架设<code>https</code>服务器有些牛刀宰鸡之感，于是需要使用<code>JScript</code>代替之。</p>
+<p>目前能想到的应用方向包括：</p>
+<ul>
+<li><code>Excel</code>、<code>Word</code>办公自动化</li>
+<li>简单的系统管理，如文件遍历、改名、删除</li>
+</ul>
+<h2>JScript 与宿主</h2>
+<p><code>JScript</code>、<code>VBScript</code>同属于官方支持的<code>Windows Script</code>，当年，这俩脚本都需要依赖于特定的宿主(<code>Host</code>)才能执行，比如，<code>JavaScript</code>大多时候运行在浏览器中。除了浏览器环境之外，他们，还可以运行在<code>Windows Script Host</code>中。
+<code>Windows Script Host</code>是一个<code>language-independent</code>的脚本宿主环境，主要用于执行<code>Windows</code>管理任务，其对象层级为：</p>
+<pre><code>// WSH 对象模型层级
+WScript
+    WshArguments
+        WshNamed
+        WshUnnamed
+    WshController
+        WshRemote
+            WshRemoteError
+    WshNetwork
+    WshShell
+        WshShortcut
+        WshUrlShortcut
+        WshEnvironment
+        WshSpecialFolders
+        WshScriptExec
+</code></pre>
+<p><code>WSH</code>提供的对象都与相应的管理<code>Task</code>相关，比如根对象<code>WScript</code>负责：</p>
+<ul>
+<li>Set and retrieve command line arguments</li>
+<li>Determine the name of the script file</li>
+<li>Determine the host file name (wscript.exe or cscript.exe)</li>
+<li>Determine the host version information</li>
+<li>Create, connect to, and disconnect from COM objects</li>
+<li>Sink events</li>
+<li>Stop a script's execution programmatically</li>
+<li>Output information to the default output device (for example, a dialog box or the command line)</li>
+</ul>
+<p>在<code>JScript</code>中，永远不需要去实例化根对象<code>WScript</code>，正如同浏览器中的直接全局对象一样。</p>
+<p>再如<code>WshShell</code>对象提供的功能为:</p>
+<ul>
+<li>在本地运行一个程序</li>
+<li>操作注册表</li>
+<li>创建快捷方式</li>
+<li>访问<code>system folder</code></li>
+<li>操作环境变量，比如 <code>WINDIR</code>、<code>PATH</code>、<code>PROMPT</code></li>
+</ul>
+<p>注意<code>WshShell</code>提供了操作注册表的功能！</p>
+<ul>
+<li><code>RegRead</code> 读</li>
+<li><code>RegWrite</code> 写</li>
+<li><code>RegDelete</code> 删</li>
+</ul>
+<p>示例代码：</p>
+<pre><code class="language-JavaScript">var shell = new ActiveXObject('Wscript.Shell'); 
+var val = shell.RegRead('HKCU\\Control Panel\\Desktop\\Wallpaper'); 
+
+WScript.Echo(val);
+</code></pre>
+<p><code>WSH</code>对象模型提供的<code>COM</code>接口可以分为两类：</p>
+<ol>
+<li>Script Execution and Troubleshooting ：这类接口运行脚本执行<code>WSH</code>的基本的操作, 输出信息、执行基本的<code>COM</code>函数（如<code>CreateObject</code>、<code>GetObject</code>）</li>
+<li>Helper Functions ：执行诸如映射网络驱动器、连接打印机、获取/修改环境变量、操作注册表之类操作</li>
+</ol>
+<h2><code>Excel</code>自动化</h2>
+<p><code>JScript</code>这货操作<code>Excel</code>，依靠的是自动化接口，和<code>VBScript</code>调用机理完全一直。唯一需要注意的是，为了避免出现中文乱码现象，记得以<code>GBK</code>格式进行存储脚本文件！</p>
+<pre><code class="language-JavaScript">var app=WScript.CreateObject(&quot;Excel.Application&quot;);
+var fso=WScript.CreateObject('Scripting.FileSystemObject');
+
+var excelFile=fso.GetFile(&quot;./生产管理专业业务对接表单（1.20）.xlsx&quot;);
+var book=app.Workbooks.Open(excelFile);
+app.Visible=true;
+var sheet=book.Worksheets(1);
+var cell=sheet.Cells(2,1);
+WScript.Echo(cell.Value);
+book.Close();
+
+app=null;
+fso=null;
+</code></pre>
+<p>文件以<code>GBK</code>编码格式保存，利用<code>wscript</code>或者<code>cscript</code>执行之，即可得到相应结果。</p>
+<p>在<code>JScript</code>中，创建对<code>Excel</code>应用对象的引用、解除引用的语法为：</p>
+<pre><code class="language-JavaScript">// 创建引用
+var app=WScript.CreateObject(&quot;Excel.Application&quot;);
+
+// 解除引用
+app=null;
+</code></pre>
+<p>注意，解除对象引用并不会导致<code>Excel.Application</code>对象关闭！关闭对象需要调用对象的专有的关闭方法！</p>
+<h2>JScript 执行</h2>
+<p>可以使用以下两种程序运行<code>JScript</code>脚本：</p>
+<ol>
+<li>Windows-based script host (Wscript.exe)</li>
+<li>command-based script host (CScript.exe)</li>
+</ol>
+<p>相应的命令行启动方式类似于：</p>
+<pre><code>&gt; wscript index.js
+&gt; cscript index.js
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/厂网优化小记.html">
+                    厂网优化小记
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-18
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>最近在集中办公搞分公司的<code>EPBP</code>项目，博客日志都疏忽了。</p>
+<p>趁着今日午休的时候，对厂网再次优化了下，目前响应等待时间已经降到 68ms 左右了。想起刚刚接手的时候打开首页至少要 2.3秒，还是非常欣慰的，毕竟现在算是达到一个网站该有的速度水平了。</p>
+<h2>小结</h2>
+<p>总体说来，原网站系统过慢的原因：</p>
+<ol>
+<li>基于<code>ASP.NET</code>的<code>Web Form</code>技术，大量使用服务端组件</li>
+<li>大量冗余无效代码</li>
+<li>低效<code>SQL</code>查询</li>
+<li>数据库索引做的渣</li>
+</ol>
+<p>针对上面的代码，改造措施如下：</p>
+<ul>
+<li>对于第1点，大量使用<code>React.js</code>进行改造。</li>
+<li>对应第2点，比如为了拼接字符串，对数据进行两次或者多次迭代、甚至嵌套循环的情况，尽量减少循环次数，把时间复杂度从O(n^2)降为O(n)。</li>
+<li>对用第3点，比如原代码中存在这样的情况：先通过<code>C#</code>调用数据库访问层查出指定栏目的id、再使用<code>C#</code>拼接<code>SQL</code>字符串去查相应栏目下的最新几篇文章。直接把两次查询优化成一句<code>SQL</code>，只查一次就拿到结果。</li>
+<li>对于第4点，没啥好说的，做好索引，比如对文章表的<code>栏目id</code>、<code>创建日期</code>列做索引。</li>
+<li>除了以上几点，还使用了<code>Node.js</code>对一些网页进行了改造，比如目前首页分成两部分，一部分仍然使用<code>ASP.NET</code>技术，另一部分比如登陆状态、Banner、欢迎信息、访问量统计都使用<code>Node.js</code>进行改写，二者通过<code>Nginx</code>配合为前端提供服务。</li>
+</ul>
+<p>在维护的这段时间，除了优化之外，搞过的重要的事儿还包括这些：</p>
+<ul>
+<li>在保留老账号系统的基础上，添加使用<code>AD</code>域认证机制。</li>
+<li>重写原有的数据库访问层——因为<code>SQL</code>注入这些漏洞随处可见</li>
+<li>重写管理后台，动机主要是各种上传漏洞满天飞。改后附带效果响应速度提升7.3倍左右。</li>
+<li>新增国际油价抓取、展示模块，模拟登陆东方油气网后台，抓取近日油价，存入后端数据库后展示到首页。</li>
+<li>新增荣誉积分模块，后台拖曳<code>Excel</code>完成当期数据导入，前端根据累计积分排名展示，并提供历史查询和相应资料下载。</li>
+<li>其他，如版面调整、<code>bug</code>修复、<code>XSS</code>等安全漏洞修复等</li>
+</ul>
+<h2>后话</h2>
+<p>自从被忽悠去接手这个项目，已经过去九个月了。然而接手的第二个月，大<code>BOSS</code>就调走了，一方面奖励再无兑现的可能，另一方面，领导也不关心网站的速度——毕竟点开首页需要2.3秒这事儿已经存在很多年了。单位并不是一个互联网企业，对这类东西并不看重，领导只看能不能打开网站而已。所以随着前<code>BOSS</code>调任其他单位，这些事儿注定都不会有回报，也不会有任何人关心。但是我还是要坚持做完这件事，因为既然答应接手了这个遗留项目，致力于修复<code>Bug</code>、优化代码，是一个技术人该有的追求。</p>
+<p>也正是因为这样，当今天中午看到响应等待时间降到68毫秒时，我内心几乎是狂喜的，我兴奋地从座位上站了起来，我几乎要大声呼喊出来，然后我望到了不远处正午休的同事，又咽回了内心的激动。我掏出手机给我对象发消息，码了一会儿，想到她对这些并不感兴趣，于是又都删了。然后我坐下来，喝了口早已凉掉的水，默默用渣渣的英文发了条状态。</p>
+<p>我脑子里想到了庖丁解牛的那些话：</p>
+<blockquote>
+<p>虽然，每至于族，吾见其难为，怵然为戒，视为止、行为迟，动刀甚微，謋然已解，如土委地。提刀而立，为之四顾，为之踌躇满志，善刀而藏之。</p>
+</blockquote>
+<p>嗯，现在算是给了自己一个交代，可以善刀而藏了。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/Node.js/TCP-连接.html">
+                    TCP 连接
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-15
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>TCP Socket</h2>
+<p>该类代表了 <code>TCP socket</code> 或者<code>local socket</code>。</p>
+<p>其实例实现了<code>duplex Stream</code>接口。即可用作<code>client</code>,也可用作<code>server</code></p>
+<h3>事件</h3>
+<p>TCP Socket 也是<code>EventEmitter</code>，重要的事件包括：</p>
+<ul>
+<li><code>lookup</code>: 在解析<code>hostname</code>(但在连接之前)触发</li>
+<li><code>connect</code>: 当一个<code>socket</code>连接成功建立后触发</li>
+<li><code>data</code>: 当<code>socket</code>接收到数据后触发</li>
+<li><code>drain</code>: emitted when the write buffer becomes empty</li>
+<li><code>end</code>: 当<code>socket</code>的另一端发送了<code>FIN packet</code>触发</li>
+<li><code>close</code>: 当<code>socket</code>被完全关闭后触发</li>
+<li><code>timeout</code>: 当<code>socket</code>非活动时超时触发，注意这只是提示<code>socket</code>是空闲的，用户需要手工关闭连接。</li>
+<li><code>error</code>: 当发生错误时触发</li>
+</ul>
+<h3>重要方法：</h3>
+<h4>socket.connect(options[, connectListener])</h4>
+<p>对给定的<code>socket</code>，打开连接</p>
+<h4>socket.write(data[, encoding][, callback])</h4>
+<p>在<code>socket</code>上发送数据，默认为<code>UTF8</code>编码，
+Returns <code>false</code> if all or part of the data was queued in user memory. <code>drain</code> will be emitted when the buffer is again free.</p>
+<h4>socket.end([data][, encoding])</h4>
+<p>半关闭<code>socket</code>，即发送一个<code>FIN</code>包。如果指定<code>data</code>，等效于</p>
+<pre><code class="language-JavaScript">socket.write(data, encoding);
+socket.end();
+</code></pre>
+<h2>TCP client</h2>
+<ul>
+<li><code>net.createConnection(options,connectListener)</code></li>
+<li><code>net.connect(options,connectListener)</code></li>
+</ul>
+<p>工厂函数，创建一个新的<code>net.Socket</code>实例，并调用<code>socket.connect</code> 方法进行连接远程服务器，返回<code>socket</code>。</p>
+<pre><code class="language-JavaScript">const net = require('net');
+
+const client = net.connect({port: 8124}, () =&gt; {
+    // 'connect' listener
+    console.log('connected to server!');
+    client.write('world!\r\n');
+});
+
+/* or
+const client = net.createConnection({port: 8124}, () =&gt; {
+    //'connect' listener
+    console.log('connected to server!');
+    client.write('world!\r\n');
+});
+*/
+
+client.on('data', (data) =&gt; {
+    console.log(data.toString());
+    client.end();
+});
+
+client.on('end', () =&gt; {
+    console.log('disconnected from server');
+});
+</code></pre>
+<h2>TCP server:</h2>
+<p>使用<code>net.createServer((client)=&gt;{})</code>工厂方法创建服务器：</p>
+<pre><code class="language-JavaScript">const net = require('net');
+
+const server = net.createServer((c) =&gt; {
+    // 'connection' listener
+    console.log('client connected');
+    c.on('end', () =&gt; {
+        console.log('client disconnected');
+    });
+    c.write('hello\r\n');
+    c.pipe(c);
+});
+
+
+server.on('error', (err) =&gt; {
+    throw err;
+});
+
+server.listen(8124, () =&gt; {
+    console.log('server bound');
+});
+</code></pre>
+<h2>一个例子：</h2>
+<p>实现一个TCP程序，在服务器和客户端之间建立连接，如果服务器接到来自客户端的消息，就在2秒后回复消息；而当客户端收到服务器的消息后，立刻给服务器发送消息。
+服务端程序如下：</p>
+<pre><code class="language-JavaScript">const net=require('net');
+
+let i=0;
+
+const server=net.createServer((client)=&gt;{
+    client.on('data',function(data){
+        console.log('message from client received:',data.toString());
+        setTimeout(function() {
+            client.write(`server message ${i++}`);
+        }, 2000);
+    });
+    client.on('end',function(){
+        console.log('client disconnected');
+    });
+    client.on('close',function(){
+        console.log('socket closed !');
+    });
+    client.on('error',function(error){
+        console.log('shit happens ...');
+    });
+});
+
+server.listen(7788,()=&gt;{
+    console.log('server bound');
+});
+</code></pre>
+<p>客户端：</p>
+<pre><code class="language-JavaScript">const net=require('net');
+
+let i=0;
+
+const socket=net.createConnection(
+    {
+        port:7788,
+        host:'127.0.0.1',
+    },
+    ()=&gt;{
+        console.log('connect!');
+        socket.write(`initial data`);
+    }
+);
+
+socket.on('data',function(data){
+    console.log(`data from server received:`,data.toString());
+    socket.write(`client data: ${i++}`);
+});
+
+socket.on('error',function(error){
+    console.log(`shit happens ...`);
+});
+
+</code></pre>
+<p>最后的效果：</p>
+<p>{% asset_img &quot;talk-screenshot.jpg&quot; &quot;node tcp talk&quot; %}</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Java/Activiti/Activiti-极速入门2——Java-Service-Task-和-Script-Task.html">
+                    Activiti 极速入门2——Java Service Task 和 Script Task
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>我们知道，在<code>Activiti</code>支持的<code>BPMN2.0</code>流程定义中，可以使用</p>
+<ul>
+<li><code>userTask</code>元素</li>
+<li><code>scriptTask</code>元素</li>
+<li><code>serviceTask</code>元素
+来处理相关任务。</li>
+</ul>
+<p>和使用<code>userTask</code>元素定义用户任务一样，我们也可以通过<code>serviceTask</code>元素来调用<code>Java Service</code>处理流程：</p>
+<pre><code class="language-XML">&lt;serviceTask id=&quot;serviceTask1&quot; name=&quot;a java service to validate sth&quot; 
+    activiti:class=&quot;a-fully-qualified-class-name&quot;
+/&gt;
+</code></pre>
+<p>除此之外，还可以利用<code>scriptTask</code>元素调用诸如<code>JavaScript</code>、<code>Groovy</code>之类的脚本来执行任务:</p>
+<pre><code class="language-XML">&lt;scriptTask id=&quot;automatedIntro&quot; name=&quot;Generic and Automated Data Entry&quot; 
+    scriptFormat=&quot;javascript&quot; activiti:autoStoreVariables=&quot;false&quot; &gt;
+    &lt;script&gt;
+        &lt;![CDATA[
+            var dateAsString = new Date().toString();
+            execution.setVariable(&quot;autoWelcomeTime&quot;, dateAsString);
+        ]]&gt;
+    &lt;/script&gt;
+&lt;/scriptTask&gt;
+</code></pre>
+<h2>Java Service Task</h2>
+<p>一个 <code>Java Service Task</code> 可以有4种用法：</p>
+<ul>
+<li>Java service task class</li>
+<li>Java service task class with field extensions</li>
+<li>Java service task with method or value expressions</li>
+<li>A delegate expression that defines a variable that is resolved to a Java bean at
+runtime</li>
+</ul>
+<h3>Java Service Task class</h3>
+<p>一个典型的<code>Java Service Task</code>必须实现<code>JavaDelegate</code>接口，</p>
+<pre><code class="language-Java">public class ValidateService implements JavaDelegate {
+    @Override
+    public void execute(DelegateExecution execution) {
+        System.out.println(&quot;execution id &quot; + execution.getId());
+        Long isbn = (Long) execution.getVariable(&quot;isbn&quot;);
+        System.out.println(&quot;received isbn &quot; + isbn);
+        execution.setVariable(&quot;validatetime&quot;, new Date());
+    }
+}
+</code></pre>
+<p><code>DelegateExecution</code>实例提供了一个可以获取、设置流程变量的接口。一旦<code>Java Service Task</code>被执行，其<code>execute(DelegateExecution execution)</code>方法将会被流程引擎调用。</p>
+<p>然而这种方式是一种同步方式，意味着进程实例必须等待<code>automatic task</code>完成才能继续处理。要解决这个问题，从<code>BPMN2.0</code> XML的角度来说，很简单，只要声明任务为异步即可：</p>
+<pre><code class="language-XML">&lt;serviceTask id=&quot;serviceTask1&quot; name=&quot;a java service to validate sth&quot;
+    activiti:async=&quot;true&quot;
+    activiti:class=&quot;a-fully-qualified-class-name&quot;
+/&gt;
+</code></pre>
+<p>一旦把<code>activiti:async</code>设置为<code>true</code>，相关任务会在单独的事务和线程中执行。</p>
+<h3>Script Task</h3>
+<p>对于<code>Activiti Engine</code>执行的<code>scriptTask</code>，<code>scriptFormat</code>属性值必须兼容于<code>JSR-223</code>(“Scripting for the Java Platform”)。支持的语言包括：<code>Groovy</code>, <code>Clojure</code>, <code>JRuby</code>, <code>Jython</code>, 还有<code>JavaScript</code>。</p>
+<p>在<code>Java Service Task</code>中，可以通过<code>DelegateExecution</code>实例来读取、设置流程变量，在<code>Script Task</code>中也可以显式通过<code>execution</code>变量来读取、设置流程变量。
+比如，一段<code>Groovy</code>脚本为：</p>
+<pre><code class="language-XML">&lt;script&gt;
+    def bookVar = &quot;BPMN 2.0 with Activiti&quot;
+    execution.setVariable(&quot;bookName&quot;, bookVar);
+&lt;/script&gt;
+</code></pre>
+<p>当然，还可以通过隐式修改的方式（自动保存变量）进行:</p>
+<pre><code class="language-XML">&lt;script&gt;
+    sum = 0;
+    for ( i in inputArray ) {
+        sum += i
+    }
+&lt;/script&gt;
+</code></pre>
+<p>这里<code>sum</code>会被自动保存到流程变量中，如果要避免这种行为，应该使用<code>script-local variables</code>的方式——即使用<code>def</code>进行声明。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Java/Activiti/Activiti-极速入门3——User-Task-和-Activiti-Form.html">
+                    Activiti 极速入门3——User Task 和 Activiti Form
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>我们可以通过<code>scriptTask</code>或者<code>serviceTask</code>来处理一些自动化任务，但是，如果需要和人进行交互，则可以使用<code>userTask</code>来完成：
+<code>userTask</code>
+指定<code>activiti:formKey</code>属性使用自己的渲染技术进行模板渲染</p>
+<pre><code class="language-XML">&lt;startEvent id=&quot;theStart&quot; activiti:formKey=&quot;your.form&quot; /&gt;
+</code></pre>
+<p>利用<code>activiti:formProperty</code>定义表单属性，</p>
+<pre><code class="language-XML">&lt;userTask id=&quot;myUserTask&quot; name=&quot;Enter Data&quot; 
+    activiti:assignee=&quot;${initiator}&quot; 
+    activiti:candidateGroups=&quot;kezhang&quot; &gt;
+    &lt;extensionElements&gt;
+        &lt;activiti:formProperty id=&quot;name&quot; name=&quot;Full Name&quot; type=&quot;string&quot;&gt; &lt;/activiti:formProperty&gt;
+        &lt;activiti:formProperty id=&quot;age&quot; name=&quot;age&quot; type=&quot;long&quot; required=&quot;true&quot;&gt;&lt;/activiti:formProperty&gt;
+    &lt;/extensionElements&gt;
+&lt;/userTask&gt;
+</code></pre>
+<p>一旦表单被提交，表单中的字段就会被以流程变量存储于流程上下文中，默认的类型是<code>String</code>，其他支持的类型包括<code>long</code>, <code>Boolean</code>, <code>enum</code>, 和<code>date</code> 。</p>
+<p>服务<code>FormService</code>可以访问<code>userTask</code> 或<code>startEvent</code>定义的<code>formProperty</code>，也可以被用来提交表单字段来完成特定的<code>userTask</code>。</p>
+<pre><code class="language-Java">
+// Task task = ...
+FormData formData = formService.getTaskFormData(task.getId());
+
+Map&lt;String, Object&gt; variables = new HashMap&lt;String, Object&gt;();
+for (FormProperty formProperty : formData.getFormProperties()) {
+    // get type 
+    formProperty.getType();
+    // get name
+    formProperty.getName();
+    // get id
+    formProperty.getId();
+    // value= ...
+    Object value /=* via input or sthm */ ;
+    variables.put(formProperty.getId(), value);
+}
+taskService.complete(task.getId(), variables);
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page18.html">
+          Previous
+        </a>
+        20 of 32
+        <a href="/posts/page20.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

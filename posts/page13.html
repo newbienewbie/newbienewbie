@@ -1,0 +1,283 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/数据库理论/查询语言/存在量词-全程量词-与SQL转换.html">
+                    数据库笔记 存在量词、全称量词与SQL转换
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>存在量词</h2>
+<p>在集合关系中，我们经常使用存在量词(<code>$\exists$</code>)和全称量词(<code>$\forall$</code>)来表达意图。但是<code>SQL</code>中仅仅提供了存在量词关键字支持。本笔记记录如何把存在量词和全称量词转换为<code>SQL</code>表述。</p>
+<h3>SQL 的 exists</h3>
+<p><code>SQL</code>提供了一个存在量词<code>exists</code>，其基本语法为:</p>
+<pre><code class="language-sql">where exists R
+</code></pre>
+<p>表示当且仅当关系<code>$R$</code>非空时（即<code>R</code>至少有一个元组时），结果为<code>true</code>。<code>exists</code>关键字可以等价转换为集合关系的存在量词<code>$\exists$</code>。还可以配合<code>not</code>关键字取反：</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/数据库理论/查询语言/关系代数除法的意义与SQL转换.html">
+                    数据库笔记 关系代数除法运算的意义与SQL转换
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>关系代数除法运算定义</h2>
+<p>给定关系<code>$R=\{X,Y\}$</code>，<code>$S=\{Y,Z\}$</code>，公共属性（集）为<code>Y</code>。显然关系<code>$S$</code>上<code>$Y$</code>属性的域为<code>$\pi_y(S)$</code>。记<code>$x=t^n[X]$</code>，<code>$Y_x$</code>为<code>$x$</code>在<code>$R$</code>上的象集，则<code>$R \div S$</code>的关系演算形式定义为：</p>
+<pre><code class="language-math">%% KaTex
+R \div S= \{ t^n[X] \,\mid\, t^n \in R \,\land\, \pi_y(S) \subseteq Y_x \}
+</code></pre>
+<p>除法运算最终的结果的属性集为<code>$X$</code>，与<code>$Z$</code>无关。除法运算的求解过程如下：</p>
+<ol>
+<li>在关系<code>$S$</code>上求公共属性集<code>Y</code>的域为<code>$\pi_{Y}(S)$</code>(准确的说并非是域，因为是非去重结果，下同)</li>
+<li>在关系<code>$R$</code>上求<code>$X$</code>的域，记为<code>$M$</code></li>
+<li>对每一个的 <code>$x \in M $</code> ，都在<code>$R$</code>中进行相应的选择运算、并投影到公共属性<code>$Y$</code>上，得到的集合为<code>$Y_x=\pi_{Y}(\sigma_{X=x}(R))$</code>，如果满足<code>$\pi_{Y}(S) \subseteq Y_x$</code> ，则<code>$x$</code>是除法运算最终结果集的一个元组。</li>
+</ol>
+<p>第3步的表意还是还是有一点没说清楚，什么叫满足<code>$\pi_{Y}(S) \subseteq Y_x$</code>？根据集合定义，我们可以换个等价说法：如果满足<code>$(\forall s \in \pi_{Y}(S)) (s \in Y_x)$</code>，则<code>$x$</code>是除法运算最终结果集的一个元组。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/OS/文件系统/磁盘管理.html">
+                    操作系统笔记 文件系统—磁盘管理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>空闲块管理</h2>
+<p>如何跟踪磁盘的空闲块？通常有三种方式：一种是采用磁盘块表法，一种是采用磁盘块链法，另一种可选办法是采用位示图表示法。</p>
+<h3>空闲表法</h3>
+<p>适合于文件的连续分配方式。操作系统为每个文件分配一个连续的存储空间，并为所有的存储空间建立一个空闲表，每个空闲区对应一个空闲表项，表项包括空闲区第一块号和空闲区空闲块数等信息。</p>
+<h3>空闲链法</h3>
+<p>在每个空闲块下设置了指向下一个空闲物理块的指针，所有的空闲块连接构成了一个空闲块链表。</p>
+<h3>位示图法</h3>
+<p>为了表示磁盘块的使用情况，位示图表示法对每个磁盘块用一个比特位记录其使用情况，n个块的磁盘需要采用n位位图。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/数据库理论/查询语言/关系演算.html">
+                    数据库笔记 关系演算
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>关系演算包括 <em>元组关系演算</em> 和 <em>域关系演算</em> 。</p>
+<h2>元组关系演算</h2>
+<p>元组关系演算表达式一般形式为<code>$\{t\mid \varphi(t)\}$</code>，其中<code>t</code>为元组变量，<code>$\varphi(t)$</code>是以元组变量<code>$t$</code>为基础的公式。</p>
+<ol start="0">
+<li><code>$\lor$</code>、<code>$\land$</code>、<code>$\lnot$</code>分别表示逻辑运算的或、且、非。</li>
+<li><code>$(\exists t) (\varphi)$</code>：表示至少有一个元组<code>$t$</code>使得<code>$\varphi$</code>为真。<code>$\exists$</code>称之为 <em>存在量词</em></li>
+<li><code>$(\forall t) (\varphi)$</code>：表示对于所有的元组<code>$t$</code>都使得<code>$\varphi$</code>为真。<code>$\forall$</code>称之为 <em>全称量词</em></li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/OS/存储管理/虚拟内存与分页管理.html">
+                    操作系统笔记 存储管理—虚拟内存与分页管理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-27
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>虚拟内存与虚拟内存空间</h2>
+<p>在任何一台计算机上，程序引用一组内存地址，当程序执行指令：</p>
+<pre><code class="language-asm">mov reg , 1000
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page12.html">
+          Previous
+        </a>
+        14 of 32
+        <a href="/posts/page14.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/爬虫/Node-js-爬虫实现抓取-fang-com-信息.html">
+                    使用 Node.js 编写房价爬虫
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-10-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在知乎上有个关于<a href="https://www.zhihu.com/question/51547046">深圳房价暴跌</a>的讨论，楼下有个答主回答说他<a href="https://www.zhihu.com/question/51547046/answer/126838511">编写的爬虫监控到了深圳房价下跌</a>：</p>
+<p>{% blockquote 鼹鼠CC, &quot;https://www.zhihu.com/people/yan-shu-zhao-fang&quot; &quot;https://www.zhihu.com/question/51547046/answer/126838511&quot; &quot;深圳房价暴跌，一线城市的第一轮下跌已经开始了吗？&quot; %}
+虽然暴跌这个用词有点夸张，深圳的房价已经开始下跌了，而且这一波跌幅还不会小。
+我爬取了深圳某中介的四万多条二手房挂盘数据，相比国庆节前，已经有八千多条房源的放盘价格出现了下降。
+{% endblockquote %}</p>
+<p>然而，该答主在评论中表示代码不开源，也不透露是从哪个网上爬取的信息，并且其公共号也只关心深圳房价。于是我就想自己写一个爬虫监控周边房价。</p>
+<h2>技术选型</h2>
+<p>按说写爬虫用<code>Python</code>有成熟的方案,但是人生贵在折腾——<code>JavaScript</code>在 Web 上有天然的优势。所以这次以<code>Node.js</code>为基础。</p>
+<ul>
+<li>使用 <code>fetch</code> API 进行网络请求</li>
+<li>使用 <code>cheerio</code> + <code>RegEx</code> 进行解析</li>
+<li>使用 <code>Sequelize</code> 进行持久化</li>
+</ul>
+<h2>爬虫方案</h2>
+<h3>目标分析</h3>
+<ol>
+<li>由于常州没有链家，只好选<a href="http://fang.com">房天下</a>（<a href="http://soufun.com">搜房网</a>）。</li>
+<li>优先从二手房入手</li>
+</ol>
+<p>所以目标网站为：</p>
+<pre><code># URL 构成:
+# - esf : 二手房
+# - cz : 常州
+http://esf.cz.fang.com/
+</code></pre>
+<p>二手房信息都是在一定的搜索条件下分页展示的，URL格式较为固定：</p>
+<pre><code># 创建种子路径，种子是一个相对URL
+# 目前总是以/house-开头，完整的格式为：
+/house-{区代码}-{镇代码}/{总价区间代码}-{分页代码}: 
+# eg:'/house-a0341-b013685/d250/';
+</code></pre>
+<h3>爬虫逻辑</h3>
+<ol>
+<li>以种子路径为基础，指定区域、价格条件(可选)，得到一个种子URL，并将之作为目标URL</li>
+<li>抓取目标URL的响应数据</li>
+<li>从中解析房源列表中的每条信息</li>
+<li>将解析结果持久化（暂时只写入数据库）</li>
+<li>查看是否有下一页，如果有，将下一页作为目标URL，跳至步2；如果没有，停止抓取。</li>
+</ol>
+<h2>代码实现</h2>
+<p>功能分割：</p>
+<ol>
+<li>步骤2：爬虫<code>Crawler</code>的<code>crawlPage(url)</code></li>
+<li>步骤3：解析器<code>Parser</code>的<code>parseHouseListItem(e)</code></li>
+<li>步骤4：持久化服务<code>persistence-service</code>的<code>persist(info)</code>方法</li>
+<li>步骤5：爬虫<code>Crawler</code>的<code>crawl(seed)</code>方法</li>
+</ol>
+<p>代码相对简单，核心部分如下（<a href="https://github.com/newbienewbie/fangtianxia">完整代码见GitHub</a>）：</p>
+<pre><code class="language-JavaScript">
+class Crawler{
+
+    constructor(host='http://esf.cz.fang.com'){
+        this.host=host;
+        this.parser=new Parser(host);
+    }
+
+
+    /**
+     * 根据某个URL对应的分页的中的房价信息
+     */
+    crawlPage(url) {
+        console.log(`当前正直抓取: ${url}`);
+        return fetch(url)
+            .then(resp =&gt; resp.text())
+            .then(text =&gt; {
+                let $ = cheerio.load(text);
+
+                // 获取house 信息列表
+                const infoList=this.parser.parseHouseList($);
+                // 持久化
+                infoList.forEach((info)=&gt;{
+                    persistenceService.persist(info);
+                });
+
+                // 获取下一页的地址
+                const nextUrl=this.parser.parseNextPageUrl($);
+                return Promise.resolve(nextUrl);
+            })
+    }
+
+    /**
+     * 抓取各页的所有房价信息，直至完成最后一页为止。
+     */
+    crawl(seed) {
+        return this.crawlPage(seed)
+            .then(nextpath =&gt; {
+                if (nextpath) {
+                    if (!this.host) {
+                        throw 'HOST 不满足要求！';
+                    }
+                    const next = this.host + nextpath;
+                    console.log(`捕获到下一页: ${next}`);
+                    return this.crawl(next);
+                } else {
+                    console.log('未捕获到下一页，抓取结束');
+                }
+            });
+    }
+
+
+}
+
+</code></pre>
+<h2>效果展示：</h2>
+<p>{% asset_img &quot;房价抓取结果.jpg&quot; &quot;房价抓取结果&quot; %}</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

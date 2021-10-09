@@ -1,0 +1,246 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (5) 与Authentication实现的对比.html">
+                    Authorization — (5) 授权与认证的实现对比
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-12
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>概念对比</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Authentication</th>
+<th>Authorization</th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全局选项</td>
+<td><code>AuthenticationOptions</code></td>
+<td><code>AuthorizationOptions</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>模式/策略</td>
+<td><code>AuthenticationScheme</code>:  <br>    - <code>Name</code>,<br>    - <code>HandlerType</code><br></td>
+<td><code>AuthorizationPolicy</code>: <br>    - <code>AuthenticationSchemes</code>,<br>     - <code>Requirements</code><br></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>模式/策略Provider</td>
+<td><code>IAuthenticationSchemeProvider</code> <br> <code>AuthenticationSchemeProvider</code></td>
+<td><code>IAuthorizationPolicyProvider</code> <br> <code>DefaultAuthorizationPolicyProvider</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>具体模式/策略细节</td>
+<td><code>AuthenticationSchemeOptions</code></td>
+<td><code>IRequirement</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>具体模式/策略Handler</td>
+<td><code>IAuthenticationHandler</code> <br> <code>AuthenticationHandler&lt;SomeSchemeOptions&gt;</code></td>
+<td><code>IAuthorizationHandler</code> <br><code>Authorization&lt;SomeRequirement&gt;</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>HandlerProvider</td>
+<td><code>IAuthenticationHandlerProvider</code><br> <code>AuthenticationHandlerProvider</code></td>
+<td><code>IAuthorizationHandlerProvider</code> <br> <code>DefaultAuthorizationHandlerProvider</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>服务</td>
+<td><code>IAuthenticationService</code><br> <code>AuthenticationService</code></td>
+<td><code>IAuthorizationService</code><br> <code>DefaultAuthorizationService</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<!-- more -->
+<h3>配置过程对比</h3>
+<p>针对<code>Authentication</code>的配置过程，如：</p>
+<pre><code class="language-csharp">services.AddAuthentication(options =&gt;{
+    ...
+}) // 返回一个AuthenticationBuilder
+    .AddScheme&lt;SomeSchemeOptions,SomeAuthenticationHandler&gt;(name,opts=&gt;{ ... })
+    .AddCookie(name, opts =&gt;{ ... })
+    .AddJwtBearer(name, opts =&gt;{ ... }
+    ...
+;
+</code></pre>
+<p>其实是在配置全局的<code>AuthenticationOptions</code>。他们都会在内部调用<code>AddSchemeHelper&lt;TOptions,THandler&gt;(name,configurer)</code> 会配置全局的AuthenticationOptions，向其中添加<code>&lt;schemeName&gt;-&lt;handlerType&gt;</code>的映射关系。</p>
+<p>类似的，<code>Authorization</code>的配置过程其实就是配置<code>AuthorizationOptions</code>的过程，如：</p>
+<pre><code class="language-csharp">services.AddAuthorization(options =&gt;
+{
+    options.AddPolicy(&quot;policy1&quot;, policyBuilder =&gt; { 
+        policyBuilder.Requirements.Add(new MyRequirement());
+        // ...
+    } );
+    options.AddPolicy(&quot;policy2&quot;, policyBuilder =&gt; { 
+        policyBuilder.RequireAssertion(ctx =&gt;{
+            ... return true;
+            ... return false;
+        });
+    });
+    ... // other policies
+});
+</code></pre>
+<p>和可以添加多种<code>AuthenticationScheme</code>一样，我们可以为<code>AuthorizationOptions</code>添加多个<code>Policy</code>。不过这里每个<code>Policy</code>中可以有多个<code>Requirements</code>和<code>AuthenticationSchemes</code>。此外，和<code>Authentication.AddScheme&lt;TOptions,THandler&gt;(...)</code>不同，可以观察到这里的配置过程对某个<code>Requirement</code>对应的<code>AuthorizationHandler</code>一无所知，所以也无法把特定的<code>AuthorizationHandler</code>自动注册为服务——这也是开发者需要手工注册<code>AuthorizationHandler</code>服务的根本原因。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

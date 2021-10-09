@@ -1,0 +1,218 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/JScript/JScript-与模块化.html">
+                    JScript 与模块化
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-24
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Windows Script Files (.wsf)</h2>
+<p><code>Windows script file</code>(<code>*.wsf</code>) 是一个<code>XML</code>文件，表现的像个<code>Windows Script</code>容器，然而它们并非和特定的<code>engine</code>相关，可以包含任意<code>Windows Script</code>：</p>
+<p>比如，有一个<code>JScript</code>文件的代码为：</p>
+<pre><code class="language-JavaScript">//fso.js
+function GetFreeSpace(drvPath) {
+   var fs, d, s;
+   fs = new ActiveXObject(&quot;Scripting.FileSystemObject&quot;);
+   d = fs.GetDrive(fs.GetDriveName(drvPath));
+   s = &quot;Drive &quot; + drvPath + &quot; - &quot; ;
+   s += d.VolumeName;
+   s += &quot; Free Space: &quot; + d.FreeSpace/1024 + &quot; Kbytes&quot;;
+   return s;
+} 
+</code></pre>
+<p>现在创建一个<code>*.wsf</code>文件来引用<code>JScript</code>脚本，然后使用<code>VBScript</code>调用之：</p>
+<pre><code class="language-XML">&lt;job id=&quot;IncludeExample&quot;&gt;
+   &lt;script language=&quot;JScript&quot; src=&quot;fso.JS&quot;/&gt;
+   &lt;script language=&quot;VBScript&quot;&gt;
+      ' Get the free space for drive C.
+      s = GetFreeSpace(&quot;c:&quot;)
+      WScript.Echo s
+   &lt;/script&gt;
+&lt;/job&gt;
+</code></pre>
+<h2>模块化编写脚本</h2>
+<p>注意上面使用脚本的方式，是不是和在<code>HTML</code>中引用、创建<code>script</code>脚本非常类似？<code>*.wsf</code>给了我们模块化开发<code>JScript</code>的能力。
+比如，我们可以引用一个<code>MyLib1.js</code>、再创建一个<code>MyLib2.js</code>的库：</p>
+<pre><code class="language-XML">&lt;!-- MyJob.wsf --&gt;
+&lt;job id=&quot;IncludeExample&quot;&gt;
+  &lt;script language=&quot;JScript&quot; src=&quot;MyLib1.js&quot;/&gt;
+  &lt;script language=&quot;JScript&quot; src=&quot;MyLib2.js&quot;/&gt;
+  &lt;script language=&quot;JScript&quot;&gt;
+    WScript.Echo(myLib1.foo());
+    WScript.Echo(myLib2.bar());
+  &lt;/script&gt;
+&lt;/job&gt;
+</code></pre>
+<p>事实上，更多时候可以使用<code>package</code>，这样就能同时处理多个任务——从另一个角度说，能提供更高级别的封装。</p>
+<p>比如要显示：</p>
+<ul>
+<li>domain name</li>
+<li>computer name</li>
+<li>user name</li>
+</ul>
+<p>我们使用<code>VBScript</code>、<code>JScript</code>分别完成：</p>
+<pre><code class="language-XML">&lt;package&gt;
+   &lt;job id=&quot;vbs&quot;&gt;
+      &lt;script language=&quot;VBScript&quot;&gt;
+         Set WshNetwork = WScript.CreateObject(&quot;WScript.Network&quot;)
+         WScript.Echo &quot;Domain = &quot; &amp; WshNetwork.UserDomain
+         WScript.Echo &quot;Computer Name = &quot; &amp; WshNetwork.ComputerName
+         WScript.Echo &quot;User Name = &quot; &amp; WshNetwork.UserName
+      &lt;/script&gt;
+   &lt;/job&gt;
+
+   &lt;job id=&quot;js&quot;&gt;
+      &lt;script language=&quot;JScript&quot;&gt;
+         var WshNetwork = WScript.CreateObject(&quot;WScript.Network&quot;);
+         WScript.Echo(&quot;Domain = &quot; + WshNetwork.UserDomain);
+         WScript.Echo(&quot;Computer Name = &quot; + WshNetwork.ComputerName);
+         WScript.Echo(&quot;User Name = &quot; + WshNetwork.UserName);
+      &lt;/script&gt;
+   &lt;/job&gt;
+&lt;/package&gt;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

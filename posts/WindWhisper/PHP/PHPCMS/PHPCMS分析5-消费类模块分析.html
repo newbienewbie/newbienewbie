@@ -1,0 +1,622 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/PHPCMS/PHPCMS分析5-消费类模块分析.html">
+                    PHPCMS分析5-消费类模块分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-16
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>数据库配置</h2>
+<p>账户的金额和积分值是存储在会员模型的member表中的：</p>
+<pre><code class="language-SQL">CREATE TABLE `member` (
+    `userid` MEDIUMINT(8) UNSIGNED NOT NULL AUTO_INCREMENT,
+       ...
+    `username` CHAR(20) NOT NULL DEFAULT '',
+    `password` CHAR(32) NOT NULL DEFAULT '',
+       ...
+    `amount` DECIMAL(8,2) UNSIGNED NOT NULL DEFAULT '0.00',
+    `point` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0',
+       ....
+    PRIMARY KEY (`userid`),
+    UNIQUE INDEX `username` (`username`),
+    INDEX `email` (`email`(20)),
+    INDEX `phpssouid` (`phpssouid`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=MyISAM
+AUTO_INCREMENT=4
+;
+</code></pre>
+<p>至于消费记录是在pay_spend中：</p>
+<pre><code class="language-SQL">CREATE TABLE `pay_spend` (
+    `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `creat_at` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+    `userid` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+    `username` VARCHAR(20) NOT NULL,
+    `type` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
+    `logo` VARCHAR(20) NOT NULL,
+    `value` INT(5) NOT NULL,
+    `op_userid` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+    `op_username` CHAR(20) NOT NULL,
+    `msg` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    INDEX `type` (`type`),
+    INDEX `creat_at` (`creat_at`),
+    INDEX `logo` (`logo`),
+    INDEX `userid` (`userid`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=MyISAM
+;
+</code></pre>
+<h2>消费类</h2>
+<p>PHPCMS提供了一个静态类，帮助操作数据库,只需要利用</p>
+<pre><code class="language-PHP">spend::amount()
+</code></pre>
+<p>和</p>
+<pre><code class="language-PHP">spend::point()
+</code></pre>
+<p>即可进行消费金钱和积分</p>
+<pre><code class="language-PHP">
+/**
+ *
+ * 直接使用pc_base::load_app_class('spend', 'pay', 0);
+ * 进行加载。
+ * 使用spend::amonut()进行金钱的消费
+ * spend::point()进行积分消费
+ * 当函数返回的结果为false是，可使用spend::get_msg()获取错误原因
+ *
+ */
+class spend {
+
+    //数据库连接
+    protected static $db;
+
+    //错误代码
+    public static $msg;
+
+    /**
+     * 数据库连接
+     */
+    protected  static function connect() {
+        self::$db = pc_base::load_model(&quot;pay_spend_model&quot;);
+    }
+
+    /**
+     * 按用户名、时间、标识查询是否有消费记录
+     * @param integer $userid      用户名
+     * @param integer $time        时间。  从指定时间到现在的时间范围内。
+     * @param string $logo   标识
+     */
+    public static function spend_time($userid, $time, $logo) {
+        if (empty(self::$db)) {
+            self::connect();
+        } 
+        return self::$db-&gt;get_one(
+        &quot;`userid` = '$userid' AND `creat_at` BETWEEN '$time' AND '&quot;.SYS_TIME.&quot;' AND `logo` = '$logo'&quot;
+        );
+    }
+
+    /**
+     * 添加金钱消费记录
+     * @param integer $value          消费金额
+     * @param string $msg             消费信息
+     * @param integer $userid         用户ID
+     * @param string $username        用户名
+     * @param integer $op_userid      操作人
+     * @param string $op_username     操作人用户名
+     * @param string $logo            特殊标识，如文章消费时，可以对文章进行标识，以满足在一段时间内，都可以再次的使用
+     */
+    public static function amount(
+        $value, 
+        $msg, 
+        $userid = '', 
+        $username = '',
+        $op_userid = '', 
+        $op_username = '', 
+        $logo = ''
+    ){
+         return self::_add(array(
+            'username'=&gt;$username, 
+            'userid'=&gt;$userid, 
+            'type'=&gt;1, 
+            'value'=&gt;$value, 
+            'op_userid'=&gt;$op_userid, 
+            'op_username'=&gt;$op_username, 
+            'msg'=&gt;$msg,
+            'logo'=&gt;$logo
+        ));
+    }
+
+    /**
+     * 添加积分消费记录
+     * @param integer $value          消费金额
+     * @param string $msg             消费信息
+     * @param integer $userid         用户ID
+     * @param string $username        用户名
+     * @param integer $op_userid      操作人
+     * @param string $op_username     操作人用户名
+     * @param string $logo            特殊标识，如文章消费时，可以对文章进行标识，以满足在一段时间内，都可以再次的使用
+     */
+    public static function point(
+        $value, 
+        $msg, 
+        $userid = '', 
+        $username = '', 
+        $op_userid = '', 
+        $op_username = '', 
+        $logo = ''
+    ) {
+         return self::_add(array(
+            'username'=&gt;$username,
+            'userid'=&gt;$userid, 
+            'type'=&gt;2, 
+            'value'=&gt;$value, 
+            'op_userid'=&gt;$op_userid, 
+            'op_username'=&gt;$op_username, 
+            'msg'=&gt;$msg,
+            'logo'=&gt;$logo
+        ));
+    }
+
+    /**
+     * 添加消费记录
+     * @param array $data 添加消费记录参数
+     */
+    private static function _add($data) {
+        $data['userid'] = isset($data['userid']) &amp;&amp; intval($data['userid']) ? intval($data['userid']) : 0;
+        $data['username'] = isset($data['username']) ? trim($data['username']) : '';
+        $data['op_userid'] = isset($data['op_userid']) &amp;&amp; intval($data['op_userid']) ? intval($data['op_userid']) : 0;
+        $data['op_username'] = isset($data['op_username']) ? trim($data['op_username']) : '';
+        $data['type'] = isset($data['type']) &amp;&amp; intval($data['type']) ? intval($data['type']) : 0;
+        $data['value'] = isset($data['value']) &amp;&amp; intval($data['value']) ? abs(intval($data['value'])) : 0;
+        $data['msg'] = isset($data['msg']) ? trim($data['msg']) : '';
+        $data['logo'] = isset($data['logo']) ? trim($data['logo']) : '';
+        $data['creat_at'] = SYS_TIME;
+
+
+        //检察消费类型
+        if (!in_array($data['type'], array(1,2))) {
+            return false;
+        }
+
+        //检察消费描述
+        if (empty($data['msg'])) {
+            self::$msg = 1;
+            return false;
+        }
+
+        //检察消费金额
+        if (empty($data['value'])) {
+            self::$msg = 2;
+            return false;
+        }
+         
+        //检察userid和username并偿试再次的获取
+        if (empty($data['userid']) || empty($data['username'])) {
+            if (defined('IN_ADMIN')) {
+                self::$msg = 3;
+                return false;
+            }elseif (
+                !$data['userid'] = param::get_cookie('_userid') || 
+                !$data['username'] = param::get_cookie('_username')
+            ){
+                self::$msg = 3;
+                return false;
+            }else {
+                self::$msg = 3;
+                return false;
+            }
+        }
+         
+        //检察op_userid和op_username并偿试再次的获取
+        if (defined('IN_ADMIN') &amp;&amp; (empty($data['op_userid']) || empty($data['op_username']))) {
+            $data['op_username'] = param::get_cookie('admin_username');
+            $data['op_userid'] = param::get_cookie('userid');
+        }
+         
+        //数据库连接
+        if (empty(self::$db)) {
+            self::connect();
+        }
+        $member_db = pc_base::load_model('member_model');
+         
+        //判断用户的金钱或积分是否足够。
+        if (!self::_check_user($data['userid'], $data['type'], $data['value'], $member_db)) {
+            self::$msg = 6;
+            return false;
+        }
+          
+        $sql = array();
+        if ($data['type'] == 1) {//金钱方式消费
+            $sql = array('amount'=&gt;&quot;-=&quot;.$data['value']);
+        } elseif ($data['type'] == 2) { //积分方式消费
+            $sql = array('point'=&gt;'-='.$data['value']);
+        } else {
+            self::$msg = 7;
+            return false;
+        }
+     
+        //进入数据库操作
+        if($member_db-&gt;update($sql, array(
+           'userid'=&gt;$data['userid'], 'username'=&gt;$data['username']
+           ))&amp;&amp;
+           self::$db-&gt;insert($data)
+        ){
+            self::$msg = 0;
+            return true;
+        }else{
+            self::$msg = 8;
+            return false;
+        }
+
+    }
+
+    /**
+     * 断用户的金钱、积分是否足够
+    * param integer $userid    用户ID
+    * param integer $type      判断（1：金钱，2：积分）
+    * param integer $value     数量
+    * param $db                数据库连接
+    */
+    private static function _check_user($userid, $type, $value, &amp;$db) {
+        if ($user = $db-&gt;get_one(array('userid'=&gt;$userid), '`amount`, `point`')) {
+            if ($type == 1) { //金钱消费
+                if ($user['amount'] &lt; $value) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } elseif ($type == 2) { //积分
+                if ($user['point'] &lt; $value) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                    return false;
+            }
+        }else {
+            return false;
+        }
+    }
+
+
+    /**
+     *
+     * 获取详细的报错信息
+     */
+    public static function get_msg() {
+        $msg = self::$msg;
+        $arr = array(
+            '1' =&gt; L('spend_msg_1', '', 'pay'),
+            '2' =&gt; L('spend_msg_2', '', 'pay'),
+            '3' =&gt; L('spend_msg_3', '', 'pay'),
+            '6' =&gt; L('spend_msg_6', '', 'pay'),
+            '7' =&gt; L('spend_msg_7', '', 'pay'),
+            '8' =&gt; L('spend_msg_8', '', 'pay'),
+        );
+        return isset($arr[$msg]) ? $arr[$msg] : false;
+    }
+
+}
+
+</code></pre>
+<h2>充值类</h2>
+<pre><code class="language-PHP">class receipts {
+
+/**
+  * 添加金钱入账记录
+  * 添加金钱入账记录操作放放
+  * @param integer $value 入账金额
+  * @param integer $userid 用户ID
+  * @param string $username 用户名
+  * @param integer $trand_sn 操作订单ID,默认为自动生成
+  * @param string $pay_type 入账类型 （可选值  offline 线下充值，recharge 在线充值，selfincome 自助获取）
+  * @param string $payment 入账方式  （如后台充值，支付宝，银行汇款/转账等此处为自定义）
+  * @param string $status 入账状态  （可选值  succ 默认，入账成功，error 入账失败）注当且仅当为‘succ’时更改member数据
+  * @param string  $op_username 管理员信息
+  */
+public static function amount(
+        $value,
+        $userid = '' , 
+        $username = '', 
+        $trade_sn = '', 
+        $pay_type = '', 
+        $payment = '', 
+        $op_username = '', 
+        $status = 'succ', 
+        $note = ''
+    ){
+    return self::_add(array(
+        'username'=&gt;$username, 
+        'userid'=&gt;$userid,
+        'money'=&gt;$value, 
+        'trade_sn'=&gt;$trade_sn, 
+        'pay_type'=&gt;$pay_type, 
+        'payment'=&gt;$payment, 
+        'status'=&gt;$status, 
+        'type'=&gt;1, 
+        'adminnote'=&gt;$op_username, 
+        'usernote'=&gt;$note
+    ));  
+} 
+
+/**
+  * 添加点数入账记录
+  * 添加点数入账记录操作放放
+  * @param integer $value 入账金额
+  * @param integer $userid 用户ID
+  * @param string $username 用户名
+  * @param integer $trade_sn 操作订单ID,默认为自动生成
+  * @param string $pay_type 入账类型 （可选值  offline 线下充值，recharge 在线充值，selfincome 自助获取）
+  * @param string $payment 入账方式  （如后台充值，支付宝，银行汇款/转账等此处为自定义）
+  * @param string $status 入账状态  （可选值  succ 默认，入账成功，failed 入账失败）
+  * @param string  $op_username 管理员信息
+  */
+ public static function point(
+    $value, 
+    $userid = '' , 
+    $username = '', 
+    $trade_sn = '', 
+    $pay_type = '', 
+    $payment = '', 
+    $op_username = '', 
+    $status = 'succ', 
+    $note = ''
+) {
+  return self::_add(array(
+    'username'=&gt;$username, 
+    'userid'=&gt;$userid,
+    'money'=&gt;$value, 
+    'trade_sn'=&gt;$trade_sn, 
+    'pay_type'=&gt;$pay_type, 
+    'payment'=&gt;$payment,
+    'status'=&gt;$status, 
+    'type'=&gt;2, 
+    'adminnote'=&gt;$op_username, 
+    'usernote'=&gt;$note
+));
+}
+
+
+/**
+  * 添加入账记录
+  * @param array $data 添加入账记录参数
+  */
+ private static function _add($data) {
+
+    $data['money'] = isset($data['money']) &amp;&amp; floatval($data['money']) ? floatval($data['money']) : 0;
+    $data['userid'] = isset($data['userid']) &amp;&amp; intval($data['userid']) ? intval($data['userid']) : 0;
+    $data['username'] = isset($data['username']) ? trim($data['username']) : '';
+    $data['trade_sn'] = (isset($data['trade_sn']) &amp;&amp; $data['trade_sn']) ? trim($data['trade_sn']) : create_sn();
+    $data['pay_type'] = isset($data['pay_type']) ? trim($data['pay_type']) : 'selfincome';
+    $data['payment'] = isset($data['payment']) ? trim($data['payment']) : '';
+    $data['adminnote'] = isset($data['op_username']) ? trim($data['op_username']) : '';
+    $data['usernote'] = isset($data['usernote']) ? trim($data['usernote']) : '';
+    $data['status'] = isset($data['status']) ? trim($data['status']) : 'succ';
+    $data['type'] = isset($data['type']) &amp;&amp; intval($data['type']) ? intval($data['type']) : 0;
+    $data['addtime'] = SYS_TIME;
+    $data['ip'] = ip();
+     
+
+    //检察消费类型
+    if (!in_array($data['type'], array(1,2))) {
+        return false;
+    }
+     
+      //检查入账类型
+    if (!in_array($data['pay_type'], array('offline','recharge','selfincome'))) {
+        return false;
+    }
+
+    //检查入账状态
+    if (!in_array($data['status'], array('succ','error','failed'))) {
+        return false;
+    }
+       
+    //检查消费描述
+    if (empty($data['payment'])) {
+        return false;
+    }
+     
+    //检查消费金额
+    if (empty($data['money'])) {
+        return false;
+    }
+     
+
+    //检查userid和username并偿试再次的获取
+    if (empty($data['userid']) || empty($data['username'])) {
+        if (defined('IN_ADMIN')) {
+            return false;
+        } elseif (!$data['userid'] = param::get_cookie('_userid') || 
+            !$data['username'] = param::get_cookie('_username')
+        ) {
+            return false;
+        } else {
+            return false;
+        }
+    }
+     
+    //检查op_userid和op_username并偿试再次的获取
+    if (defined('IN_ADMIN') &amp;&amp; empty($data['adminnote'])) {
+        $data['adminnote'] = param::get_cookie('admin_username');
+    }
+
+     //数据库连接 
+    if (empty(self::$db)) {
+        self::connect();
+    }
+    $member_db = pc_base::load_model('member_model');
+       
+    //根据type类型选择是追加金钱还是积分
+    $sql = array();
+    if ($data['type'] == 1) {//金钱方式充值
+        $sql = array('amount'=&gt;&quot;+=&quot;.$data['money']);
+    } elseif ($data['type'] == 2) { //积分方式充值
+        $sql = array('point'=&gt;'+='.$data['money']);
+    } else {
+        return false;
+    } 
+       
+    //进入数据库操作
+    $insertid = self::$db-&gt;insert($data,true);
+    if($insertid &amp;&amp; $data['status'] == 'succ') {
+        return $member_db-&gt;update($sql, array(
+                'userid'=&gt;$data['userid'], 'username'=&gt;$data['username']
+            ))? 
+            true : false;
+    } else {
+        return false;
+    }
+}
+
+
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

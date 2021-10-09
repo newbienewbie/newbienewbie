@@ -1,0 +1,274 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/popmotion/设计篇1 动作与执行.html">
+                    popmotion 设计篇1 ：动作与执行
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>动作<code>action</code>是可以执行的对象。为了从头设计这样一种<code>API</code>我们希望其具有以下特征？</p>
+<ol>
+<li>一种动作用一个 <code>action</code> 对象表示，一个<code>action</code>对象表示一种动作类型</li>
+<li>我们希望一个动作对象可以在未来被启动执行</li>
+<li>我们希望一个动作对象可以反复被执行，也即是说，无状态、不可变</li>
+</ol>
+<p>据此，我们可能设想需要这样一种<code>API</code>调用方式：</p>
+<pre><code class="language-javascript">actionInstance.start();    // 执行一种动作——动作对象调用启动方法: .start()
+</code></pre>
+<p>我们想让这种动作是无状态的，也就是说，可以反复调用：</p>
+<pre><code class="language-javascript">actionInstance.start();
+actionInstance.start();
+// ...
+actionInstance.start();
+</code></pre>
+<p>有<code>OOP</code>经验的程序员很容易想到的解决方案是，定义一个<code>Action</code>接口或基类，然后为每种类型的<code>Action</code>定义一种具体的子类。不过，这种方案太重量级了。<!--more-->
+<code>JavaScript</code>并非纯<code>OO</code>的编程语言，它还混杂了函数式的编程范式。就比如说这里对动作类型抽象，我们完全可以定义一个<code>Action</code>基类，其中定义了主要的算法框架，然后对于其中可能变化的部分，用一个具体函数对象去个性化。完全没必要创建更多的子类。</p>
+<p>由于我们的目标是为了创建一个动画库，所以我们要执行一些更新操作；视更新的结果，再执行完成或者错误处理操作。据此可以写出<code>Acttion</code>的大致框架：</p>
+<pre><code class="language-javascript">class Action{
+
+    constructor(props){
+        this.props=props;
+    }
+    
+    start(){
+        this.props.update();
+        this.props.complete();
+        this.props.error();
+    }
+}
+</code></pre>
+<p>不过这种方式依旧不够灵活，如果我们需要错误后反复执行若干遍呢？又如果我们需要每隔几秒就执行一次更新呢？可见，我们不该在<code>Action</code>这个基类里定义动作是如何执行的，这样做太死板了。更好的策略是将如何执行的定义延迟到实例化的时候。也就是说，我们需要一个工厂函数，接受一个定义了动作将如何执行的函数作为参数，来创建不同类型的<code>Action</code>实例：</p>
+<pre><code class="language-javascript">
+/**
+  * 表达一种动作的类
+  */
+class Action{
+
+    constructor(props){
+        this.props=props;
+    }
+    
+    start(){
+        let do =this.props.do;  //其中定义了动作执行时的算法框架
+        do();                   // 执行算法框架
+    }
+}
+
+
+/**
+  * 一个工厂函数，可以用以创建一个Action实例
+  */
+function action(do_func){
+    return new Action({do:do_func});
+}
+</code></pre>
+<p>这样，我们就可以通过传递不同的函数来创建不同类型的动作了。</p>
+<pre><code class="language-javascript">
+function update(){ /**/ }
+function complete(){ /**/ }
+function error(){ /**/ }
+let do()=&gt;{
+    update() during 0sec to 1sec
+    complete() if done
+    else call error() 
+};
+
+const anAction=action(do);
+</code></pre>
+<p>这里，<code>update</code>、<code>complete</code>、<code>error</code>都是函数对象，三者组合起来，就定义了动作将被如何执行的算法框架<code>do()</code>。</p>
+<p>不过，很多时候，算法框架是大致相同的，比如在一段时间内更新颜色、改变大小；而一些细节可能有所差异，比如，在多长时间内改变颜色、改变到多大尺寸。为了尽可能复用这种算法框架，我们需要让<code>do()</code>变成只是一个算法框架的描述函数，不再管的那么细——细节可以在调用时以参数的形式指定:</p>
+<pre><code class="language-javascript">let do=(update,complete,error)=&gt;{
+    // update() during 0sec to 1sec
+    // complete() if done
+    // else call error() 
+};
+
+const anAction=action(do);
+</code></pre>
+<p>我们希望向<code>start()</code>方法注入一个参数<code>executor</code>，其中提供了<code>update</code>、<code>complete</code>、<code>error</code>的细节:</p>
+<pre><code class="language-javascript">anAction.start({
+    update: my_update_func,
+    complete: my_complete_func,
+    error: my_error_func,
+});
+</code></pre>
+<p>当然，这需要重新设计<code>start()</code>函数的实现：当提供<code>update()</code>、<code>complete()</code>、<code>error()</code>方法，就代换掉算法框架<code>do(update,complete,error)</code>中的相应同名函数，如果未提供其中某个方法，就用空函数代换掉算法框架中的同名函数。甚至于，为了方便起见，如果仅仅为<code>start()</code>方法提供一个函数对象作为参数，将等价于将之作为<code>update()</code>方法:</p>
+<pre><code class="language-javascript">class Action{
+    constructor(props){
+        this.props=props;
+    }
+    
+    start(executor){
+        let {
+            update=v=&gt;{},
+            complete=()=&gt;{},
+            error=()=&gt;{}
+        }=executor;
+        
+        let {do}=this.props;
+        
+        do(update,complete,error);
+    }
+}
+
+function action(do){
+    return new Action({do,});
+}
+</code></pre>
+<p>总而言之，我们可以通过工厂函数<code>action()</code>注入一个函数对象<code>do</code>作为算法框架创建出一个<code>Action</code>实例，然后在启动时刻注入具体算法的细节执行动作:</p>
+<pre><code class="language-javascript">const dosth=action((update,complete,error)=&gt;{
+    // 这里定义算法框架
+    // ...
+});
+
+dosth.start({
+    update:function(x){/* */},
+    complete:function(){},
+    error:function(){},
+})
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1027 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读5.html">
+                    BotBuilder 源码通读5 —— 对话建模与实现1
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-03-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2><code>Dialog</code></h2>
+<p><code>BotBuilder</code>中的<code>Dialog</code>变迁历史是相当复杂的。<code>v4</code>版本之初，曾有过<code>IDialog</code>相关接口；后来出于一些原因，官方删除了这个接口；而在较新的<a href="https://github.com/Microsoft/botbuilder-dotnet/tree/ComposableDialog"><code>ComposableDialog</code>分支</a>中，官方又引入了一个新的<code>IDialog</code>接口。本篇笔记以目前的<code>v4.1</code>版(<code>stable</code>)作为基础，并不涉及新的<code>IDialog</code>接口。</p>
+<p><code>v4.1</code>版本中的<code>Dialog</code> 是所有 <code>dialog</code> 的基类，大致公开以下几个属性和方法：</p>
+<pre><code>+-----------------------------------------+
+|                                         |
+|                 Dialog                  |
+|                                         |
++-----------------------------------------+
+|  Id                                     |
++-----------------------------------------+
+|  BeginDialogAsync(dc,opt,ct)            |
+|  ContinueDialogAsync(dc,ct)             |
+|  ResumeDialogAsync(dc,reason,result,ct) |
+|  RepromptDialogAsync(tc,instance,ct)    |
+|  EndDialogAsync(tc,instance,reason,ct)  |
++-----------------------------------------+
+</code></pre>
+<p>从效果上讲，<code>Dialog</code>是对“对话”的抽象：一个<code>Dialog</code>便是一次对话；在一个对话进行期间，可以开启其他子对话，待子对话完成后会“恢复”父对话的处理。这个过程如同栈一样。
+可以把<code>Dialog</code>类比作一个函数：定义一个<code>Dialog</code>类似于定义某种函数；<code>Dialog</code>的执行过程类似于函数的调用过程，<code>Dialog</code>的嵌套执行也类似于函数的嵌套调用。<!-- more --></p>
+<pre><code class="language-csharp">public abstract class Dialog
+{
+    public static readonly DialogTurnResult EndOfTurn = new DialogTurnResult(DialogTurnStatus.Waiting);
+    private IBotTelemetryClient _telemetryClient;
+
+    public Dialog(string dialogId)
+    {
+        if (string.IsNullOrWhiteSpace(dialogId))
+        {
+            throw new ArgumentNullException(nameof(dialogId));
+        }
+
+        _telemetryClient = NullBotTelemetryClient.Instance;
+        Id = dialogId;
+    }
+
+    public string Id { get; }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the telemetry client for logging events.
+    /// &lt;/summary&gt;
+    /// &lt;value&gt;The Telemetry Client logger.&lt;/value&gt;
+    public IBotTelemetryClient TelemetryClient
+    {
+        get {return _telemetryClient;}
+
+        set{ _telemetryClient = value; }
+    }
+
+
+    public abstract Task&lt;DialogTurnResult&gt; BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default(CancellationToken));
+
+
+    public virtual async Task&lt;DialogTurnResult&gt; ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // By default just end the current dialog.
+        return await dc.EndDialogAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public virtual async Task&lt;DialogTurnResult&gt; ResumeDialogAsync(DialogContext dc, DialogReason reason, object result = null, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // By default just end the current dialog and return result to parent.
+        return await dc.EndDialogAsync(result, cancellationToken).ConfigureAwait(false);
+    }
+
+    public virtual Task RepromptDialogAsync(ITurnContext turnContext, DialogInstance instance, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // No-op by default
+        return Task.CompletedTask;
+    }
+
+    public virtual Task EndDialogAsync(ITurnContext turnContext, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // No-op by default
+        return Task.CompletedTask;
+    }
+}
+</code></pre>
+<p><code>Dialog</code>类几个最关键的方法的作用为:</p>
+<ul>
+<li><code>BeginDialogAsync(dc, options, ct)</code>：启动对话框，负责对话框的初始化工作。比如新建<code>DialogState</code>、向客户端发送询问消息等。</li>
+<li><code>ContinueDialogAsync(dc, ct)</code>：当收到消息后，需要继续执行的工作。比如获取当前<code>DialogState</code>，根据具体逻辑继续执行甚至结束对话框调用等</li>
+<li><code>ResumeDialogAsync(dc,dialogReason,result,ct)</code>：通常表示当从子对话调用返回时，需要做的工作，这里的<code>result</code>参数就是子对话输出的结果。</li>
+<li><code>EndDialogAsync(tc, dialogInstance, dialogReason, ct)</code>：结束对话框时需要做的清理工作。</li>
+</ul>
+<p>需要说明的是，就跟函数定义一样，<code>Dialog</code>类只是定义了处理逻辑，处理逻辑本身并无状态。在程序中，我们通常需要反复、或者并行执行某个函数，在运行时，这会在栈上保存数据，函数多次的反复执行，并不会影响函数的定义本身。</p>
+<h2><code>DialogInstance</code> 和 <code>DialogState</code></h2>
+<p>在程序中，每次函数执行，栈上某个函数帧对应中的内存都可以用来保存该函数执行过程中的状态，这里与函数帧等价的概念是便是<code>DialogInstance</code>。<code>DialogInstance</code>表示某个<code>Dialog</code>的某一次具体执行——或者说，是表示某个对话<code>Dialog</code>的实例：</p>
+<pre><code class="language-csharp">public class DialogInstance
+{
+    public string Id { get; set; }
+    public IDictionary&lt;string, object&gt; State { get; set; }
+}
+</code></pre>
+<p>为了引用某个<code>Dialog</code>，我们可以单纯使用对话名<code>Dialog.Id</code>属性——类似于函数名（标识符）。</p>
+<p>而与函数栈等价的概念则是对话栈——表达了对话之间的调用顺序，保存在数据结构<code>DialogState.DialogStack</code>中——这是用一个<code>List&lt;DialogInstance&gt;</code>列表模拟的栈。</p>
+<pre><code class="language-csharp">public class DialogState
+{
+    public DialogState() : this(null){ }
+
+    public DialogState(List&lt;DialogInstance&gt; stack)
+    {
+        DialogStack = stack ?? new List&lt;DialogInstance&gt;();
+    }
+
+    public List&lt;DialogInstance&gt; DialogStack { get; }
+}
+</code></pre>
+<p>这里的<code>DialogState</code>是个很关键的概念，注意它保存的状态其实是一个<code>DialogInstance</code>列表，其中<code>DialogIntance</code>内部存储的也都是字符串、和一个简单字典对象——这些类型令<code>DialogState</code>易于实现持久化。<strong>如果我们能处理好它的序列化和反序列化问题，我们就可以中断对话流的执行，然后再在某个时间点再恢复执行</strong>。这给了我们流程化执行、中断、回复执行的能力。</p>
+<h2><code>DialogSet</code></h2>
+<p>函数的互相调用是由编译器来帮我们完成的，要调用一个函数，我们需要只需要一个函数名（标识符）即可。为了书写简单、维护方便，许多编程语言都会以模块化的方式对函数定义进行组织。这里<code>DialogSet</code>的作用有点类似于 <strong>模块</strong>，<code>DialogSet</code>内的<code>Dialog</code>可以用<code>Dialog.Id</code>作为标识符互相调用。</p>
+<p><code>DialogSet</code>提供了注册<code>Dialog</code>、和查找<code>Dialog</code>的功能：</p>
+<pre><code class="language-csharp">public class DialogSet
+{
+    private IDictionary&lt;string, Dialog&gt; _dialogs;
+
+    public IDialog Add(string dialogId, Dialog dialog)
+    {
+        if (string.IsNullOrEmpty(dialogId))
+            throw new ArgumentNullException(nameof(dialogId));
+        if (dialog == null)
+            throw new ArgumentNullException(nameof(dialog));
+
+        if (_dialogs.ContainsKey(dialogId))
+        {
+            throw new Exception($&quot;DialogSet.add(): A dialog with an id of '{dialogId}' already added.&quot;);
+        }
+        return _dialogs[dialogId] = dialog;
+    }
+
+    public Waterfall Add(string dialogId, WaterfallStep[] steps)
+    {
+        if (string.IsNullOrEmpty(dialogId))
+            throw new ArgumentNullException(nameof(dialogId));
+        if (steps == null)
+            throw new ArgumentNullException(nameof(steps));
+
+        var waterfall = new Waterfall(steps);
+        Add(dialogId, waterfall);
+        return waterfall;
+    }
+
+    public IDialog Find(string dialogId)
+    {
+        if (string.IsNullOrEmpty(dialogId))
+            throw new ArgumentNullException(nameof(dialogId));
+
+        Dialog result;
+        if (_dialogs.TryGetValue(dialogId, out result))
+        {
+            return result;
+        }
+        return null;
+    }
+    
+    // ...
+}
+</code></pre>
+<p>此外，<code>DialogSet</code>还提供了一个极其简单的帮助方法，用于根据当前<code>DialogSet</code>和一个<code>DialogState</code>，<code>new</code>一个对话上下文(<code>DialogContext</code>)</p>
+<pre><code class="language-csharp">    
+    public DialogContext CreateContext(ITurnContext context, IDictionary&lt;string, object&gt; state)
+    {
+        // ... check null
+
+        return new DialogContext(this, context, state);
+    }
+</code></pre>
+<p>在<code>4.2</code>之后，<code>Bot Framework</code>让<code>DialogSet</code>的构造函数接受一个<code>IStatePropertyAccessor&lt;DialogState&gt;</code>对象。这样一来，<code>CreateContext(turnContext,dialogState)</code>方法就可以少传入一个参数，因为可以通过该访问器拿到<code>DialogState</code>。也就是说，在<code>4.2</code>之后，可以用如下方式构建<code>DialogContext</code>：</p>
+<pre><code class="language-csharp">var dialogStatePropertyAccessor = this.conversationState.CreateProperty&lt;DialogState&gt;(&quot;DialogState&quot;);
+
+var dialogSet = new DialogSet(dialogStatePropertyAccessor);
+dialogSet.Add(mainDialog);
+
+var dialogContext = await dialogSet.CreateContextAsync(turnContext,cancellationToken);
+</code></pre>
+<h2>对话执行控制与<code>DialogContext</code></h2>
+<p>有了以上的抽象，我们已经可以实现<code>Dialog</code>的执行、中断、恢复执行等功能了。</p>
+<p><code>DialogTurnStatus</code>表示当前对话栈的状态：空态、等待态、完成态、取消态（并且无对话）。</p>
+<pre><code class="language-csharp">public enum DialogTurnStatus { Empty, Waiting, Complete, Cancelled, }
+</code></pre>
+<p>仅使用一个枚举来反映对话栈状态是不够的，对话完成后，可能还要一个<code>Result</code>来表示结果：</p>
+<pre><code class="language-csharp">public class DialogTurnResult
+{
+    public DialogTurnResult(DialogTurnStatus status, object result = null)
+    {
+        Status = status;
+        Result = result;
+    }
+
+    public DialogTurnStatus Status { get; set; }
+
+    public object Result { get; set; }
+}
+</code></pre>
+<p><code>DialogContext</code>封装了对话执行控制的相关功能：</p>
+<p>其中有三个基础的公开属性，分别是对<code>ITurnContext</code>、<code>DialogSet</code>及<code>DialogState</code>的引用。这三个字段使用构造函数进行初始化：</p>
+<pre><code class="language-csharp">    internal DialogContext(DialogSet dialogs, ITurnContext turnContext, DialogState state)
+    {
+        Context = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
+        Dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
+        Stack = state.DialogStack;
+    }
+</code></pre>
+<p>最后，<code>DialogContext</code>还提供有以下属性及方法用于控制流程：</p>
+<ol>
+<li><code>ActiveDialog</code>属性用于返回当前栈顶<code>DialogInstance</code></li>
+<li><code>BeginDialogAsync(dialogId, opts, ct)</code>方法用于调用一个新的<code>Dialog</code>：也即把一个新的<code>DialogInstance</code>压入栈中，然后通过<code>Dialog::BeginDialogAsync()</code>方法“激活”该<code>Dialog</code>的执行。此方法返回一个<code>Task&lt;DialogTurnResult&gt;</code> 。</li>
+<li><code>ContinueDialogAsync(dc, ct)</code>方法用于对话栈的无脑继续继续执行。也即<strong>找到栈顶<code>Dialog</code>，通过<code>Dialog::ContinueDialogAsync(this, ct)</code>方法继续执行<code>Dialog</code></strong>；如果当前栈为空，则直接返回一个<code>new DialogTurnResult(DialogTurnStatus.Empty)</code></li>
+<li><code>EndDialogAsync(result,ct)</code>: 先弹出当前栈顶<code>Dialog</code>；要是栈中还有<code>Dialog</code>，则说明存在上一级调用，此时再通过<code>Dialog::ResumeDialogAsync(this, DialogReason.EndCalled, result, ct)</code>恢复执行<code>Dialog</code>；要是栈为空，则直接返回<code>new DialogTurnResult(DialogTurnStatus.Complete, result);</code></li>
+<li><code>CancelAllDialogsAsync(ct)</code>：要是栈不为空，则逐一调用各<code>Dialog::EndDialogAsync(Context,instance,reason,ct)</code>方法；否则返回直接返回一个<code>new DialogTurnResult(DialogTurnStatus.Empty);</code></li>
+<li><code>ReplaceDialogAsync(dialogId, opts = null, ct)</code>：用一个全新的<code>Dialog</code>替换当前栈顶<code>Dialog</code>。</li>
+<li><code>PromptAsync(dialogId, opts, ct)</code>: 强类型版本的<code>BeginDialogAsync(dialogId,opts,ct)</code>，仅此而已。</li>
+<li><code>RepromptDialogAsync(ct)</code>: 调用当前栈顶<code>Dialog</code>的<code>RepromptDialogAsync(Context, ActiveDialog, ct)</code>。</li>
+</ol>
+<p>这其中最重要的方法是以下三个方法：</p>
+<ol>
+<li><code>BeginDialogAsync(dialogId,opts,ct)</code>: 把新的对话压入栈中，调用一个新对话</li>
+<li><code>ContinueDialogAsync(dc,ct)</code>：如前文所述，这个方法用于对话栈的无脑执行：每次处理消息，其实都是在调用的这个方法；倘若调用后发现这个此方法返回的结果指示当前是一个空栈，则意味着可能需要<code>BeginDialogAsync(dialogId)</code>来开始一个新的对话。</li>
+<li><code>EndDialogAsync(result,ct)</code>：这个方法实际上做了两件事，一是结束当前栈顶对话并弹出，也即执行当前栈顶对话的<code>dialog.EndDialogAsync(ctx,instance,reason,ct)</code>方法后移除当前栈顶对话；二是在栈顶会话结束并弹出后，恢复上一级父会话的执行 <code>dialog.ResumeDialogAsync(this,DialogReason.EndCalled,result,ct)</code>。</li>
+</ol>
+<p>这三个方法是如此的重要，以至于官方的<code>Sample</code>中添加如下的扩展方法来让我们的对话执行更加无脑:</p>
+<pre><code class="language-csharp">public static async Task Run(this Dialog dialog, ITurnContext turnContext, IStatePropertyAccessor&lt;DialogState&gt; accessor, CancellationToken cancellationToken = default(CancellationToken))
+{
+    var dialogSet = new DialogSet(accessor);
+    dialogSet.Add(dialog);
+
+    var dialogContext = await dialogSet.CreateContextAsync(turnContext, cancellationToken);
+    var results = await dialogContext.ContinueDialogAsync(cancellationToken);
+    if (results.Status == DialogTurnStatus.Empty)
+    {
+        await dialogContext.BeginDialogAsync(dialog.Id, null, cancellationToken);
+    }
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读4.html">
+                    BotBuilder 源码通读4 —— 状态管理之状态属性访问器
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-03-07
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>上文说到，<code>BotState</code>基类提供了几个若干方法来管理缓存和持久层。但是这些方法使用起来并不方便。
+比如调用<code>GetPropertyValueAsync&lt;T&gt;(ctx,prop)</code>方法，用户需要关心缓存是否已经加载到<code>ITurnContext.TurnState[prop]</code>中，同样的情况也会发生于<code>DeletePropertyValueAsync(ctx, prop)</code>、<code>SetPropertyValueAsync(ctx,prop)</code>和<code>ClearStateAsync(ctx)</code>方法上。</p>
+<p>每次都通过<code>BotState</code>来load状态、然后尝试根据一个字符串来读取/删除/设置某个<code>PropertyValue</code>，这种方式对于开发者而言过于啰嗦，于是，<code>BotState</code>还提供了一个方法来简化我们的代码——<code>IStatePropertyAccessor&lt;T&gt;</code>：状态属性访问器——用于对内存中的状态属性进行存取操作。</p>
+<pre><code class="language-csharp">public abstract class BotState : IPropertyManager
+{
+    // ...
+    
+    public IStatePropertyAccessor&lt;T&gt; CreateProperty&lt;T&gt;(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        return new BotStatePropertyAccessor&lt;T&gt;(this, name);
+    }
+}
+</code></pre>
+<p><code>BotState</code>可以通过<code>CreateProperty&lt;T&gt;(string name)</code>方法返回一个<code>IStatePropertyAccessor&lt;T&gt;</code>对象。这里，<code>IStatePropertyAccessor&lt;T&gt;</code>代表了可以对状态属性进行读、写、删的访问器：<!-- more --></p>
+<pre><code class="language-csharp">public interface IStatePropertyAccessor&lt;T&gt; : IStatePropertyInfo
+{
+
+    Task&lt;T&gt; GetAsync(ITurnContext turnContext, Func&lt;T&gt; defaultValueFactory = null, CancellationToken cancellationToken = default(CancellationToken));
+
+    Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken));
+
+    Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken = default(CancellationToken));
+}
+</code></pre>
+<p>其中，<code>BotStatePropertyAccessor&lt;T&gt;</code>存取器代码为：</p>
+<pre><code class="language-csharp">private class BotStatePropertyAccessor&lt;T&gt; : IStatePropertyAccessor&lt;T&gt;
+{
+    private BotState _botState;
+
+    public BotStatePropertyAccessor(BotState botState, string name)
+    {
+        _botState = botState;
+        Name = name;
+    }
+
+    /// &lt;summary&gt;
+    /// Gets name of the property.
+    /// &lt;/summary&gt;
+    public string Name { get; private set; }
+
+
+    public async Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+    {
+        await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+        await _botState.DeletePropertyValueAsync(turnContext, Name, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task&lt;T&gt; GetAsync(ITurnContext turnContext, Func&lt;T&gt; defaultValueFactory, CancellationToken cancellationToken)
+    {
+        await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await _botState.GetPropertyValueAsync&lt;T&gt;(turnContext, Name, cancellationToken).ConfigureAwait(false);
+        }
+        catch (KeyNotFoundException)
+        {
+            // ask for default value from factory
+            if (defaultValueFactory == null)
+            {
+                throw new MissingMemberException(&quot;Property not set and no default provided.&quot;);
+            }
+
+            var result = defaultValueFactory();
+
+            // save default value for any further calls
+            await SetAsync(turnContext, result, cancellationToken).ConfigureAwait(false);
+            return result;
+        }
+    }
+
+    public async Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken)
+    {
+        await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+        await _botState.SetPropertyValueAsync(turnContext, Name, value, cancellationToken).ConfigureAwait(false);
+    }
+}
+
+</code></pre>
+<p>可以看到，用户只要简单的<code>Get()</code>、<code>Set()</code>即可完成数据存取操作，不再劳心当前缓存对象是否存在，也不需要事先手工加载缓存。</p>
+<p>不过，需要注意的是，这个<code>IStatePropertyAccessor&lt;T&gt;</code>的存、取、删操作只是针对缓存而言的，并不会自动持久化。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读3.html">
+                    BotBuilder 源码通读3 —— 状态管理之 BotState
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-03-06
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2><code>BotState</code></h2>
+<p>对于<code>Bot</code>而言，根据作用域的不同，可以分为三大块：</p>
+<ul>
+<li><code>UserState</code> ： 特定<code>Channel</code>下的特定用户的状态。持久化时的键名为<code>{ChannelId}/users/{UserId}</code></li>
+<li><code>ConversationState</code>：特定<code>Channel</code>下的特定会话的状态。持久化时的键名为<code>{ChannelId}/conversations/{ConversationId</code></li>
+<li><code>PrivateConversationState</code>：特定<code>Channel</code>下，特定会话的特定用户的状态。持久化时的键名为<code>{ChannelId}/conversations/{ConversationId}/users/{UserId}</code>。</li>
+</ul>
+<p>这三个类都继承自抽象类<code>BotState</code>：</p>
+<pre><code>                             +----------------+
+                             |                |
+                             |    BotState    |
+                             |                |
+                             +-------^-^-^----+
+                                     | | |
+                                     | | |
+                  +------------------+ | +------------------+
+                  |                    |                    |
++-----------------+---+    +-----------+-+    +-------------+--------------+
+|                     |    |             |    |                            |
+|  ConversationState  |    |  UserState  |    |  PrivateConversationState  |
+|                     |    |             |    |                            |
++---------------------+    +-------------+    +----------------------------+
+</code></pre>
+<p>本质上，<code>BotState</code>并不是状态，而是状态管理器。状态可以被抽象为一个<code>IDictionary&lt;string,object&gt;</code>型对象，而状态管理器是可以对某个状态进行存、取、删的管理器，更具体的，状态管理器还可以对某个状态的某个属性进行存、取、删操作。</p>
+<ul>
+<li>状态是<code>IDictionary&lt;string,object&gt;</code>型对象，一个程序可以包含有任意多种类型的状态，常见的状态分类<strong>会话状态</strong>、<strong>用户状态</strong>、和<strong>私有会话状态</strong></li>
+<li>状态属性是某个状态下的一个属性，还是一个<code>IDictionary&lt;string,object&gt;</code>类型的对象，一个状态可以包含任意多的属性。</li>
+<li>类<code>BotState</code>及其实现<code>ConversationState</code>类、<code>UserState</code>类等均是<strong>针对某种具体状态的管理器</strong>。其中嵌入了一个<code>IStorage</code>对象，在此基础之上，状态管理器可以从持久层加载特定的状态、可以删除特定的状态，还可以保存特定的状态到持久层。比如<code>ConversationState</code>是针对会话状态的管理器，负责对会话状态及会话状态的属性进行存、取、删；而<code>UserState</code>则是针对用户状态的管理器，负责对用户状态及用户状态的属性进行存、取、删；</li>
+<li>状态属性访问器是隐含了</li>
+</ul>
+<!-- more -->
+<h2>状态管理器的实现</h2>
+<p>从实现上说，状态有两层：缓存和持久层。</p>
+<p>每次为了修改某个状态的一个属性，如果都直接操作持久层显然并不合适。所以更多时候，我们需要把状态对象加载到缓存中，然后针对缓存进行多次操作，最后再将状态对象持久化之。</p>
+<p>这里的状态对象(<code>CachedBotState</code>)是以键值对的形式挂到<code>ITurnContext.TurnState</code>这个字典对象上的。也即：</p>
+<pre><code>TurnContext.TurnState[&quot;&lt;cache-key&gt;&quot;]
+</code></pre>
+<p>其中，不同状态有不同的缓存名，总体而言，它们基本都是以类型名作为键名的：</p>
+<ul>
+<li><code>UserState</code>: <code>TurnState.Get&lt;CachedBotState&gt;&lt;nameof(UserState)&gt;()</code></li>
+<li><code>ConversationState</code>: <code>TurnState.Get&lt;CachedBotState&gt;&lt;nameof(ConversationState)&gt;()</code></li>
+<li><code>PrivateConversationState</code>: <code>TurnState.Get&lt;CachedBotState&gt;&lt;nameof(PrivateConversationState)&gt;()</code></li>
+</ul>
+<p>这里的缓存状态对象<code>CachedBotState</code>并没有什么复杂的代码，只是对一个字典进行简单地包装：</p>
+<pre><code class="language-csharp">private class CachedBotState
+{
+    public CachedBotState(IDictionary&lt;string, object&gt; state = null)
+    {
+        State = state ?? new ConcurrentDictionary&lt;string, object&gt;();
+        Hash = ComputeHash(State);
+    }
+
+    public IDictionary&lt;string, object&gt; State { get; set; }
+
+    public string Hash { get; set; }
+
+    public bool IsChanged()
+    {
+        return Hash != ComputeHash(State);
+    }
+
+    internal string ComputeHash(object obj)
+    {
+        return JsonConvert.SerializeObject(obj);
+    }
+}
+</code></pre>
+<p>其实，准确的说，状态对象是<code>CachedBotState.State</code>(类型是<code>IDictionary&lt;string,object&gt;</code>)而非缓存状态对象<code>CachedBotState</code>。缓存状态对象<code>CachedBotState</code>只不过再在状态对象之上提供了一点简单包装，令其可以检测<code>IsChagned</code>、<code>Hash</code>等信息，仅此而已。</p>
+<p>另一方面，对于外部使用用者而言，他们并不知道缓存状态对象类型<code>CachedBotState</code>的存在，他们只意识到状态对象(<code>CachedBotState.State</code>)。从理解的角度上讲，可以把缓存状态对象当作状态对象(<code>CachedBotState.State</code>)。</p>
+<h3>缓存状态属性管理</h3>
+<p>很多时候，我们并不是要操作整个状态对象，而是要对状态对象的某个属性进行操作。为此，<code>BotState</code>暴露了以下一组针对状态属性的访问<code>API</code>：</p>
+<pre><code class="language-csharp">    // get a property from the state cache in the turn context.
+    protected Task&lt;T&gt; GetPropertyValueAsync&lt;T&gt;(ITurnContext turnContext, string propertyName, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // ...
+    }
+
+    // Set the value of a property in the state cache in the turn context.
+    protected Task SetPropertyValueAsync(ITurnContext turnContext, string propertyName, object value, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // ...
+    }
+
+    // Deletes a property from the state cache in the turn context.
+    protected Task DeletePropertyValueAsync(ITurnContext turnContext, string propertyName, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // ...
+    }
+    
+    // Clear all the properties of the state cache in the turn context
+    public Task ClearStateAsync(ITurnContext ctx, CancellationToken ct = default(CancellationToken))
+    {
+        if (ctx == null) { throw new ArgumentNullException(nameof(ctx)); }
+
+        // Explicitly setting the hash will mean IsChanged is always true. And that will force a Save.
+        ctx.States[_contextServiceKey] = new CachedBotState { Hash = string.Empty };
+        return Task.CompletedTask;
+    }
+</code></pre>
+<p>这几个<code>API</code>非常简单，只是简单地对状态对象的某个属性进行存、取、删操作（注意，这组<code>API</code>相对较为底层，全都假设了当前状态对象已经被加载到<code>ITurnContext</code>中）。</p>
+<h3>存储层管理：</h3>
+<p>显然仅在内容中管理状态对象是不够的，我们还需要能将之持久化。<code>BotFramework v4</code>对存储层做了基于键名进行读、写、删的抽象，可以根据键名对状态对象进行整体存取：</p>
+<pre><code class="language-csharp">public interface IStorage
+{
+    Task&lt;IDictionary&lt;string, object&gt;&gt; ReadAsync(string[] keys, CancellationToken cancellationToken = default(CancellationToken));
+
+    Task WriteAsync(IDictionary&lt;string, object&gt; changes, CancellationToken cancellationToken = default(CancellationToken));
+
+    Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default(CancellationToken));
+}
+</code></pre>
+<p>其中，键名约定如下：</p>
+<ul>
+<li><code>UserState</code> ：存储层键名为<code>{ChannelId}/users/{UserId}</code></li>
+<li><code>ConversationState</code>：存储层键名为<code>{ChannelId}/conversations/{ConversationId</code></li>
+<li><code>PrivateConversationState</code>：存储层键名为<code>{ChannelId}/conversations/{ConversationId}/users/{UserId}</code>。</li>
+</ul>
+<p>有了存储层的抽象，定义加载、保存、删除状态对象就非常方便了：</p>
+<pre><code class="language-csharp">    public async Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        if (turnContext == null) { throw new ArgumentNullException(nameof(turnContext));}
+
+        var cachedState = turnContext.TurnState.Get&lt;CachedBotState&gt;(_contextServiceKey);
+        var storageKey = GetStorageKey(turnContext);
+        if (force || cachedState == null || cachedState.State == null)
+        {
+            var items = await _storage.ReadAsync(new[] { storageKey }, cancellationToken).ConfigureAwait(false);
+            items.TryGetValue(storageKey, out object val);
+            turnContext.TurnState[_contextServiceKey] = new CachedBotState((IDictionary&lt;string, object&gt;)val);
+        }
+    }
+
+    public async Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        if (turnContext == null) { throw new ArgumentNullException(nameof(turnContext)); }
+
+        var cachedState = turnContext.TurnState.Get&lt;CachedBotState&gt;(_contextServiceKey);
+        if (force || (cachedState != null &amp;&amp; cachedState.IsChanged()))
+        {
+            var key = GetStorageKey(turnContext);
+            var changes = new Dictionary&lt;string, object&gt;
+            {
+                { key, cachedState.State },
+            };
+            await _storage.WriteAsync(changes).ConfigureAwait(false);
+            cachedState.Hash = cachedState.ComputeHash(cachedState.State);
+            return;
+        }
+    }
+
+    public async Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        if (turnContext == null) { throw new ArgumentNullException(nameof(turnContext)); }
+
+        var cachedState = turnContext.TurnState.Get&lt;CachedBotState&gt;(_contextServiceKey);
+        if (cachedState != null)
+        {
+            turnContext.TurnState.Remove(_contextServiceKey);
+        }
+
+        var storageKey = GetStorageKey(turnContext);
+        await _storage.DeleteAsync(new[] { storageKey }, cancellationToken).ConfigureAwait(false);
+    }
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Protocol/MQTT/MQTT 协议与实现 1.html">
+                    MQTT 协议与实现 1  —— 协议概要
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-02-09
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><a href="http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html"><code>MQTT</code> 协议</a>是连接物与物(<code>M2M</code>)的协议，该协议规定了一系列用于物与<code>Broker</code>之间相互交换的控制报文。总体来说，一个控制报文结构分为三个部分：</p>
+<ol>
+<li>固定头(<code>Fixed Header</code>) : 所有 MQTT Control Packets 的固定存在的报头</li>
+<li>可选头(<code>Variable Header</code>) : 某些  MQTT Control Packets 会包含的报头</li>
+<li>负载(<code>Payload</code>) : 某些 MQTT Control Packets 会有传输 <code>Payload</code></li>
+</ol>
+<p>其中，首字节的前四个比特规定了共<code>$2^4=16$</code>种可能的控制报文类型，后4个字节则是一些标志位组合，可以在一定程度上视作为对报文类型的补充。<code>MQTT</code>报文的基本格式为：</p>
+<pre><code class="language-math">%% KaTex
+\overbrace{\color{orange}\text{报文类型}}^{\text{4 bits}} \enspace \overbrace{\color{green}\text{标志位}}^{\text{4 bits}} \enspace \overbrace{\color{blue} \text{剩余长度} }^{\text{1..4 Bytes}} \enspace \overbrace{\color{yellow} \text{可变头}}^{\text{...}} \enspace \overbrace{\color{skyblue} \text{Payload}}^{\text{...}}
+</code></pre>
+<h3>固定头</h3>
+<p>固定头的由两部分组成：首字节及剩余长度。正如上文所述，首字节的前四个比特位代表了不同的控制报文类型。从功能上说，控制报文主要分为以下两大类：</p>
+<!-- more -->
+<ul>
+<li>连接管理类：
+<ul>
+<li>连接控制型：连接、连接确认；断开连接</li>
+<li>心跳控制型：<code>Ping</code>请求、<code>Ping</code>相应</li>
+</ul>
+</li>
+<li>消息管理类：
+<ul>
+<li>消息订阅型：订阅、订阅确认；取消订阅、取消订阅确认</li>
+<li>消息发布型：发布、发布确认、发布收到、发布释放、发布完成</li>
+</ul>
+</li>
+</ul>
+<p>具体来说，各类型的编码如下：</p>
+<ul>
+<li>连接类
+<ul>
+<li><code>CONNECT</code>: <code>1</code> , 客户端请求连接到服务器</li>
+<li><code>CONNACK</code> : <code>2</code>, 连接确认 ，由服务端发往客户端</li>
+</ul>
+</li>
+<li>消息发布 (均为双向消息，即可从客户端发到服务器，也可由服务器发往客户端)
+<ul>
+<li><code>PUBLISH</code>: <code>3</code> , 发布消息</li>
+<li><code>PUBACK</code> : <code>4</code> , 发布确认</li>
+<li><code>PUBREC</code> : <code>5</code> , 发布收到 (delivery part 1)</li>
+<li><code>PUBREL</code> : <code>6</code> , 发布释放 (delivery part 2)</li>
+<li><code>PUBCOMP</code>: <code>7</code> , 发布完成 (delivery part 3)</li>
+</ul>
+</li>
+<li>消息订阅
+<ul>
+<li><code>SUBSCRIBE</code> : <code>8</code> , Client subscribe request  (Client to Server )</li>
+<li><code>SUBACK</code> : <code>9</code>, Subscribe acknowledgment ( Server to Client)</li>
+<li><code>UNSUBSCRIBE</code> : <code>10</code> , Unsubscribe request (Client to Server)</li>
+<li><code>UNSUBACK</code> : <code>11</code> , Unsubscribe acknowledgment  ( Server to Client)</li>
+</ul>
+</li>
+<li>心跳
+<ul>
+<li><code>PINGREQ</code> : <code>12</code>, PING request  (Client to Server)</li>
+<li><code>PINGRESP</code> : <code>13</code> , PING response  (Server to Client )</li>
+</ul>
+</li>
+<li>断开连接
+<ul>
+<li><code>DISCONNECT</code> : <code>14</code> , Client is disconnecting (Client to Server)</li>
+</ul>
+</li>
+<li><code>0</code> ,<code>15</code> : 保留。</li>
+</ul>
+<p>剩余长度则代表了当前报文的剩余字节数（包括可选头及负载两部分的总长度）。该长度采用可变长编码，即第一个字节的低7位表示0~127，最高位如果为1则表示还有后续字节；如此类似，最多不超过4个字节。</p>
+<h2>可变头和负载</h2>
+<p>某些类型的报文包含了可变头，而且每种报文的可变头都不一样；此外，也并不是每种报文都有<code>Payload</code>部分:</p>
+<table>
+<thead>
+<tr>
+<th>连接管理类型报文</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Connect</code></td>
+<td><strong>必含</strong></td>
+</tr>
+<tr>
+<td><code>CONNACK</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>DISCONNECT</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PINGREQ</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PINGRESP</code></td>
+<td>必无</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>消息管理类型报文</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PUBLISH</code></td>
+<td><strong>可选</strong></td>
+</tr>
+<tr>
+<td><code>PUBACK</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PUBREC</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PUBREL</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>PUBCOMP</code></td>
+<td>必无</td>
+</tr>
+<tr>
+<td><code>SUBSCRIBE</code></td>
+<td><strong>必含</strong></td>
+</tr>
+<tr>
+<td><code>SUBACK</code></td>
+<td><strong>必含</strong></td>
+</tr>
+<tr>
+<td><code>UNSUBSCRIBE</code></td>
+<td><strong>必含</strong></td>
+</tr>
+<tr>
+<td><code>UNSUBACK</code></td>
+<td>必无</td>
+</tr>
+</tbody>
+</table>
+<h3>连接功能</h3>
+<p><code>Connect</code>报文的可变头和负载相对复杂一些。</p>
+<ul>
+<li><code>Variable header</code>: 协议名(6 Bytes)+协议级别(1 Byte)+连接标志(1 Byte)+保持连接(2 Bytes)</li>
+<li><code>Payload</code>: Client Identifier +  Will Topic + Will Message + User Name + Password</li>
+</ul>
+<p>其中，<code>Variable Header</code>分为：</p>
+<ul>
+<li>协议名：长度(2个字节，值为<code>4</code>)+<code>MQTT</code>(4个字节)</li>
+<li>协议级别：1个字节，值为<code>0x04</code>代表版本号为<code>3.1.1</code>的协议</li>
+<li>连接标志：1个字节，即<code>清理会话标志|遗嘱标志|遗嘱QoS标志|遗嘱保留标志|用户名标志|密码标志</code></li>
+<li>保持连接：2个字节，表示一个客户端从结束到开始发送下一个控制包的最大时间间隔(秒)</li>
+</ul>
+<p>而<code>Payload</code>部分则分为：</p>
+<ul>
+<li>客户端标识符：这是<code>Payload</code>中的第一个字段</li>
+<li>遗嘱主题和遗嘱消息：如果<code>Variable Header</code>中的<code>遗嘱标志</code>被设置为1，那么<code>Payload</code>中的接下来的字段就是<code>Will Topic</code>和<code>Will Message</code>。</li>
+<li>用户名：如果<code>Variable Header</code>中的用户名标志被设置为1，那么接下来的字段就是用户名</li>
+<li>密码：用户<code>Variable Header</code>中的密码标志被设置为1，那么接下来的字段就是密码。</li>
+</ul>
+<p>服务器收到<code>CONNECT</code>报文后，需要发送一个<code>CONNACK</code>进行连接确认。<code>CONNACK</code>报文的可变头由两个部分构成： 连接确认标志(1 Byte) + 返回码(1 Byte) 。其中返回码的编码为：</p>
+<table>
+<thead>
+<tr>
+<th><code>CONACK</code>返回码</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0x00</code></td>
+<td>连接接受</td>
+</tr>
+<tr>
+<td><code>0x01</code></td>
+<td>连接拒绝（不被接受的协议版本）</td>
+</tr>
+<tr>
+<td><code>0x02</code></td>
+<td>连接拒绝（客户端标识符拒绝）</td>
+</tr>
+<tr>
+<td><code>0x03</code></td>
+<td>连接拒绝（服务器服务不可用）</td>
+</tr>
+<tr>
+<td><code>0x04</code></td>
+<td>连接拒绝（用户名或者密码错误）</td>
+</tr>
+<tr>
+<td><code>0x05</code></td>
+<td>连接拒绝（未授权）</td>
+</tr>
+<tr>
+<td><code>0x06</code>-<code>0xFF</code></td>
+<td>预留</td>
+</tr>
+</tbody>
+</table>
+<p>注意<code>CONNACK</code>报文无<code>Payload</code>部分。</p>
+<h3>发布消息及响应</h3>
+<p>消息发布可由客户端发往服务器，也可以由服务器发往客户端，其中<code>PUBLISH</code>报文的可变头和负载格式为：</p>
+<ul>
+<li><code>Variable Header</code>: 主题名 + 包标识符（2个字节）</li>
+<li><code>Payload</code>:  即所发布的消息</li>
+</ul>
+<p>而<code>PUBLISH</code>消息的接收者将根据<code>QoS</code>级别的不同，分别有如下响应行为：</p>
+<table>
+<thead>
+<tr>
+<th>QoS Level</th>
+<th>期待响应</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QoS 0</td>
+<td>None</td>
+</tr>
+<tr>
+<td>QoS 1</td>
+<td>PUBACK</td>
+</tr>
+<tr>
+<td>QoS 2</td>
+<td>PUBREC</td>
+</tr>
+</tbody>
+</table>
+<p>此外，对于<code>QoS 2</code>的消息发布，当接收方收到<code>PUBREC</code>后，会响应以<code>PUBREL</code>；而发布方收到<code>PUBREL</code>后，会再返回以<code>PUBCOMP</code>，作为<code>QoS</code>中发布消息控制报文的最后一次消息交换 :</p>
+<pre><code>+-------+              +-------+
+|       | (1) PUBLISH  |       |
+|       +--------------&gt;       |
+|       |              |       |
+|       | (2) PUBACK   |       |
+|       &lt;--------------+       |
+|       |              |       |
+|   A   | (3) PUBREL   |   B   |
+|       +--------------&gt;       |
+|       |              |       |
+|       | (4) PUBCOMP  |       |
+|       &lt;--------------+       |
+|       |              |       |
++-------+              +-------+
+</code></pre>
+<h3>订阅消息</h3>
+<h4>订阅</h4>
+<p>和消息发布不同，<code>SUBSCRIBE</code> 是由客户端发往服务端来创建订阅的报文。每个<code>SUBSCRIBE</code>报文都注册了一个客户端对一个或者多个主题的兴趣。</p>
+<p><code>SUSBSCRIBE</code>报文固定头第一个必须字节必须是：<code>$\color{orange}1000\enspace \color{green}0010$</code>；负载必须至少包含一个<code>Topic Filter/Requested QoS</code>对，其中，每个<code>Topic Filter/Requested QoS</code>对类似于：</p>
+<pre><code>Topic Filter = Length (Byte 1-2) + Filter(Byte 3...N)
+Requested QoS  = 0x000000XX (Byte N+1)
+</code></pre>
+<p>同一个<code>SUBSCRIBE</code>报文下，各个<code>Topic Filter/Requested QoS</code>对连续堆叠。</p>
+<p>而当服务端收到<code>SUBSCRIBE</code>消息时，必须响应一个<code>SUBACK</code>报文。<code>SUBACK</code>报文的<code>Payload</code>将针对各个订阅逐一给出响应码，每个响应码占一个字节：</p>
+<table>
+<thead>
+<tr>
+<th>响应码</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x00</td>
+<td>Success - Maximum QoS 0</td>
+</tr>
+<tr>
+<td>0x01</td>
+<td>Success - Maximum QoS 1</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>Success - Maximum QoS 2</td>
+</tr>
+<tr>
+<td>0x80</td>
+<td>Failure</td>
+</tr>
+</tbody>
+</table>
+<p>也即<code>SUBACK</code>报文的<code>Payload</code>是由一系列响应码构成的字节数组。</p>
+<h3>取消订阅</h3>
+<p>类似的，<code>UNSUBSCRIBE</code>是由客户端发往服务端来取消订阅的报文。<code>UNSUSBSCRIBE</code>报文固定头第一个必须字节必须是：<code>$\color{orange}1010\enspace \color{green}0010$</code>。</p>
+<p>但是和<code>SUBSCRIBE</code>不同的是，<code>UNSUBSCRIBE</code>的<code>Payload</code>并非由各个<code>Topic Filter/Requested QoS</code>对连续堆叠而成，而是一个由<code>Topic Filter</code>所组成的列表。</p>
+<p>此外，<code>UNSUBACK</code>报文并没有<code>Payload</code>。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读2.html">
+                    BotBuilder 源码通读2 —— 中间件的实现
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-01-30
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>BotBuilder</code>的中间件非常简单，从实现上说，这里的中间件全部都是基于接口的中间件，并不存在基于约定的中间件。</p>
+<h2>中间件接口</h2>
+<p><code>BotBuilder</code>中间件接口本身非常简单，只有一个方法<code>OnTurnAsync(context,next,cancelToken)</code>用于处理收到的<code>Activity</code>。</p>
+<pre><code class="language-csharp">public interface IMiddleware
+{
+    Task OnTurnAsync(ITurnContext context, NextDelegate next, CancellationToken cancellationToken = default(CancellationToken));
+}
+</code></pre>
+<p>而所谓<code>NextDelegate</code>，也非常简单：</p>
+<pre><code class="language-csharp"> public delegate Task NextDelegate(CancellationToken cancellationToken);
+</code></pre>
+<p>含义是调用下一个中间件的<code>OnTurnAsync(ctx,next,ct)</code>方法。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page4.html">
+          Previous
+        </a>
+        6 of 32
+        <a href="/posts/page6.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

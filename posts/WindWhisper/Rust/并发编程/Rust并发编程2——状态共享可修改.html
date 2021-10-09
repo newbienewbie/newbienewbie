@@ -1,0 +1,205 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/并发编程/Rust并发编程2——状态共享可修改.html">
+                    Rust并发编程2——状态共享可修改
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-11
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在<code>Rust</code>中，一贯的理念是，一个类型应该要么是共享只读，要么是独占可改。这也是所有权系统要求对同一实例的引用(<code>&amp;T</code>)、可变引用(<code>&amp;mut T</code>)不能共存的原因。不过，这种所有权规则有时候会给编程带来极大的不变性，在单线程场景下，可以通过<code>RefCell&lt;T&gt;</code>实现内部可修改，通过<code>Rc&lt;T&gt;</code>实现共享所有权，这样组合后就可以实现基于共享不可变引用的内部可修改了。</p>
+<p>在多线程场景下，如果只是简单的数据共享，可以借助于<a href="http://www.itminus.com/blog/2018/03/10/WindWhisper/Rust/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/Rust%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B1%E2%80%94%E2%80%94%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92/">上一篇笔记中</a>的消息传递机制；但是要实现数据共享且可修改，就要借助于<code>Mutex&lt;T&gt;</code>和<code>Arc&lt;T&gt;</code>了。</p>
+<h2><code>Mutex</code>和<code>MutexGuard</code>智能指针</h2>
+<p><code>Mutex</code>(互斥体)是用于共享内存的并发原语，表示在任何给定的时间点，只允许唯一一个线程去访问数据，为了访问<code>Mutex</code>中的数据，线程必须首先发出信号请求获得<code>Mutex</code>的锁，表示想要访问数据。这里的锁是<code>mutex</code>中的数据结构，用于追踪当前是谁在访问这个数据。由于是基于锁机制，<code>Mutex</code>要求程序员遵循以下原则:</p>
+<ol>
+<li>使用数据前，必须要尝试获取锁。倘若获取不到，则无法使用数据；倘若获取到，则可以独占数据。</li>
+<li>一旦处理完数据，必须释放锁。倘若不释放锁，则其他人无法再使用数据。</li>
+</ol>
+<p>在<code>Rust</code>中，<code>Mutext&lt;T&gt;</code>类型可以使用<code>Mutext::new()</code>构造一个实例，在使用之前需要尝试通过<code>Mutex</code>类型的<code>lock()</code>方法加锁，需要注意的是：</p>
+<ul>
+<li><code>lock()</code>方法会阻塞当前线程</li>
+<li><code>lock()</code>方法成功之后会返回一个<code>MutextGuard</code>类型的智能指针，此智能指针实现的<code>Deref</code>让其可以被当作一个对内部数据的可变引用，而此类型实现的<code>Drop</code>会在作用域结束之后自动释放锁。</li>
+</ul>
+<pre><code class="language-Rust">use std::sync::Mutex;
+
+fn main(){
+    let m=Mutex::new(String::from(&quot;hello world&quot;));
+    {
+        let mut num=m.lock().unwrap();     // 调用 lock() 会阻塞当前线程，成功之后会返回`MutexGuard`类型
+        *num=String::from(&quot;fuck world&quot;);   // 解引用
+    }                                      // 一旦`MutexGuard`到了作用域之外，就会自动释放锁
+    println!(&quot;{:?}&quot;, m)
+}
+</code></pre>
+<p>和其他编程语言一样，在<code>Rust</code>中需要注意，使用<code>Mutex&lt;T&gt;</code>可能造成死锁。<!--more--></p>
+<p>在本质上，<code>Mutex</code>借助于锁的概念，以对<code>Mutex</code>对象的不可变引用，实现了对其所包裹的内部数据的可修改性。这十分类似于<code>RefCell</code>的功能。不过，<code>Mutex&lt;T&gt;</code>还是属于单所有权那一套。要实现多线程场景下的共享可修改，还需要配合<code>Arc&lt;T&gt;</code>一起使用。</p>
+<h2><code>Arc&lt;T&gt;</code>和<code>Mutex&lt;T&gt;</code>的配合使用</h2>
+<p><code>Arc</code>类型表示 <em>原子引用计数</em> (<code>atomically reference counted</code>)，正如名字中暗示的那样，<code>Arc</code>是<code>Rc</code>的 <em>atomic</em> 版本，二者有相同的<code>API</code>。所谓<code>atomic</code>，也是并发原语之一，借助于<code>Rust</code>标准库<code>std::sync::atomic</code>中，可以支持像其他基本类型那样，在多线程之间安全的传递。</p>
+<pre><code class="language-Rust">use std::thread;
+use std::sync::{Mutex, Arc};
+
+fn main() {
+    let counter = Arc::new(Mutex::new(0));
+    let mut handles = vec![];
+
+    for _ in 0..10 {
+        let counter = Arc::clone(&amp;counter);
+        let handle = thread::spawn(move || {
+            let mut num = counter.lock().unwrap();
+            *num += 1;
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!(&quot;Result: {}&quot;, *counter.lock().unwrap());
+}
+</code></pre>
+<p>这种用<code>Mutex&lt;T&gt;</code>可修改+用<code>Arc&lt;T&gt;</code>共享实现多线程下都可修改的方式，十分类似于<code>RefCell&lt;T&gt;</code>+<code>Rc&lt;T&gt;</code>实现的单线程场景下共享。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

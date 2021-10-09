@@ -1,0 +1,248 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Alchemy/machine-learning/机器学习 - 世界观/机器学习 世界观 3.html">
+                    机器学习 世界观 成本函数与另一种有监督的学习算法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>对于训练集<code>$\bold X$</code>中第<code>$i$</code>个<code>Sample</code> <code>$\bold x^{(i)}$</code>，记其目标值为<code>$y^{(i)}$</code>，预测值为<code>$\hat y^{(i)}$</code>。对于训练集中的样品，训练后的最好效果是，各预测值与相应的实际值完全相同，但实际情况必然是互有大小。为了衡量这组值的误差大小，可以用 <em>平方和</em> (<code>SSE</code>) 来表示这种误差：</p>
+<pre><code class="language-math">%% KaTex
+J(w) = \frac{1}{2} \displaystyle \sum_i{\Big(y^{(i)} -\hat y^{(i)} \Big)}^{2}
+</code></pre>
+<p>要让训练的效果最好，其实就是要让此<code>SSE</code>取得最小值。故而，我们将这个<code>$J(w)$</code>称之为 <em>目标函数</em> (<code>objective function</code>)，目标函数通常是 <em>成本函数</em> (<code>cost function</code>)，正如这里的<code>SSE</code>，训练就是要让成本函数取得最低值。</p>
+<h2>梯度下降法的朴素思想</h2>
+<p>那么，如何才让成本函数取得最低值呢？</p>
+<p>根据泰勒公式，一个函数<code>$f(x)$</code>可以利用在<code>$x=x_0$</code>展开近似：</p>
+<pre><code class="language-math">%% KaTex
+f(x) = f(x_0)+f'(x_0)*(x-x_0)
+</code></pre>
+<p>不妨假设<code>$f(x)$</code>在<code>$x=x_0$</code>上附加一个增量<code>$\delta x$</code>(即当点<code>$x$</code>位于<code>$x_0$</code>的右侧) <!--more--></p>
+<ul>
+<li>如果导数<code>$f'(x_0)$</code>为正，则<code>$f(x)$</code>会比<code>$f(x_0)$</code>大，即随着<code>$x$</code>变大，函数值会变大</li>
+<li>如果导数<code>$f'(x_0)$</code>为负，则<code>$f(x)$</code>会比<code>$f(x_0)$</code>小，即随着<code>$x$</code>变大，函数值会变小</li>
+</ul>
+<p>类似的，当<code>$x$</code>位于<code>$x_0$</code>左侧:</p>
+<ul>
+<li>如果导数<code>$f'(x_0)$</code>为正数，则<code>$f(x)$</code>会比<code>$f(x_0)$</code>小，即随着<code>$x$</code>变小，函数值会变小。</li>
+<li>如果导数<code>$f'(x_0)$</code>为负数，则<code>$f(x)$</code>会比<code>$f(x_0)$</code>大，即随着<code>$x$</code>变小，函数值会变大。</li>
+</ul>
+<p>综合以上情况，我们可以得出非常符合直觉的结论：</p>
+<ul>
+<li>如果<code>$f'(x)$</code>为正，则函数<code>$f(x)$</code>的值会随着<code>$x$</code>的变大而变大，随着<code>$x$</code>的变小而变小</li>
+<li>如果<code>$f'(x)$</code>为负，则函数<code>$f(x)$</code>的值会随着<code>$x$</code>的变大而变小，随着<code>$x$</code>的变小而变大</li>
+</ul>
+<p>于是为了找到更小的函数值，我们可以采取这样一种迭代方法：</p>
+<ol>
+<li>取<code>$x=x_0$</code>为轴点，计算轴点的导数值<code>$f'(x=x_0)$</code></li>
+<li>如果<code>$f'(x_0)$</code>为负，则说明往右方向函数在减小，为了找到更小的点，需要增大<code>$x$</code>，可以将轴点设置为<code>$x_0$</code>右侧的一个点(即<code>$x=x_0 + \delta x$</code>)，然后继续下一轮迭代。</li>
+<li>如果<code>$f'(x_0)$</code>为正，则说明往右方向函数在增大，为了找到更小的点，需要调小<code>$x$</code>，可以将轴点设置为<code>$x_0$</code>左侧的一个点(即<code>$x=x_0 - \delta x$</code>)，然后继续下一轮迭代。</li>
+</ol>
+<p>注意到</p>
+<ol>
+<li><code>$f'(x_0)$</code>的正负和<code>$\delta x$</code>之前的符号具有相反性</li>
+<li>直观上，<code>$f'(x_0)$</code>的绝对值越大，表示曲线越陡，可能离<code>$f'(x)=0$</code>的极小点越远，需要调整<code>$\delta x$</code>的幅度越大</li>
+</ol>
+<p>所以，可以把上述迭代规则统一表示为<code>$x = x_0 - \eta f'(x_0) $</code>。</p>
+<p>类似地，对于多元函数<code>$J(\bold w)$</code>，我们可以通过逐步调整<code>$\bold w$</code>，也即进行<code>$\bold w := \bold w + \Delta \bold w$</code>迭代，最终让<code>$J(w)$</code>取得最小(极小)值。这里:</p>
+<pre><code class="language-math">%% KaTex
+\Delta \bold w = - \eta \nabla J(\bold w)
+</code></pre>
+<p>即沿着梯度方向，不断调整影响成本函数的权重变量，直至成本函数取得极小值。当然，这种方法找到的并不一定式最小点，很有可能是个极小点。不过机器学习作为炼丹玄学，我们大可以碰碰运气——梦想还是要有的，万一实现了呢？</p>
+<h2><code>SSE</code>的偏导函数公式推导</h2>
+<p>梯度下降法需要对偏导函数进行求值，对于采用<code>SSE</code>法定义的成本函数，我们可以做一点微积分来化简<code>SSE</code>的<code>$J(\bold w)$</code>偏导函数：</p>
+<pre><code class="language-math">%% KaTex
+\frac{\partial {J}}{\partial {w_j}} = \frac{\partial }{\partial {w_j}} \frac{1}{2} \displaystyle \sum_i{ \Big(y^{(i)} -\hat y^{(i)} \Big)^{2}}
+</code></pre>
+<p>如果取<code>$ \phi(z) = z$</code>，即选取纯线性函数作为传输函数，显然，上述等式右侧等于：</p>
+<pre><code class="language-math">%% KaTex
+\frac{1}{2} \displaystyle \sum_i{2 \Big( y^{(i)} -\hat y^{(i)} \Big)  \Big( \frac{\partial }{\partial {w_j}} \big( y^{(i)} -\hat y^{(i)} \big)  \Big)  = \displaystyle \sum_i{ \Big( y^{(i)} -\hat y^{(i)} \Big) } \Big( \underbrace{ \frac{\partial }{\partial {w_j}} \big( y^{(i)} -\hat y^{(i)} \big) }_{\text{A}} \Big) }
+</code></pre>
+<p>对于纯线性传输函数，训练集中的任意一个样品<code>$i$</code>，都有<code>$\hat y^{(i)}=\displaystyle \sum_i{w_j^{(i)}x_j^{(i)} +b^{(i)} }$</code>，不过偏置<code>$b^{(i)}$</code>可以通过平移消除，所以为了简便起见，暂时略去。据此展开上式中的<code>$A$</code>部分：</p>
+<pre><code class="language-math">%% KaTex
+A = \frac{\partial }{\partial {w_j}} \Big( y^{(i)} -\hat y^{(i)} \Big) =  \frac{\partial }{\partial {w_j}} \Big( y^{(i)} - \displaystyle \sum_i{\big( w_j^{(i)} x_j^{(i)} \big)}  \Big) 
+</code></pre>
+<p>由于对任意<code>$w_j$</code>而言，目标值<code>$y^{(i)}$</code>都是既定常量，故：</p>
+<pre><code class="language-math">%% KaTex
+A =  \frac{\partial }{\partial {w_j}} \Big(  - \displaystyle \sum_i{\big( w_j^{(i)} x_j^{(i)} \big)}  \Big) =- x_j^{(i)}
+</code></pre>
+<p>综上，得到<code>$J(w)$</code>的偏导函数求解公式：</p>
+<pre><code class="language-math">%% KaTex
+\color{white} \frac{\partial {J}}{\partial {w_j}} = \color{orange} - \displaystyle \sum_i{ \Big( y^{(i)} -\hat y^{(i)} \Big)  x_j^{(i)} }
+</code></pre>
+<p>上式右部实际上可以视作为向量的内积，记误差向量为<code>$\bold e = \bold y - \hat \bold y= [ (y^{(1)}-\hat y^{(1)}),  (y^{(2)}-\hat y^{(2)}) , ... ,  (y^{(n)}-\hat y^{(n)}) ]^{T}$</code>于是有：</p>
+<pre><code class="language-math">%% KaTex
+\frac{\partial {J}}{\partial {w_j}} = - \underbrace{ [x^{(1)}_{j} , x^{(2)}_{j} , ... ,x^{(n)}_{j} ] }_\text{B} \cdot \bold e 
+</code></pre>
+<p>上式的<code>$B$</code>部分表示训练集中的第<code>$j$</code>个输入所构成的向量(行向量)——也就是训练集<code>$X$</code>中的第<code>$j$</code>列的转置，不妨记作<code>$x^{T}_j$</code>。故有<code>$\frac{\partial{J}}{\partial{w_j}}$</code>等于第<code>$j$</code>个特性输入样品向量与误差向量的内积。即：</p>
+<pre><code class="language-math">%% KaTex
+\frac{\partial {J}}{\partial {w_j}} = - \bold x^{T}_j \cdot \bold e 
+</code></pre>
+<p>这样从另一个侧面说明，针对每种特性的输入，偏导函数的值都是一个常量。对于<code>$\bold w = [w_1, w_2, ... , w_j , ..., w_n]$</code>，分别计算<code>$\frac{\partial {J}}{\partial {w_j}}$</code>，写成列向量的形式，则有：</p>
+<pre><code>%% KaTex
+\nabla J = \begin{bmatrix} \frac{\partial {J}}{\partial {w_1}} \\ \frac{\partial {J}}{\partial {w_2}} \\ ... \\ \frac{\partial {J}}{\partial {w_n}}  \end{bmatrix} = - \begin{bmatrix} \bold x^{T}_1 \cdot \bold e \\ \bold x^{T}_2 \cdot \bold e  \\ ... \\ \bold x^{T}_n \cdot \bold e  \end{bmatrix} = - X^{T} \bold e
+</code></pre>
+<p>这意味着，这一系列偏导函数所构成的列向量(梯度向量)，等于训练集<code>$X$</code>的转置取负后乘以误差向量<code>$\bold e$</code>。</p>
+<h2>算法实现</h2>
+<p>根据以上分析，训练神经元的过程就是反复进行<code>$\bold w  := \bold w + \Delta \bold w$</code>。其中，对于线性传输函数，利用梯度下降法求解<code>SSE</code>最小值，有<code>$ \Delta \bold w  = - \eta * \nabla J = \eta * X^{T} \bold e $</code>。</p>
+<p>据此，很容易写出以下实现：</p>
+<pre><code class="language-python">
+class AdaptiveLineNeuron:
+
+    # ....
+     
+    def fit(self,X,y):
+        self.weight =[]
+        for i in range(self.n_iter):
+            y_predicted=self.net_input(X)
+            e= y - y_predicted 
+            self.weight += self.eta * X.T.dot(e)
+    
+    def net_input(self,X):
+        return np.dot(X , self.weight)
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/Rust-WASM/Rust与WebAssembly 1——编译.html">
+                    Rust与WebAssembly 1——编译
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>如何编译到<code>WebAssembly</code></h2>
+<p>目前而言，<code>WebAssembly</code>并无<code>GC</code>，各种其他能力也还在蓬勃开发之中。根据<a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Concepts">Mozilla文档</a>，当下能靠谱的编译到<code>WebAssembly</code>尚只有三种语言：</p>
+<ol>
+<li><code>C</code></li>
+<li><code>C++</code></li>
+<li><code>Rust</code></li>
+</ol>
+<p>对于<code>Rust</code>而言，目前可以采用如下方案:</p>
+<ol>
+<li>Rust with Emscripten ：走<code>C/C++</code>一样的路线</li>
+<li>Rust without Emscripten : 2017年11月底的时候，<code>Rust</code>的<code>nightly</code>版本支持<code>target=wasm32-unknown-unkonwn</code>，可以无需<code>emscripten</code>直接编译<code>wasm</code></li>
+</ol>
+<h3>工具链和编译目标的安装</h3>
+<p>这里以编译到<code>wasm32-unknown-unknown</code>为例。编译目标设置为<code>wasm32-unknown-unnkown</code>，好处是不用再依赖<code>emscripten</code>，不过目前而言，此特性尚未加到<code>stable</code>中去，只能在<code>nightly</code>版本中使用(随着<code>Rust</code>官方在<code>WebAssembly</code>领域的持续发力，这个方案会越来越成熟)。首先当然是需要安装<code>nightly</code>版本：</p>
+<pre><code>rustup toolchain install nightly     
+</code></pre>
+<p>然后添加到<code>wasm32-unknown-unknown</code>的编译目标:<!--more--></p>
+<pre><code>rustup target add wasm32-unknown-unknown --toolchain nightly
+</code></pre>
+<h3><code>rustc</code>单文件编译</h3>
+<p>随后即可调用命令</p>
+<pre><code>rustc +nightly --target wasm32-unknown-unknown &lt;rs文件名&gt;
+</code></pre>
+<p>进行编译。当然，目前编译出的结果还包含很多实际没用的垃圾代码，为了减小体积，可以通过<code>wasm-gc</code>之类的工具(虽然这就是一行命令的事儿，不过我并不关心，因为这并不重要——随着直接编译到<code>wasm32-unknown-unknown</code>功能的越来越完善，这种事肯定不会再需要开发者操心)。</p>
+<h3><code>cargo</code>项目编译</h3>
+<p>大多数情况下，我们都是用<code>cargo new myproject</code>来创建项目，为了编译整个<code>cargo</code>项目，我们可以在<code>Cargo.toml</code>中配置：</p>
+<pre><code class="language-toml">[lib]
+path = &quot;src/lib.rs&quot;
+crate-type = [&quot;cdylib&quot;]
+</code></pre>
+<p>然后即可调用命令编译:</p>
+<pre><code>cargo +nightly build --target wasm32-unknown-unknown --release
+</code></pre>
+<h3><code>cargo web</code></h3>
+<p>使用上述两个办法有几个不足：</p>
+<ol>
+<li>不能<code>watch</code>文件变化自动编译</li>
+<li>缺乏一个Web服务器，目前<code>WebAssembly</code>还只能通过<code>JavaScript</code>动态载入，导致浏览器中无法加载<code>WASM</code>代码</li>
+</ol>
+<p>所以，<code>Rust</code>社区在上述方案的基础之上构建了一个更方便的办法，也即<code>cargo web</code>子命令。</p>
+<p>安装 <code>cargo web</code>子命令非常简单：</p>
+<pre><code>cargo install -f cargo-web
+</code></pre>
+<p>然后在相关路径下直接调用<code>cargo web</code>子命令即可。</p>
+<p>构建：</p>
+<pre><code>cargo web build --target=wasm32-unknown-unknown
+</code></pre>
+<p>测试：</p>
+<pre><code>cargo web test --node.js  # 使用node.js测试，默认是无脑Chrome浏览器
+</code></pre>
+<p>开启一个嵌入式Web服务器，会在必要时自动触发编译：</p>
+<pre><code>cargo web start
+</code></pre>
+<p>由于默认也不是<code>wasm32-unknown-unknown</code>的编译目标，目前也只支持<code>nightly</code>，所以要写作这样：</p>
+<pre><code>cargo +nightly web start --target=wasm32-unknown-unknown
+</code></pre>
+<h4>配置</h4>
+<p>为了省去命令行那么长的传参，可以将诸多参数统统写到配置文件<code>Web.toml</code>里(挨着<code>Cargo.toml</code>放就行)，例如官方提供的一个：</p>
+<pre><code>default-target = &quot;wasm32-unknown-unknown&quot;
+
+# This will prepend a given JavaScript file to the resulting `.js` artifact.
+# You can put any initialization code here which you'd like to have executed
+# when your `.js` file first loads.
+#
+# This accepts either a string (as shown here), or an array of strings,
+# in which case it will prepend all of the specified files in their
+# order of appearance.
+prepend-js = &quot;src/runtime.js&quot;
+
+[cargo-web]
+# Asserts the minimum required version of `cargo-web` necessary
+# to compile this crate; supported since 0.6.0.
+minimum-version = &quot;0.6.0&quot;
+
+# These will only take effect on *-emscripten targets.
+[target.emscripten]
+# You can have a target-specific `prepend-js` key.
+prepend-js = &quot;src/emscripten_runtime.js&quot;
+# This will enable Emscripten's SDL2 port. Consult Emscripten's documentation
+# for more details.
+link-args = [&quot;-s&quot;, &quot;USE_SDL=2&quot;]
+
+# You can also specify the target by its full name.
+[target.wasm32-unknown-unknown]
+prepend-js = &quot;src/native_runtime.js&quot;
+</code></pre>
+<h4>工作原理分析</h4>
+<p>我们可以写一个最简单的程序来分析它是如何工作的，新建一个项目：</p>
+<pre><code>cargo new --lib hello
+</code></pre>
+<p>指定其类型为<code>cdylib</code>，这个类型可以用于让编译出的动态库很方便地被其他语言载入：</p>
+<pre><code class="language-toml">[lib]
+crate-type=[&quot;cdylib&quot;]
+</code></pre>
+<p>(后文会说<code>cargo new --bin hello</code>这种方式创建的项目是如何工作的，如果是<code>--bin</code>类型，无需指定<code>cdylib</code>。)
+随便编写一个<code>Rust</code>函数：</p>
+<pre><code class="language-Rust">#[no_mangle]
+pub extern &quot;C&quot; fn add(x: i32, y :i32) -&gt; i32 {
+    x+y
+}
+</code></pre>
+<p>调用<code>cargo web</code>编译：</p>
+<pre><code>cargo +nightly web deploy --target=wasm32-unknown-unknown
+</code></pre>
+<p>获得 三个文件：</p>
+<ul>
+<li>index.html</li>
+<li>hello.js</li>
+<li>hello.wasm</li>
+</ul>
+<p>其中，编译出的<code>wasm</code>代码经过精简后为：</p>
+<pre><code class="language-wat">(module
+  (type $t0 (func (param i32 i32) (result i32)))
+  ;; 下面就是我们用`Rust`编写的 add(x,y) 函数
+  (func $add (type $t0) (param $p0 i32) (param $p1 i32) (result i32)
+    get_local $p1
+    get_local $p0
+    i32.add)
+  (table $__web_table 0 anyfunc)
+  (memory $memory 17)
+  (export &quot;add&quot; (func $add))             ;; 导出add(x,y)函数
+  (export &quot;__web_table&quot; (table 0))
+  (export &quot;memory&quot; (memory 0))
+  (data (i32.const 4) &quot;\10\00\10\00&quot;))
+</code></pre>
+<p>而生成的<code>js</code>则是起到了胶水功能，代码主体非常简单，就是一个立即执行函数，负责编译、实例化<code>WASM</code>模块，然后将需要导出的部分以同步或者<code>promise</code>的方式挂载到外部环境上。</p>
+<pre><code class="language-javascript">if (typeof Rust === &quot;undefined&quot;) { var Rust = {}; }
+
+(function (root, factory) {
+    // AMD
+    if (typeof define === &quot;function&quot; &amp;&amp; define.amd) { define([], factory); } 
+    // node.js 
+    else if (typeof module === &quot;object&quot; &amp;&amp; module.exports) { module.exports = factory(); } 
+    // plain browser
+    else { Rust.hello = factory(); }
+}(this, function () {
+    function __initialize(__wasm_module, __load_asynchronously) {
+        const Module = {};    // 注意返回的是这个`Module`的`exports`属性
+        // 以异步或者同步方式加载模块，
+        // 返回Module.exports或者Promise的返回
+    }
+
+    // 使用node.js api读取当前目录下的指定wasm文件
+    if (typeof window === &quot;undefined&quot;) {
+        const fs = require(&quot;fs&quot;);
+        const path = require(&quot;path&quot;);
+        const wasm_path = path.join(__dirname, &quot;hello.wasm&quot;);
+        const buffer = fs.readFileSync(wasm_path);
+        const mod = new WebAssembly.Module(buffer);
+
+        return __initialize(mod, false);
+    } 
+    // 使用浏览器API获取指定名称的wasm文件
+    else {
+        return fetch(&quot;hello.wasm&quot;)
+            .then(response =&gt; response.arrayBuffer())
+            .then(bytes =&gt; WebAssembly.compile(bytes))
+            .then(mod =&gt; __initialize(mod, true));
+    }
+}))
+</code></pre>
+<p>至于其中的<code>__initialize()</code>函数，主要是实例化模块、把相关结构存到内部变量<code>Module</code>上，注意，默认情况下，并非<code>pub extern &quot;C&quot; </code>标注的就会被这个引入到<code>js</code>。在其内部有个<code>__instantiate(instance)</code>函数，将根据编译出的实例对象，更改内部的<code>Module</code>对象。</p>
+<pre><code class="language-javascript">function __initialize(){
+    const Module={};
+    // ...
+
+    function __instantiate(instance) {
+        Object.defineProperty(Module, 'instance', {
+            value: instance
+        });
+        Object.defineProperty(Module, 'web_malloc', {
+            value: Module.instance.exports.__web_malloc
+        });
+        Object.defineProperty(Module, 'web_free', {
+            value: Module.instance.exports.__web_free
+        });
+        Object.defineProperty(Module, 'web_table', {
+            value: Module.instance.exports.__web_table
+        });
+
+
+        __imports.env.__web_on_grow();
+
+    }
+
+    // ...
+
+}
+</code></pre>
+<p>注意其中的</p>
+<pre><code class="language-javascript">
+        __imports.env.__web_on_grow();
+
+</code></pre>
+<p>前后有留白。</p>
+<ol>
+<li>前一行留白对应的是：尽管在生成的<code>wasm</code>文件中已经将相关<code>pub extern &quot;C&quot;</code>声明的函数导出，但是生成的<code>js</code>里并没有把<code>module.instance.exports</code>对象挂到<code>Module.exports</code>。如果需要，可以手工在<code>__instantiate()</code>添加；另一种情况是，配合使用<code>stdweb</code>使用时，可以自动<code>js_export</code>自动导出并挂载。</li>
+<li>后一行留白对应的是：如果项目是<code>cargo new --bin</code>生成的运行程序而非一个库，则<code>cargo web</code>会在生成的<code>wasm</code>代码中导出<code>Rust</code>中的<code>main()</code>函数<code>(export &quot;main&quot; (func $main)</code>，然后再在生成的<code>js</code>代码中<code>__imports.env.__web_on_grow();</code>之后的位置调用<code>Module.instance.exports.main()</code>，也即是<code>Rust</code>中的<code>main()</code>函数。</li>
+</ol>
+<h2>小结</h2>
+<p>这篇笔记记录了如何从<code>Rust</code>编译到<code>WebAssembly</code>。不过，现在很多<code>Web</code>接口尚未对<code>WebAssembly</code>开放，<code>WebAssembly</code>对浏览器的控制能力还是相对较弱。所以要做出一个实用的<code>WebAssembly</code>程序，借助<code>JavaScript</code>再所难免。为此，<code>Rust</code>社区开发了<code>stdweb</code>库，可以让<code>Rust</code>和<code>JavaScript</code>之间方便的交换数据，也支持在<code>Rust</code>中嵌入<code>javascript</code>代码，最后统统编译为<code>WebAssembly</code>代码，从而在<code>Node.js</code>和浏览器环境中运行。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

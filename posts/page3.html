@@ -1,0 +1,1132 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (5) 如何自定义认证处理器.html">
+                    Authentication — (5) 如何自定义认证处理器
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-15
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>设想有这样一个场景，我们开发了一个<code>SaaS</code>服务，正如微软在暴露<code>Azure</code>的某些服务那样，我们要求开发者提供相应的订阅（<code>SubScriptionKey</code>）才能访问我们的资源。我们约定，开发者需要在<code>HTTP</code>请求中添加如下形式的报头：</p>
+<pre><code>Authorization: subscription-key {KEY}
+</code></pre>
+<p>此外，服务提供商还会定期公布一些供新用户试用的订阅，使用这些试用订阅也能通过认证。</p>
+<p>为了巩固前几篇源码分析笔记的相关知识，我们通过自定义一个新的认证处理器来解决这个问题。</p>
+<h2>自定义认证处理器</h2>
+<p>首先，我们新建一个类来表示与此认证相关的配置项：</p>
+<pre><code class="language-csharp">public class SubsKeyAuthNSchemeOptions : AuthenticationSchemeOptions
+{
+    public string SubscriptionKeyPrefix { get; set; } = &quot;subscription-key&quot;;
+    public string TrialKey { get; set; } = &quot;42 is the answer&quot;;
+}
+</code></pre>
+<p>认证处理器需要首先从报头中提取<code>Token</code>（也即订阅的<code>Key</code>）；然后判断当前Key是否为试用的订阅，然后从数据库中检索该Key是否有效；如果有效，则生成认证成功凭证、认证票据，最后返回认证成功结果。</p>
+<p>下面给出认证处理器的完整实现：<!-- more --></p>
+<pre><code class="language-csharp">public class SubsKeyAuthNHandler : AuthenticationHandler&lt;SubsKeyAuthNSchemeOptions&gt;
+{
+    public SubsKeyAuthNHandler(IOptionsMonitor&lt;SubsKeyAuthNSchemeOptions&gt; options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
+        : base(options, logger, encoder, clock)
+    {
+    }
+    // 一段虚构的用于校验Key的代码
+    private Task&lt;bool&gt; ValidateSubscriptionKeyAsync(string key)
+    {
+        Func&lt;string,bool&gt; validateKeyAgainstDb = (skey)=&gt; {
+            // ... check this subscription key
+            return false;
+        };
+        var result = key == this.Options.TrialKey || validateKeyAgainstDb(key) ;
+        return Task.FromResult(result);
+    }
+
+    protected override async Task&lt;AuthenticateResult&gt; HandleAuthenticateAsync()
+    {
+        // 获取Key
+        string key = null;
+        string authorization = Request.Headers[&quot;Authorization&quot;];
+        if (string.IsNullOrEmpty(authorization)) {
+            return AuthenticateResult.NoResult();
+        }
+        if (authorization.StartsWith(this.Options.SubscriptionKeyPrefix, StringComparison.OrdinalIgnoreCase)) {
+            key = authorization.Substring(this.Options.SubscriptionKeyPrefix.Length).Trim();
+        }
+        if (string.IsNullOrEmpty(key)) { return AuthenticateResult.NoResult(); }
+
+        // 校验Key
+        var res =await this.ValidateSubscriptionKeyAsync(key);
+        if (!res) {
+            return AuthenticateResult.Fail($&quot;token {this.Options.SubscriptionKeyPrefix} not match&quot;);
+        } else {
+            var id=new ClaimsIdentity( 
+                new Claim[] { new Claim(&quot;Key&quot;, key) },  // not safe , just as an example , should custom claims on your own
+                Scheme.Name 
+            );
+            ClaimsPrincipal principal=new ClaimsPrincipal( id);
+            var ticket = new AuthenticationTicket(principal, new AuthenticationProperties(), Scheme.Name);
+            return AuthenticateResult.Success(ticket);
+        }
+    }
+
+    protected override Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 401;
+        var message = &quot;tell me your token&quot;;
+        Response.Body.Write(Encoding.UTF8.GetBytes(message));
+        return Task.CompletedTask;
+    }
+
+    protected override Task HandleForbiddenAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 403;
+        var message = &quot;you have no rights&quot;;
+        Response.Body.Write(Encoding.UTF8.GetBytes(message));
+        return Task.CompletedTask;
+    }
+}
+</code></pre>
+<p>为了后续可以方便地表述这种认证模式，我们不妨定义两个常量字符串：</p>
+<pre><code class="language-csharp">public class SubsKeyAuthNDefaults {
+    public const string Scheme = &quot;SubscriptionKeyAuthenticationScheme&quot;;
+    public const string DisplayName= &quot;Subscription Key Authentication Scheme&quot;;
+}
+</code></pre>
+<h2>配置认证</h2>
+<p>在<code>Startup.cs</code>的配置认证服务，为了让我们的程序稍显复杂一点，我故意把默认的认证模式改成了<code>JwtBearer</code>；另外我还重写了默认的<code>TrialKey</code>:</p>
+<pre><code class="language-csharp">services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt; {
+        options.TokenValidationParameters = new TokenValidationParameters{ /* ... */ };
+        options.ForwardAuthenticate = SubsKeyAuthNDefaults.Scheme;
+    })
+    .AddScheme&lt;SubsKeyAuthNSchemeOptions, SubsKeyAuthNHandler&gt;(
+        SubsKeyAuthNDefaults.Scheme, 
+        SubsKeyAuthNDefaults.DisplayName, 
+        opts =&gt; {
+            opts.TrialKey = &quot;42 is not the answer&quot;;
+        }
+    );
+</code></pre>
+<h2>测试</h2>
+<p>最后，新建一个<code>API</code>用于测试我们的代码，其中<code>Get</code>方法要求<code>JwtBearer</code>认证，而<code>Post</code>方法需要进行<code>SubsKeyAuthNDefaults.Scheme</code>认证。</p>
+<pre><code class="language-csharp">[Route(&quot;api/[controller]&quot;)]
+[ApiController]
+public class ValuesController : ControllerBase
+{
+
+    [Authorize(AuthenticationSchemes =JwtBearerDefaults.AuthenticationScheme)]
+    [HttpGet(&quot;{id}&quot;)]
+    public ActionResult&lt;string&gt; Get(int id)
+    {
+        return &quot;value&quot;;
+    }
+
+    [Authorize(AuthenticationSchemes = SubsKeyAuthNDefaults.Scheme)]
+    [HttpPost]
+    public string Post([FromBody] string value)
+    {
+        return value;
+    }
+}
+</code></pre>
+<h4>测试 JwtBearer 转发认证</h4>
+<p>我们分别提交错误的Key、默认的Key和自定义的Key进行测试：</p>
+<pre><code>### 返回 401
+GET https://localhost:5001/api/values/5 HTTP/1.1
+Authorization: subscription-key Houston, we have had a problem
+
+
+### 返回 401
+GET https://localhost:5001/api/values/5 HTTP/1.1
+Authorization: subscription-key 42 is the answer
+
+### 返回 200
+GET https://localhost:5001/api/values/5 HTTP/1.1
+Authorization: subscription-key 42 is not the answer
+</code></pre>
+<h4>测试 SubsKey 认证</h4>
+<ol>
+<li>测试 POST方法 + SubsKey 认证（提交错误的Key）</li>
+</ol>
+<pre><code>POST https://localhost:5001/api/values HTTP/1.1
+Authorization: subscription-key Houston, we have had a problem
+Content-Type: application/json
+
+&quot;Hello, World&quot;
+</code></pre>
+<p>以上的请求会返回 <code>401</code> + &quot;tell me your token&quot; ：</p>
+<pre><code>HTTP/1.1 401 Unauthorized
+Connection: close
+Server: Kestrel
+Transfer-Encoding: chunked
+
+tell me your token
+</code></pre>
+<ol start="2">
+<li>测试 POST方法 + SubsKey 认证 （提交正确的Key）</li>
+</ol>
+<pre><code>POST https://localhost:5001/api/values HTTP/1.1
+Authorization: subscription-key 42 is not the answer
+Content-Type: application/json
+
+&quot;It works&quot;
+</code></pre>
+<p>以上的请求会返回 <code>200</code>  + &quot;It works&quot;:</p>
+<pre><code>HTTP/1.1 200 OK
+Connection: close
+Date: Thu, 15 Aug 2019 03:06:33 GMT
+Content-Type: text/plain; charset=utf-8
+Server: Kestrel
+Transfer-Encoding: chunked
+
+It works
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (3.1) 认证处理器的实现之AuthenticationHandler抽象基类.html">
+                    Authentication — (3.1) 认证处理器的实现之AuthenticationHandler抽象基类
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>前文说到，<code>AspNet/HttpAbstractions</code>项目中定义了<code>IAuthenticationHandler</code>接口，负责针对每个请求进行认证处理，包含了初始化、认证、质询、和禁止访问4个功能：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandler
+{
+    Task InitializeAsync(AuthenticationScheme scheme, HttpContext context);
+    Task&lt;AuthenticateResult&gt; AuthenticateAsync();
+    Task ChallengeAsync(AuthenticationProperties properties);
+    Task ForbidAsync(AuthenticationProperties properties);
+}
+</code></pre>
+<p>在<code>AspNet/Security</code>项目中，提供了一个抽象类<code>AuthenticationHandler&lt;TOptions&gt;</code>作为<code> IAuthenticationHandler</code>的基础实现：</p>
+<pre><code class="language-csharp">public abstract class AuthenticationHandler&lt;TOptions&gt; : IAuthenticationHandler 
+    where TOptions : AuthenticationSchemeOptions, new()
+{
+     // ...
+}
+</code></pre>
+<p>其中，初始化只是简单地设置模式、<code>HttpContext</code>，创建事件处理器等：<!-- more --></p>
+<pre><code class="language-csharp">    // 初始化，设置scheme，context ，事件等
+    public async Task InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+    {
+        // ...
+        
+        Scheme = scheme;
+        Context = context;
+
+        Options = OptionsMonitor.Get(Scheme.Name) ?? new TOptions();
+        Options.Validate(Scheme.Name);
+
+        await InitializeEventsAsync();
+        await InitializeHandlerAsync();
+    }
+</code></pre>
+<p>而其余三个关键的接口方法分别负责认证、质询、和禁止，三者的处理逻辑都是先进行<strong>转发检测</strong>，判断是否要转发给其他认证模式。如果需要转发，则转而调用<code>HttpContext</code>上的认证服务处理；否则，就会调用自身的处理认证、处理质询、和处理禁止方法。</p>
+<p>转发检测是通过<code>ResolveTarget(scheme)</code>这个函数完成的，该函数非常简单，只是根据当前认证处理器的配置选项，解析需要转发给哪个目标认证模式：</p>
+<pre><code class="language-csharp">    protected virtual string ResolveTarget(string scheme)
+    {
+        var target = scheme ?? Options.ForwardDefaultSelector?.Invoke(Context) ?? Options.ForwardDefault;
+
+        // Prevent self targetting
+        return string.Equals(target, Scheme.Name, StringComparison.Ordinal)
+            ? null
+            : target;
+    }
+</code></pre>
+<p>可以看到获取目标模式的优先级为：</p>
+<ol>
+<li>如果配置了<code>ForwardDefaultSelector</code>函数，则调用此函数来获取转发模式，</li>
+<li>如果结果为空，则尝试用<code>ForwardDefault</code>选项来设置</li>
+</ol>
+<h3>认证</h3>
+<p>如果想把认证过程转发给其他认证模式，则转而调用<code>HttpContext</code>的认证服务进行处理；否则，则使用自己的逻辑进行处理，并返回认证结果。当然，为了避免同一次请求过程中反复计算<code>AuthenticationResult</code>，需要把结果缓存下来，也即调用<code>await HandleAuthenticateOnceAsync();</code>来避免反复计算:</p>
+<pre><code class="language-csharp">    public async Task&lt;AuthenticateResult&gt; AuthenticateAsync()
+    {
+        // target scheme string
+        var target = ResolveTarget(Options.ForwardAuthenticate);
+        if (target != null)
+        {
+            return await Context.AuthenticateAsync(target);
+        }
+
+        // Calling Authenticate more than once should always return the original value.
+        var result = await HandleAuthenticateOnceAsync();
+        // ... log
+        return result;
+    }
+</code></pre>
+<p><code> HandleAuthenticateOnceAsync()</code>函数只是简单的调用自身的<code>HandleAuthenticateAsync()</code>进行处理，这里的<code>HandleAuthenticateAsync()</code>是一个抽象方法，留待子类实现；在当次请求过程中，第一次认证结束后的认证结果会缓存下来，当次请求过程中如果还有后续认证需求的话，直接从当前缓存中返回认证结果：</p>
+<pre><code class="language-csharp">    protected Task&lt;AuthenticateResult&gt; HandleAuthenticateOnceAsync()
+    {
+        if (_authenticateTask == null)
+        {
+            _authenticateTask = HandleAuthenticateAsync();
+        }
+
+        return _authenticateTask;
+    }
+    
+    protected abstract Task&lt;AuthenticateResult&gt; HandleAuthenticateAsync();
+</code></pre>
+<h3>质询</h3>
+<p>和认证方法类似，质询也是优先判断是否要转发给其他模式质询，如果没有的话，再调用自身的抽象方法<code>HandleChallengeAsync</code>处理质询过程：</p>
+<pre><code class="language-csharp">    public async Task ChallengeAsync(AuthenticationProperties properties)
+    {
+        var target = ResolveTarget(Options.ForwardChallenge);
+        if (target != null)
+        {
+            await Context.ChallengeAsync(target, properties);
+            return;
+        }
+
+        properties = properties ?? new AuthenticationProperties();
+        await HandleChallengeAsync(properties);
+        Logger.AuthenticationSchemeChallenged(Scheme.Name);
+    }
+</code></pre>
+<p>这里默认的处理质询过程只是返回一个<code>401</code></p>
+<pre><code class="language-csharp">    protected virtual Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 401;
+        return Task.CompletedTask;
+    }
+</code></pre>
+<h3>禁止</h3>
+<p>至于禁止方法，同样还是优先判断是否要转发给其他模式禁止。如果不需要，则由<code>HandleForbiddenAsync()</code>方法自身处理禁止过程：</p>
+<pre><code class="language-csharp">    public async Task ForbidAsync(AuthenticationProperties properties)
+    {
+        var target = ResolveTarget(Options.ForwardForbid);
+        if (target != null)
+        {
+            await Context.ForbidAsync(target, properties);
+            return;
+        }
+
+        properties = properties ?? new AuthenticationProperties();
+        await HandleForbiddenAsync(properties);
+        Logger.AuthenticationSchemeForbidden(Scheme.Name);
+    }
+</code></pre>
+<p>默认禁止只是返回一个<code>403</code> :</p>
+<pre><code class="language-csharp">    protected virtual Task HandleForbiddenAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 403;
+        return Task.CompletedTask;
+    }
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (1) 基本概念.html">
+                    Authentication — (1) 基本概念
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这部分代码在<code>HttpAbstractions</code>项目中定义，定义在<code>Microsoft.AspNetCore.Authentication</code>命名空间下。</p>
+<p>本篇笔记分为两大部分：</p>
+<ol>
+<li>第一部分主要讲述<strong>认证模式</strong>、<strong>认证处理器</strong>及相应的<strong>认证模式Provider</strong>和<strong>认证处理器Provider</strong></li>
+<li>第二部分主要对认证过程中涉及的相关类型进行描述，主要包括<strong>认证属性</strong>、<strong>认证票据</strong>、<strong>认证结果</strong></li>
+</ol>
+<h3>认证模式</h3>
+<p>认证模式类<code>AuthenticationScheme</code>非常简单，顾名思义，它代表了某一种特定的认证模式，其中还包含了对应的认证处理器的类型信息：</p>
+<pre><code class="language-csharp">public class AuthenticationScheme
+{
+    public AuthenticationScheme(string name, string displayName, Type handlerType)
+    {
+        if (name == null) { /* throw */ }
+        if (handlerType == null) { /* throw */ }
+        if (!typeof(IAuthenticationHandler).IsAssignableFrom(handlerType)) { /* throw */ }
+
+        Name = name;
+        HandlerType = handlerType;
+        DisplayName = displayName;
+    }
+
+    public string Name { get; }
+    public string DisplayName { get; }
+
+    public Type HandlerType { get; }
+}
+</code></pre>
+<p>常见的认证模式有 <code>Cookies</code>、<code>Bearer</code>、<code>OAuth</code>、<code>OpenIdConnect</code>、<code>Google</code>、<code>Microsoft</code>、<code>Facebook</code>等。每种 认证模式都有各自的处理器负责处理用户认证事宜。注意，<strong><code>Scheme</code>中存储的并非是<code>Handler</code>实例，而是<code>Handler</code>的类型！</strong> <!-- more --></p>
+<h3>认证处理器相关接口</h3>
+<p><code>IAuthenticationHandler</code>接口负责针对每个请求进行认证处理，包含了<strong>初始化</strong>、<strong>认证</strong>、<strong>质询</strong>、和<strong>禁止</strong>访问几个功能：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandler
+{
+    Task InitializeAsync(AuthenticationScheme scheme, HttpContext context); // 初始化
+    Task&lt;AuthenticateResult&gt; AuthenticateAsync();                           // 认证
+    Task ChallengeAsync(AuthenticationProperties properties);               // 质询
+    Task ForbidAsync(AuthenticationProperties properties);                  // 禁止
+}
+</code></pre>
+<p>除了以上几个通用的功能，还有两个特化的认证处理器接口用于<strong>登入</strong>和<strong>登出</strong>：</p>
+<pre><code class="language-csharp">public interface IAuthenticationSignOutHandler : IAuthenticationHandler
+{
+    Task SignOutAsync(AuthenticationProperties properties);
+}
+
+public interface IAuthenticationSignInHandler : IAuthenticationSignOutHandler
+{
+    Task SignInAsync(ClaimsPrincipal user, AuthenticationProperties properties);
+}
+</code></pre>
+<p>最后，还有一个特化的接口<code>IAuthenticationRequestHandler</code> 用于<strong>中间件级别的请求处理</strong>：</p>
+<pre><code class="language-csharp">public interface IAuthenticationRequestHandler : IAuthenticationHandler
+{
+    Task&lt;bool&gt; HandleRequestAsync();
+}
+</code></pre>
+<p>如果一个<code>IAuthenticationHanlder</code>接口对象可以转换为<code>IAuthenticationRequestHandler</code>接口，则说明该 接口对象否想参与中间件级别的请求处理，其<code>HandlerRequestAsync()</code>方法将用于对请求进行处理；当该方法完成后，如果希望系统停止后续中间件的处理，则返回<code>true</code>，否则返回<code>false</code>。</p>
+<h3><code>AuthenticationSchemeProvider</code></h3>
+<p><code>IAuthenticationSchemeProvider</code>接口用于</p>
+<ul>
+<li>枚举当前认证模式</li>
+<li>增、删某种认证模式</li>
+<li>查找某种认证模式</li>
+</ul>
+<pre><code class="language-csharp">public interface IAuthenticationSchemeProvider
+{
+    Task&lt;IEnumerable&lt;AuthenticationScheme&gt;&gt; GetAllSchemesAsync();
+    Task&lt;AuthenticationScheme&gt; GetSchemeAsync(string name);
+   
+    Task&lt;AuthenticationScheme&gt; GetDefaultAuthenticateSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultChallengeSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultForbidSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultSignInSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultSignOutSchemeAsync();
+
+    void AddScheme(AuthenticationScheme scheme);
+    void RemoveScheme(string name);
+
+    Task&lt;IEnumerable&lt;AuthenticationScheme&gt;&gt; GetRequestHandlerSchemesAsync();
+}
+</code></pre>
+<p>其默认实现为<code>AuthenticationSchemeProvider</code>，由于源码较为简单，此处不再赘述。</p>
+<h3><code>AuthenticationHandlerProvider</code></h3>
+<p><code>IAuthenticationHandlerProvider</code>用于提供与指定模式名相匹配的认证处理器的实例，其接口定义为：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandlerProvider
+{
+    Task&lt;IAuthenticationHandler&gt; GetHandlerAsync(HttpContext context, string authenticationScheme);
+}
+</code></pre>
+<p>作为<code>IAuthenticationHandlerProvider</code>接口的默认实现，<code>AuthenticationHandlerProvider</code>包含了一个<code>IAuthenticatioSchemProvider</code>属性，获取相应认证模式处理器的类型，然后根据类型信息创建一个实例并存入缓存：</p>
+<pre><code class="language-csharp">namespace Microsoft.AspNetCore.Authentication
+{
+    public class AuthenticationHandlerProvider : IAuthenticationHandlerProvider
+    {
+        public AuthenticationHandlerProvider(IAuthenticationSchemeProvider schemes)
+        {
+            Schemes = schemes;
+        }
+
+        public IAuthenticationSchemeProvider Schemes { get; }
+        // 创建一个字典作为缓存
+        private Dictionary&lt;string, IAuthenticationHandler&gt; _handlerMap = new Dictionary&lt;string, IAuthenticationHandler&gt;(StringComparer.Ordinal);
+
+        public async Task&lt;IAuthenticationHandler&gt; GetHandlerAsync(HttpContext context, string authenticationScheme){
+            // 优先从缓存中查询
+            if (_handlerMap.ContainsKey(authenticationScheme)){ return _handlerMap[authenticationScheme]; }
+
+            var scheme = await Schemes.GetSchemeAsync(authenticationScheme);
+            if (scheme == null){ return null; }
+            
+            // 创建实例、初始化、存入缓存
+            var handler = (context.RequestServices.GetService(scheme.HandlerType) ??
+                ActivatorUtilities.CreateInstance(context.RequestServices, scheme.HandlerType))
+                as IAuthenticationHandler;
+            if (handler != null){
+                await handler.InitializeAsync(scheme, context);
+                _handlerMap[authenticationScheme] = handler;
+            }
+            return handler;
+        }
+    }
+}
+</code></pre>
+<h3>认证属性、认证票据和认证结果</h3>
+<h4><code>AuthenticationProperties</code></h4>
+<p>认证属性是一个简单的类似于字典一样的对象，用于存取关于认证会话的各项属性。其中，最核心的是两个字典属性：</p>
+<ul>
+<li><code>Items</code> ： <code>Dictionary&lt;string,string&gt;</code>型字典</li>
+<li><code>Parameters</code>：<code>Dictionary&lt;string,object&gt;</code>型字典，用于在handler之间共享对象，不可序列化或者持久化</li>
+</ul>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+
+    public IDictionary&lt;string, string&gt; Items { get; }
+
+    public IDictionary&lt;string, object&gt; Parameters { get; }
+}
+</code></pre>
+<p>为了方便起见，<code>AuthenticationProperties</code>针对<code>Parameters</code>字典和<code>Items</code>提供了如下的取、存方法</p>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+    
+    public T GetParameter&lt;T&gt;(string key) =&gt; Parameters.TryGetValue(key, out var obj) &amp;&amp; obj is T value ? value : default;
+
+    public void SetParameter&lt;T&gt;(string key, T value) =&gt; Parameters[key] = value;
+        
+    public string GetString(string key)
+    {
+        return Items.TryGetValue(key, out string value) ? value : null;
+    }
+
+    public void SetString(string key, string value)
+    {
+        if (value != null) {
+            Items[key] = value;
+        } else if (Items.ContainsKey(key)) {
+            Items.Remove(key);
+        }
+    }
+}       
+</code></pre>
+<p>而<code>Items</code>虽然只能存储<code>string</code>型值，但是配合<code>ToString()</code>和从字符串解析的功能，还可以对<code>bool</code>、<code>DateTime</code>型数据类型进行存取：</p>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+    
+    protected bool? GetBool(string key) { /* ...*/ }
+
+    protected void SetBool(string key, bool? value) { /* ...*/ }
+    
+    protected DateTimeOffset? GetDateTimeOffset(string key) { /* ...*/ }
+
+    protected void SetDateTimeOffset(string key, DateTimeOffset? value) { /* ...*/ }
+}
+</code></pre>
+<p>在此基础之上，对一些常用属性及值提供了便利方法：</p>
+<pre><code class="language-csharp">{
+    internal const string IssuedUtcKey = &quot;.issued&quot;;
+    internal const string ExpiresUtcKey = &quot;.expires&quot;;
+    internal const string IsPersistentKey = &quot;.persistent&quot;;
+    internal const string RedirectUriKey = &quot;.redirect&quot;;
+    internal const string RefreshKey = &quot;.refresh&quot;;
+    internal const string UtcDateTimeFormat = &quot;r&quot;;
+
+    public bool IsPersistent
+    {
+        get =&gt; GetString(IsPersistentKey) != null;
+        set =&gt; SetString(IsPersistentKey, value ? string.Empty : null);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the full path or absolute URI to be used as an http redirect response value.
+    /// &lt;/summary&gt;
+    public string RedirectUri
+    {
+        get =&gt; GetString(RedirectUriKey);
+        set =&gt; SetString(RedirectUriKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the time at which the authentication ticket was issued.
+    /// &lt;/summary&gt;
+    public DateTimeOffset? IssuedUtc
+    {
+        get =&gt; GetDateTimeOffset(IssuedUtcKey);
+        set =&gt; SetDateTimeOffset(IssuedUtcKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the time at which the authentication ticket expires.
+    /// &lt;/summary&gt;
+    public DateTimeOffset? ExpiresUtc
+    {
+        get =&gt; GetDateTimeOffset(ExpiresUtcKey);
+        set =&gt; SetDateTimeOffset(ExpiresUtcKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets if refreshing the authentication session should be allowed.
+    /// &lt;/summary&gt;
+    public bool? AllowRefresh
+    {
+        get =&gt; GetBool(RefreshKey);
+        set =&gt; SetBool(RefreshKey, value);
+    }
+}
+</code></pre>
+<h4><code>AuthenticationTicket</code></h4>
+<p>认证票据封装了用户身份信息和一些配套的认证属性，如过期信息、是否允许刷新等。</p>
+<pre><code class="language-csharp">public class AuthenticationTicket
+{
+
+    public AuthenticationTicket(ClaimsPrincipal principal, AuthenticationProperties properties, string authenticationScheme)
+    {
+        if (principal == null) { /* throw */ }
+
+        AuthenticationScheme = authenticationScheme;
+        Principal = principal;
+        Properties = properties ?? new AuthenticationProperties();
+    }
+
+    public AuthenticationTicket(ClaimsPrincipal principal, string authenticationScheme) 
+        : this(principal, properties: null, authenticationScheme: authenticationScheme)
+    { }
+
+
+    public string AuthenticationScheme { get; private set; }
+
+    public ClaimsPrincipal Principal { get; private set; }
+
+    public AuthenticationProperties Properties { get; private set; }
+}
+</code></pre>
+<h4><code>AuthenticationResult</code></h4>
+<p>认证结果有三种，分别是：</p>
+<ul>
+<li>没有结果：暂时无法确定最终认证结果，留待其他认证处理程序处理。</li>
+<li>认证成功：需要提供认证票据</li>
+<li>认证失败：需要指定失败消息</li>
+</ul>
+<p><code>AuthenticationResult</code>提供了一个类来封装了以上所有信息：</p>
+<pre><code class="language-csharp">public class AuthenticateResult
+{
+    public AuthenticationTicket Ticket { get; protected set; }    // 认证成功时的票据
+
+    public ClaimsPrincipal Principal =&gt; Ticket?.Principal;        // 认证成功时票据中的主体
+
+    public AuthenticationProperties Properties { get; protected set; } // 认证属性
+
+    public Exception Failure { get; protected set; }               // 认证失败时的失败异常
+
+    public bool None { get; protected set; }                       // 认证是否没有结果
+     
+    public bool Succeeded =&gt; Ticket != null;                       // 认证是否已经成功
+}
+</code></pre>
+<p><code>AuthenticationResult</code>还提供了三类静态方法来创建认证结果</p>
+<pre><code class="language-csharp">public class AuthenticateResult
+{
+    // ...
+    
+    
+    public static AuthenticateResult NoResult()
+    {
+        return new AuthenticateResult() { None = true };
+    }
+    
+    public static AuthenticateResult Success(AuthenticationTicket ticket)
+    {
+        if (ticket == null)
+        {
+            throw new ArgumentNullException(nameof(ticket));
+        }
+        return new AuthenticateResult() { Ticket = ticket, Properties = ticket.Properties };
+    }
+
+    public static AuthenticateResult Fail(Exception failure)
+    {
+        return new AuthenticateResult() { Failure = failure };
+    }
+
+    public static AuthenticateResult Fail(Exception failure, AuthenticationProperties properties)
+    {
+        return new AuthenticateResult() { Failure = failure, Properties = properties };
+    }
+
+    public static AuthenticateResult Fail(string failureMessage)
+        =&gt; Fail(new Exception(failureMessage));
+
+    public static AuthenticateResult Fail(string failureMessage, AuthenticationProperties properties)
+        =&gt; Fail(new Exception(failureMessage), properties);
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (3.3) 认证处理器的实现之RemoteAuthenticationHandler.html">
+                    Authentication — (3.3) 认证处理器的实现之RemoteAuthenticationHandler
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>设想我们要写一个支持<code>OAuth2.0</code>的认证处理器，它支持使用<code>Google</code>、<code>Microsoft</code>、<code>Facebook</code>等账号登陆。由于它们共用一套认证逻辑<code>OAuth2.0</code>，所以我们不希望为每一个网站都写一遍处理认证的方法，而是希望针对每个网站的一些特性部分进行简单填充。一个合理的方式是让处理认证的方法接受一个如何登陆的字符串（比如<code>Google</code>），然后通过认证服务去自动调用对应具体的认证处理器（比如<code>GoogleHandler</code>）。
+更一般的，除了<code>OAuth</code>,<code>OIDC</code>也是一种常见的远程认证方式。</p>
+<p>为了抽象这种利用远程服务器进行认证的方式，<code>ASP.NET Core</code>提供了<code>RemoteAuthenticationHandler&lt;TOptions&gt;</code>抽象类。该类继承自<code>AuthenticationHandler&lt;TOptions&gt;</code>抽象基类，并且实现了<code>IAuthenticationRequestHandler</code>接口：</p>
+<pre><code class="language-csharp">public abstract class RemoteAuthenticationHandler&lt;TOptions&gt; : AuthenticationHandler&lt;TOptions&gt;, IAuthenticationRequestHandler
+    where TOptions : RemoteAuthenticationOptions, new()
+{
+    protected string SignInScheme =&gt; Options.SignInScheme;
+    
+    protected new RemoteAuthenticationEvents Events
+    {
+        get { return (RemoteAuthenticationEvents)base.Events; }
+        set { base.Events = value; }
+    }
+    
+    // ...
+}
+</code></pre>
+<p>由于在继承自<code>AuthenticationHandler&lt;TOptions&gt;</code>的同时，还实现了<code>IAuthenticationRequestHandler</code>接口，这个<code>RemoteAuthenticationHandler&lt;TOptions&gt;</code>类就有两套处理认证的机制。一套是<code>AuthenticationHandler&lt;TOptions&gt;</code>的认证、质询、禁止等方法；另一套是<code>IAuthenticationRequestHandler</code>的接口方法<code>HandleRequestAsync()</code>用于直接对请求进行中间件级别的处理，并中断后续请求处理过程。<!-- more --></p>
+<p>需要特别指出的是，<code>RemoteAuthenticationHandler</code>中有一个受保护的 <strong><code>SignInScheme</code></strong> 属性。其用途为：</p>
+<ol>
+<li>当用户认证成功时，使用该<code>SignInScheme</code>将用户<strong>登入</strong></li>
+<li>当需要认证用户时，只需查看当前用户在该<code>SignInScheme</code>下是否已经登陆</li>
+<li>当用户被判定登陆失败提示<code>Forbidden</code>时，调用认证服务转而调用<code>SignInScheme</code>模式对应的认证处理器方法。</li>
+</ol>
+<h3><code>AuthenticationHandler&lt;TOptions&gt;</code>系的方法</h3>
+<p>这一系列的方法包括处理认证、处理质询、处理禁止、处理登入、和处理登出几个方法。其中，处理禁止的方法最为简单，只是简单转而调用<code>SignInScheme</code>对应的处理器方法：</p>
+<pre><code class="language-csharp">protected override Task HandleForbiddenAsync(AuthenticationProperties properties)=&gt; Context.ForbidAsync(SignInScheme);
+</code></pre>
+<p>而其处理认证的方法也只是复用<code>SigninScheme</code>模式进行认证：</p>
+<pre><code class="language-csharp">protected override async Task&lt;AuthenticateResult&gt; HandleAuthenticateAsync()
+{
+    var result = await Context.AuthenticateAsync(SignInScheme);
+    if (result != null)
+    {
+        if (result.Failure != null) {  return result; }
+
+        // The SignInScheme may be shared with multiple providers, make sure this provider issued the identity.
+        string authenticatedScheme;
+        var ticket = result.Ticket;
+        if (ticket != null &amp;&amp; ticket.Principal != null &amp;&amp; ticket.Properties != null
+            &amp;&amp; ticket.Properties.Items.TryGetValue(AuthSchemeKey, out authenticatedScheme)
+            &amp;&amp; string.Equals(Scheme.Name, authenticatedScheme, StringComparison.Ordinal))
+        {
+            return AuthenticateResult.Success(new AuthenticationTicket(ticket.Principal,
+                ticket.Properties, Scheme.Name));
+        }
+
+        return AuthenticateResult.Fail(&quot;Not authenticated&quot;);
+    }
+
+    return AuthenticateResult.Fail(&quot;Remote authentication does not directly support AuthenticateAsync&quot;);
+}
+</code></pre>
+<p>其他几个方法均类似，故不复赘述。</p>
+<h3><code>IAuthenticationRequestHandler</code>系的接口方法</h3>
+<p>在开始这部分内容之前，先要了解下这个类的一个辅助方法：<code>ShouldHandleRequestAsync()</code>。我们知道，远程认证结束后，远程服务器需要把用户重定向到本服务器的某个地址（称之为<strong>回调地址</strong>）。该方法的工作原理便是判断当前路径是否为配置好的<strong>回调地址</strong>，如果是，则意味着当前请求是远程服务器认证结束后重定向来的<strong>回调请求</strong>，需要拦截处理。</p>
+<pre><code class="language-csharp">public virtual Task&lt;bool&gt; ShouldHandleRequestAsync() =&gt; Task.FromResult(Options.CallbackPath == Request.Path);
+</code></pre>
+<p>作为<code>IAuthenticationRequestHandler</code>接口的核心方法，<code>HandleRequestAsync()</code>方法基本思路是，<strong>判断当前路径是否为预配返回地址，如果不是，则意味着当前请求并不适合用<code>IAuthenticationRequestHandler</code>接口处理，直接返回<code>false</code>；否则，意味着当前的请求是由远程认证服务器认证结束后重定向来的请求，应当确认用户身份，触发相关事件钩子，最终在登入用户之后，中断后续的请求处理过程(<code>return true</code>)</strong>。</p>
+<pre><code class="language-csharp">public virtual async Task&lt;bool&gt; HandleRequestAsync()
+{
+    if (!await ShouldHandleRequestAsync())
+    {
+        return false;
+    }
+    
+    // ...
+    
+    var authResult = await HandleRemoteAuthenticateAsync();
+    // check authResult... 
+    
+    // create a ticketContext if authResult succeeds 
+    // ... await Events.TicketReceived(ticketContext);
+    
+    await Context.SignInAsync(SignInScheme, ticketContext.Principal, ticketContext.Properties);
+
+    // Default redirect path is the base path
+    if (string.IsNullOrEmpty(ticketContext.ReturnUri))
+    {
+        ticketContext.ReturnUri = &quot;/&quot;;
+    }
+
+    Response.Redirect(ticketContext.ReturnUri);
+    return true;
+}
+</code></pre>
+<p>这里<code>HandleRemoteAuthenticateAsync()</code>是一个抽象方法，留待不同的子类提供实现。</p>
+<h2><code>RemoteAuthenticationHandler</code> 流程概述</h2>
+<p>总结而言，<code>RemoteAuthenticationHandler</code>的完整调用流程可以</p>
+<p>以<code>GoogleHandler</code>为例，</p>
+<ol>
+<li>用户访问某个页面，点击“使用Google登陆”按钮，申请使用Google账号提交，浏览器发送请求到<code>https://your-server/Identity/Account/ExternalLogin?returnUrl=%2F</code>:</li>
+<li><code>ASP.NET Core</code> 相关登陆页面将之重定向至<code>Google</code>授权页面</li>
+</ol>
+<pre><code>https://accounts.google.com/o/oauth2/v2/auth?
+    response_type=code
+    &amp;client_id=xxx
+    &amp;scope=openid%20profile%20email
+    &amp;redirect_uri=https%3A%2F%2Fyour-server%2Fsignin-google
+    &amp;state=xxx
+</code></pre>
+<ol start="3">
+<li><code>Google</code>认证用户完成以后，将用户重定向至<code>ASP.NET Core</code> 的指定URL（携带<code>code</code>等参数），该URL通常是：<code>/sigin-google</code>:</li>
+</ol>
+<pre><code> https://your-server/signin-google?
+    state=xxx
+    &amp;code=yyy
+    &amp;scope=zzz
+    &amp;authuser=0
+    &amp;session_state=abc
+    &amp;prompt=none
+</code></pre>
+<ol start="4">
+<li>浏览器访问上述URL，中间件<code>AuthenticationMiddleware</code>会调用<code>GetRequestHandlerSchemesAsync()</code>方法获取所有的<code>RequestHandlerSchemes</code>，然后逐一尝试将该认证处理器转换<code>AuthenticationRequestHandler</code>，如果成功，则调用其<code>HandleRequestAsync()</code>方法。<code>GoogleHandler::HandleRequestAsync()</code>方法继承自<code>RemoteAuthenticationHandler</code>，会先调用<code>ShouldHandleRequestAsync()</code>进行判断是否需要处理请求。默认情况下，该方法只是检测<code>Options.CallbackPath</code>和 <code>Request.Path</code>是否相等而已。如果不等，说明当前认证处理器不应当处理当前请求相等；否则，比如这里等于<code>signin-google</code>，则会进行远程认证处理(不同的远程认证模式，其处理方式也不同，比如，<code>OAuth2.0</code>中常见的方式是用<code>code</code>换取<code>token</code>)，处理认证完成之后，倘若认证成功，则再将用户<code>SigninAsync()</code>之。</li>
+</ol>
+<p>参见SO上的回答:
+https://stackoverflow.com/questions/52980581/how-signin-google-in-asp-net-core-authentication-is-linked-to-the-google-handler/52984793#52984793</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (4) Authentication服务的配置与构建.html">
+                    Authentication — (4) Authentication服务的配置与构建
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>世界观</h2>
+<p><code>ASP.NET Core</code>可以配置多种认证，让各个认证模式协同工作。这种配置主要体现在两个方面:</p>
+<ol>
+<li>需要对<code>DI</code>容器中的 <strong><code>AuthenticationOptions</code></strong> 进行设置: 其中包含了每一种认证模式对应的<code>&lt;scheme&gt;-&lt;handlerType&gt;</code>的映射关系、以及默认的相关scheme名等信息。</li>
+<li>需要把各个<code>scheme</code>对应的 <strong><code>handler</code>类</strong> <strong>作为服务</strong>注册 到<code>DI</code>容器中。</li>
+</ol>
+<h3><code>AuthenticationBuilder</code></h3>
+<p>事实上，<code>ASP.NET Core</code>暴露了一个<code>AuthenticationBuilder</code>来帮助开发者对认证进行设置。由于认证除了简单地<code>new</code>一个<code>AuthenticationBuilder</code>实例之外，还需要注册一些其他服务（比如编码解码功能等），<code>ASP.NET Core</code>为<code>IServiceCollection</code>提供了一个<code>AddAuthentication()</code>扩展方法，封装了上述过程，调用后返回一个<code>AuthenticationBuilder</code>实例：</p>
+<pre><code class="language-csharp">public static AuthenticationBuilder AddAuthentication(this IServiceCollection services)
+{
+    if (services == null)
+    {
+        throw new ArgumentNullException(nameof(services));
+    }
+
+    services.AddAuthenticationCore();
+    services.AddDataProtection();
+    services.AddWebEncoders();
+    services.TryAddSingleton&lt;ISystemClock, SystemClock&gt;();
+    return new AuthenticationBuilder(services);
+}
+</code></pre>
+<p>除了<code>.AddAuthentication()</code>这种核心方式，还有两种重载形式：<!-- more --></p>
+<pre><code class="language-csharp">public static AuthenticationBuilder AddAuthentication(this IServiceCollection services, Action&lt;AuthenticationOptions&gt; configureOptions) {
+    if (services == null) { throw ...; }
+    if (configureOptions == null){ throw ...; }
+
+    var builder = services.AddAuthentication();
+    services.Configure(configureOptions);
+    return builder;
+}
+
+public static AuthenticationBuilder AddAuthentication(this IServiceCollection services, string defaultScheme)
+    =&gt; services.AddAuthentication(o =&gt; o.DefaultScheme = defaultScheme);
+</code></pre>
+<p>可以看到，这两种重载只是在<code>.AddAuthentication()</code>这个方法基础之上再添加一点配置功能，仅此而已。最终<code>.AddAuthentication()</code>都返回一个<code>AuthenticationBuilder</code>实例，用于后续的链式配置。</p>
+<h4><code>AuthenticationBuilder</code>的核心方法</h4>
+<p><code>AuthenticationBuilder</code>是用于配置认证服务的一个类，该类暴露一个核心方法 <strong><code>AddScheme&lt;TOptions, THandler&gt;(schemeName, displayName, configureAction)</code></strong> 。在内部，该方法会调用一个私有方法<code>AddSchemeHelper&lt;TOptions, THandler&gt;(schemeName, displayName, configureOptionsAction)</code>来完成前文所述的两个工作细节：</p>
+<ol>
+<li>配置全局的<code>AuthenticationOptions</code>（向其中添加<code>&lt;schemeName&gt;-&lt;handlerType&gt;</code>的映射关系，调用传入的委托配置选项），</li>
+<li>然后再把相应的<code>Handler</code>注册到<code>DI</code>容器。</li>
+</ol>
+<p><code>AddSchemeHelper&lt;TOptions, THandler&gt;(schemeName, displayName, configureOptionsAction)</code>的实现为：</p>
+<pre><code class="language-csharp">private AuthenticationBuilder AddSchemeHelper&lt;TOptions, THandler&gt;(string authenticationScheme, string displayName, Action&lt;TOptions&gt; configureOptions)
+    where TOptions : AuthenticationSchemeOptions, new()
+    where THandler : class, IAuthenticationHandler
+{
+    // 设置AuthenticationOptions中的 scheme-handler 映射关系
+    Services.Configure&lt;AuthenticationOptions&gt;(o =&gt;
+    {
+        o.AddScheme(authenticationScheme, scheme =&gt; {
+            scheme.HandlerType = typeof(THandler);
+            scheme.DisplayName = displayName;
+        });
+    });
+    // 配置TOptions钩子
+    if (configureOptions != null)
+    {
+        Services.Configure(authenticationScheme, configureOptions);
+    }
+    // 添加TOptions 
+    Services.AddOptions&lt;TOptions&gt;(authenticationScheme).Validate(o =&gt; {
+        o.Validate(authenticationScheme);
+        return true;
+    });
+    // 注册handler服务
+    Services.AddTransient&lt;THandler&gt;();
+    return this;
+}
+</code></pre>
+<p>这里的<code>TOptions</code>是特定的某种认证模式下的配置，如<code>JwtBearerOptions</code>、<code>CookieAuthenticationOptions</code>等。这个具体的<code>TOptions</code>会在认证时被对应的<code>THanlder</code>使用。</p>
+<p>在此基础上，<code>AuthenticationBuilder</code>又提供了一系列<code>AddScheme&lt;TOptions, THandler&gt;(...)</code>方法供开发者注册相应认证<code>scheme</code>及<code>handler</code>。<code>AddScheme&lt;TOptions, THandler&gt;(...)</code>最简单的形式是对<code>AddSchemeHelper</code>的转发调用:</p>
+<pre><code class="language-csharp">public virtual AuthenticationBuilder AddScheme&lt;TOptions, THandler&gt;(string authenticationScheme, string displayName, Action&lt;TOptions&gt; configureOptions)
+    where TOptions : AuthenticationSchemeOptions, new()
+    where THandler : AuthenticationHandler&lt;TOptions&gt;
+    =&gt; AddSchemeHelper&lt;TOptions, THandler&gt;(authenticationScheme, displayName, configureOptions);
+</code></pre>
+<h4>特定认证模式的配置</h4>
+<p>各个不同的认证模式往往会<strong>提供一些具体的扩展方法来简化特定的认证模式配置</strong>，比如 <strong><code>AddCookie()</code></strong> 的源码实现为：</p>
+<pre><code class="language-csharp">public static AuthenticationBuilder AddCookie(this AuthenticationBuilder builder, string authenticationScheme, string displayName, Action&lt;CookieAuthenticationOptions&gt; configureOptions)
+{
+    builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton&lt;IPostConfigureOptions&lt;CookieAuthenticationOptions&gt;, PostConfigureCookieAuthenticationOptions&gt;());
+    builder.Services.AddOptions&lt;CookieAuthenticationOptions&gt;(authenticationScheme).Validate(o =&gt; o.Cookie.Expiration == null, &quot;Cookie.Expiration is ignored, use ExpireTimeSpan instead.&quot;);
+    return builder.AddScheme&lt;CookieAuthenticationOptions, CookieAuthenticationHandler&gt;(authenticationScheme, displayName, configureOptions);
+}
+</code></pre>
+<p>这使得开发者可以通过以下方式配置<code>Cookie</code>认证：</p>
+<pre><code class="language-csharp">services.AddAuthentication(options =&gt;{
+    ...
+})
+.AddCookie(IdentityConstants.ApplicationScheme, o =&gt;
+{
+    o.LoginPath = new PathString(&quot;/Account/Login&quot;);
+    o.Events = new CookieAuthenticationEvents
+    {
+        OnValidatePrincipal = SecurityStampValidator.ValidatePrincipalAsync
+    };
+})
+.AddCookie(IdentityConstants.ExternalScheme, o =&gt;
+{
+    o.Cookie.Name = IdentityConstants.ExternalScheme;
+    o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+})
+.AddCookie(IdentityConstants.TwoFactorRememberMeScheme, o =&gt;
+{
+    o.Cookie.Name = IdentityConstants.TwoFactorRememberMeScheme;
+    o.Events = new CookieAuthenticationEvents
+    {
+        OnValidatePrincipal = SecurityStampValidator.ValidateAsync&lt;ITwoFactorSecurityStampValidator&gt;
+    };
+})
+.AddCookie(IdentityConstants.TwoFactorUserIdScheme, o =&gt;
+{
+    o.Cookie.Name = IdentityConstants.TwoFactorUserIdScheme;
+    o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+});
+</code></pre>
+<p>（其实，这段代码摘自官方<code>AddIdentity&lt;TUser, TRole&gt;(setupAction)</code>项目）</p>
+<p>再比如<code>JwtBearer</code>模式提供了<code>AddJwtBearer()</code>扩展方法来简化其认证服务的配置：</p>
+<pre><code class="language-csharp">public static AuthenticationBuilder AddJwtBearer(this AuthenticationBuilder builder, string authenticationScheme, string displayName, Action&lt;JwtBearerOptions&gt; configureOptions)
+{
+    builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton&lt;IPostConfigureOptions&lt;JwtBearerOptions&gt;, JwtBearerPostConfigureOptions&gt;());
+    return builder.AddScheme&lt;JwtBearerOptions, JwtBearerHandler&gt;(authenticationScheme, displayName, configureOptions);
+}
+</code></pre>
+<h3>如何使用:</h3>
+<pre><code class="language-csharp">services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt;
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            // validate the server that created that token
+            ValidateIssuer = true,
+            // ensure that the recipient of the token is authorized to receive it
+            ValidateAudience = true,
+            // check that the token is not expired and that the signing key of the issuer is valid
+            ValidateLifetime = true,
+            // verify that the key used to sign the incoming token is part of a list of trusted keys
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = issuer,
+            ValidAudience = issuer,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+        };
+    });
+</code></pre>
+<pre><code class="language-csharp">service.AddAuthentication(...)
+    .AddJwtBearer(options =&gt;
+        // ...
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =&gt;
+            {
+                // replace &quot;token&quot; with whatever your param name is
+                if (ctx.Request.Method.Equals(&quot;GET&quot;) &amp;&amp; ctx.Request.Query.ContainsKey(&quot;token&quot;))
+                    ctx.Token = ctx.Request.Query[&quot;token&quot;];
+                return Task.CompletedTask;
+            }
+        };
+    });
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page2.html">
+          Previous
+        </a>
+        4 of 32
+        <a href="/posts/page4.html">
+          Next
+        </a>
+      </div>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

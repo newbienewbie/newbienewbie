@@ -1,0 +1,275 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Java/spring/Spring-WebMvc流程分析综述2：基于JavaConfig的配置方式.html">
+                    Spring WebMvc流程分析综述2：基于JavaConfig的配置方式
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-10-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>如<a href="/2016/10/18/WindWhisper/Java/spring/Spring-WebMvc%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B01%EF%BC%9A%E5%9F%BA%E4%BA%8EXML%E7%9A%84%E9%85%8D%E7%BD%AE%E6%96%B9%E5%BC%8F">Spring-WebMvc流程分析综述1：基于XML的配置方式</a> 所述， Spring WebMvc提供了<code>DispatherServlet</code>作为MVC的<code>前端控制器</code>， 为了让相应的请求都被映射到这个Servlet来处理，需要对应用进行配置：
+传统的方式是基于XML的<code>web.xml</code>配置方式。
+然而这种方式非常啰嗦，而且难以在编译期发现错误，故现在大家更推崇的是基于<code>JavaConfig</code>的配置方式。</p>
+<h2>启动流程</h2>
+<h3>新的标准——Servlet容器初始化器</h3>
+<p>对于Servlet 3.0环境而言，容器会在<code>classpath</code>中搜寻<code>javax.servlet.ServletContainerInitializer</code>接口(<code>SPI</code>)的实现类， 任何实现该 <code>SPI</code> 的类都会被用于配置<code>Servlet容器</code>，从而为避免使用<code>web.xml</code>的方式来配置提供了可能。</p>
+<pre><code class="language-Java">public interface ServletContainerInitializer
+{
+    void onStartup(Set&lt;Class&lt;?&gt;&gt; c, ServletContext ctx)
+}
+</code></pre>
+<h3>Spring 提供的实现</h3>
+<p>Spring为此<code>SPI</code>提供了一个实现类<code>SpringServletContainerInitializer</code>，通过 JAR Services API <code>ServiceLoader.load(Class)</code> ，该实现类会被自动加载用于配置 <code>Servlet容器</code>。</p>
+<p><code>SpringServletContainerInitializer</code>会找出接口<code>WebApplicationInitializer</code>的实现类，然后委托他们去配置。 Spring3.2为<code>WebApplicationInitializer</code>引入了一个方便的基础类<code>AbstractAnnotationConfigDispatcherServletInitializer</code>。</p>
+<p>吐槽：这个抽象类<code>AbastractAnnotationConfigDispatherServletInitializer</code>名字真长！但是想要记住也不是难事:</p>
+<ul>
+<li>Abstract :抽象类前缀</li>
+<li>AnnotationConfig :注解配置</li>
+<li>DispatcherServletInitalizer ：DispatcherServlet初始化器</li>
+</ul>
+<p>根据继承关系，只要我们新建一个 <code>AbastractAnnotationConfigDispatherServletInitializer</code> 的子类，就会被自动加载用于配置容器。</p>
+<p>这个类有三个重要的抽象方法:</p>
+<ul>
+<li><code>getServletConfigClasses()</code>返回的配置类用于为<code>DispatherServlet</code>定义配置，其context多用于加载web组件，如controllers，view resolvers，handler mappings</li>
+<li><code>getRootConfigClasses()</code>返回的配置类用于配置由<code>ContextLoaderListener</code>创建的application context，可用于加载非web 的components，如后端的中间层，数据层组件</li>
+<li><code>getServletMappings()</code> 用于匹配映射</li>
+</ul>
+<pre><code class="language-Java">package config;
+
+public class AppInit extends AbstractAnnotationConfigDispatcherServletInitializer
+{
+
+    // 注意这里返回了 DispatcherSerlvet 的配置类的信息
+    @Override
+    protected Class&lt;?&gt;[] getServletConfigClasses()
+    {
+        return new Class&lt;?&gt;[]{ServletConfig.class};
+    }
+    
+    @Override
+    protected Class&lt;?&gt;[] getRootConfigClasses()
+    {
+        return null ;
+    }
+
+    @Override
+    protected String[] getServletMappings()
+    {
+        return new String[]{&quot;/&quot;};
+    }
+
+	
+}
+</code></pre>
+<p>新建一个用于<code>ServletDispatcher</code>的配置类，注意类名应该和上文中的<code>getServletConfigClasses()</code>返回的Class数组匹配。</p>
+<p>为了避免手工配置静态资源处理方式，这里选择继承<code>WebMvcConfigureAdapter</code>：</p>
+<pre><code class="language-Java">package config;
+
+@Configuration
+@ComponentScan(&quot;m1.controller&quot;)
+@EnableWebMvc
+public class ServletConfig extends WebMvcConfigurerAdapter
+{
+
+    @Override
+    public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer)
+    {
+        configurer.enable();
+    }
+
+    @Bean
+    public ViewResolver viewResolver()
+    {
+        InternalResourceViewResolver resolver=new InternalResourceViewResolver();
+        resolver.setPrefix(&quot;/WEB-INF/views/&quot;);
+        resolver.setSuffix(&quot;.jsp&quot;);
+        resolver.setExposeContextBeansAsAttributes(true);
+        return resolver;
+    }
+
+}
+
+</code></pre>
+<p>总之，通过为标准的<code>javax.servlet.ServletContainerInitializer</code>接口提供实现<code>SpringServletContainerInitializer</code>,Spring会把工作委托给接口<code>WebApplicationInitializer</code>的实现类来完成。</p>
+<h2>MVC处理</h2>
+<p>配置完毕，然后可以开始业务流程了。和基于XML配置一样，也是通过IoC机制获取相应的控制器和视图解析器，控制器返回一个视图逻辑名，经视图解析器解析得到视图对象。</p>
+<p>控制器：</p>
+<pre><code class="language-Java">package m1.controller;
+
+
+
+@Controller
+@RequestMapping(&quot;/mycontroller&quot;)
+public class MyController
+{
+    @RequestMapping(value = &quot;/home&quot;)
+    public String home(Map model)
+    {
+        model.put(&quot;k&quot;,&quot;fuck gfw&quot;);
+        return  &quot;home&quot;;
+    }
+
+}
+</code></pre>
+<p>控制器方法完成业务逻辑后对<code>Map</code>型参数<code>model</code>施加影响，并返回<code>视图逻辑名</code>。
+前期配置的<code>视图解析器</code>将会根据<code>视图逻辑名</code>和<code>setExposeContextBeansAsAttributes(true)</code>情况生成<code>View类对象</code>。</p>
+<p>与视图逻辑名<code>home</code>匹配的的视图文件：<code>/WEB-INF/views/home.jsp</code></p>
+<pre><code class="language-HTML">&lt;%@page contentType=&quot;text/html&quot; pageEncoding=&quot;UTF-8&quot;%&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=UTF-8&quot;&gt;
+        &lt;title&gt;JSP Page&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;h1&gt;home&lt;/h1&gt;
+        &lt;p&gt;
+            ${k}
+        &lt;/p&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/MVC执行概貌/0. 路由与MVC的执行流程.html">
+                    ASP.NET Core MVC — MVC执行概貌(0) 路由与MVC的执行流程
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>许多中间件都会为<code>IApplicationBuilder</code>添加一个扩展方法以简化调用，比如在<code>2.x</code>中常见的<code>UseRoute()</code>之类，其实就是简单调用<code>UseMiddleware&lt;Xxx&gt;()</code>。在<code>ASP.NET Core</code>的<code>MVC</code>也同样提供了一个<code>UseMvc()</code>扩展方法，但是和会转换为<code>UseMiddleware&lt;XMiddleware&gt;()</code>的那些方法不同，并没有一个与<code>UseMvc()</code>对应的、名称为<code>MvcMiddleware</code>的中间件存在。</p>
+<p>其实，所谓的<code>UseMvc()</code>其实不过是对<code>UseRouter()</code>的封装：</p>
+<pre><code class="language-csharp">// project: 
+//      aspnet/Mvc
+// file:
+//      src/Microsoft.AspNetCore.Mvc.Core/Builder/MvcApplicationBuilderExtensions.cs
+
+public static IApplicationBuilder UseMvc( this IApplicationBuilder app, Action&lt;IRouteBuilder&gt; configureRoutes)
+{
+    if (app == null){ throw new ArgumentNullException(nameof(app)); }
+    if (configureRoutes == null){ throw new ArgumentNullException(nameof(configureRoutes)); }
+
+    // throw an exception if there's no MvcMarkerService 
+    VerifyMvcIsRegistered(app);   
+
+    var routes = new RouteBuilder(app)
+    {
+        DefaultHandler = app.ApplicationServices.GetRequiredService&lt;MvcRouteHandler&gt;(),
+    };
+
+    configureRoutes(routes);
+
+    routes.Routes.Insert(0, AttributeRouting.CreateAttributeMegaRoute(app.ApplicationServices));
+
+    return app.UseRouter(routes.Build());
+}
+</code></pre>
+<p>可以看到，执行<code>app.UseMvc(rb=&gt;{ /**/ })</code> 之类的操作，其实是在配置一个路由中间件，其默认处理器是<code>MvcRouterHandler</code>的实例。<!--more-->这个<code>MvcRouterHandler</code>继承自<code>IRouter</code>，核心思想便是先进行MVC匹配，如果匹配不成功，则返回<code>Task.CompletedTask</code>（根据路由中间件的实现原理，之后会交由后续中间件进行处理）；否则，获取路由匹配到的数据，设置处理器为调用相关动作。源码如下：</p>
+<pre><code class="language-csharp"> public class MvcRouteHandler : IRouter{
+
+    private readonly IActionContextAccessor _actionContextAccessor;
+    private readonly IActionInvokerFactory _actionInvokerFactory;
+    private readonly IActionSelector _actionSelector;
+    private readonly ILogger _logger;
+    private readonly DiagnosticSource _diagnosticSource;
+     
+    // ...
+    
+    public Task RouteAsync(RouteContext context)
+    {
+        if (context == null) { throw new ArgumentNullException(nameof(context)); }
+    
+        var candidates = _actionSelector.SelectCandidates(context);
+        if (candidates == null || candidates.Count == 0)
+        {
+            _logger.NoActionsMatched(context.RouteData.Values);
+            return Task.CompletedTask;
+        }
+    
+        var actionDescriptor = _actionSelector.SelectBestCandidate(context, candidates);
+        if (actionDescriptor == null)
+        {
+            _logger.NoActionsMatched(context.RouteData.Values);
+            return Task.CompletedTask;
+        }
+    
+        context.Handler = (c) =&gt;
+        {
+            var routeData = c.GetRouteData();
+    
+            var actionContext = new ActionContext(context.HttpContext, routeData, actionDescriptor);
+            if (_actionContextAccessor != null)
+            {
+                _actionContextAccessor.ActionContext = actionContext;
+            }
+    
+            var invoker = _actionInvokerFactory.CreateInvoker(actionContext);
+            if (invoker == null)
+            {
+                throw new InvalidOperationException(
+                    Resources.FormatActionInvokerFactory_CouldNotCreateInvoker(
+                        actionDescriptor.DisplayName));
+            }
+    
+            return invoker.InvokeAsync();
+        };
+    
+        return Task.CompletedTask;
+    }
+    
+    // ...
+}
+</code></pre>
+<p>总结来说，这里的代码主要完成以下工作：</p>
+<ol>
+<li>这里一旦路由匹配，则可以得知当前路由所命中<code>Action</code>，<code>ASP.NET Core</code>使用<code>ActionDescriptor</code>描述该<code>Action</code>。其中包含了当前<code>Action</code>方法名、参数描述符表、过滤器描述表、<code>Action</code>约束、<code>RouteValue</code>等信息。</li>
+<li>作为一个<code>IRouter</code>，路由匹配后自然还要设置<code>Handler</code>以示命中：这里也就是构建一个<code>routeContext.Handler</code>。该<code>Handler</code>执行以下基本处理过程:
+<ol>
+<li>根据当前<code>HttpContext</code>，配合当前路由数据、及所命中<code>Action</code>的<code>ActionDescriptor</code>，构建上下文<code>ActionContext</code>:
+<pre><code class="language-csharp">var actionContext = new ActionContext(httpContext, routeData, actionDescriptor)
+</code></pre>
+</li>
+<li>根据<code>ActionContext</code>，创建<code>IActionInvoker</code>。</li>
+<li>执行<code>IActionInvoker.InvokeAsync()</code>，触发 MVC <code>pipeline</code>的调用</li>
+</ol>
+</li>
+</ol>
+<p>具体的细节，比如<code>IActionInvoker</code>是如何创建的，在后续相关笔记中记录。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

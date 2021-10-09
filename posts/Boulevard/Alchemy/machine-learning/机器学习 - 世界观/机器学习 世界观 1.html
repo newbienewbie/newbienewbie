@@ -1,0 +1,185 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Alchemy/machine-learning/机器学习 - 世界观/机器学习 世界观 1.html">
+                    机器学习 世界观
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-09
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>机器学习大体上是在利用某些学习规则，发现问题的潜在规律，然后拟合出数学方程（也即是训练，或者可以叫学习、拟合），最后加以应用的过程。机器学习有许多数学方法，当下最热门的莫过于神经网络了。</p>
+<h2>神经网络的概念</h2>
+<p>所谓神经网络，从数学角度说，是一个数学方程，可以视作<b>将一组输入通过权重变换，再经过偏置处理，得到净输入，最后送入传输函数得到结果。</b>其工作过程如下图所示：</p>
+<pre><code class="language-math">%% KaTex
+\color{Blue}\text{Input}  \color{white} \xrightarrow{z=\bold w \cdot \bold x +b} \text{NetInput} \color{white} \xrightarrow{\phi(z)} \color{Orange} \text{Output}
+</code></pre>
+<p>为了表述简便，采用如下记号约定：</p>
+<ul>
+<li>向量：用加粗小写表示，如<code>$\bold x$</code></li>
+<li>矩阵：用加粗大写表示，如<code>$\bold X$</code></li>
+<li><code>$\Bbb R^{n \times m}$</code>：表示由<code>$n \times m$</code>型实数域矩阵构成的集合</li>
+</ul>
+<p>为了理解神经网络的数学原理，不妨只考虑单个神经元的情况：假设有单个单神经元，记该神经元的权重向量为<code>$\bold w$</code>，偏置值为<code>$b$</code>，传输函数<code>$\phi(z)$</code>。当输入一组变量<code>$\bold x$</code>，显然就可以通过单神经元的作用<code>$\phi(\bold w \cdot \bold x + b)$</code>，得到一个输出。</p>
+<p>一般情况下，单个神经元并不能满足实际应用要求。可以把若干个神经元编成一组(称之为一层神经网络)。这种情况下，各个神经元的权重向量就构成了一个权重矩阵<code>$\bold W$</code>，各个神经元的偏置值构成了一组偏置向量<code>$\bold b$</code>。当对该神经网络输入一组变量<code>$\bold x$</code>，经过单层神经网络的作用<code>$\phi(\bold W \bold x + \bold b)$</code>，即可得到一组输出值。</p>
+<p>在这里涉及到的相关概念为：<!--more--></p>
+<ul>
+<li>输入向量<code>$\bold x$</code>：表示神经网络问题的一系列变量<code>$x_1,x_2,...,x_R$</code>。</li>
+<li>权重向量<code>$\bold w$</code>：表示单个神经元的对各个输入的权重向量。当有多个神经元构成一层神经网络时候，各个权重向量<code>$\bold w$</code>可以构成一个权重矩阵<code>$\bold W$</code>，权重矩阵的第<code>$i$</code>行表示第<code>$i$</code>个神经元的权重向量。</li>
+<li>偏置向量<code>$\bold b$</code>，单个神经元情况下，只有唯一一个值。</li>
+<li>单神经元的净输入是个标量<code>$z=\bold w \cdot \bold x + b$</code>，而单层神经网络的净输入是个向量<code>$\bold z=\bold W \bold x + \bold b $</code></li>
+<li>传输函数<code>$\phi(\bold z)$</code>：负责将净输入变换为结果值。</li>
+</ul>
+<p>单层神经网络并没有比单个神经网络高深多少，完全可以视作若干个单神经元的简单并行版本。</p>
+<h2>机器学习类型</h2>
+<p>所谓学习规则，就是修改权值和偏置值的方法和过程，也称之为训练算法。学习规则大致可以分为三种类型：</p>
+<ol>
+<li>有监督学习(<code>Supervised Learning</code>)：有训练集和相应的正确目标输出集。感知器的学习就是属于这一类有监督学习。</li>
+<li>无监督学习(<code>Unsupervised Learning</code>)：仅根据神经网络的输入调整权职和偏置，并无相应的目标输出。适合执行聚类操作等。</li>
+<li>增强学习(<code>Reinforcement Learning</code>)：和有监督学习类似，不过并不像有监督学习那样为每一组输入提供相应输出，而仅仅是给出一个级别（或者评分）。</li>
+</ol>
+<p>为了树立一个基本的机器学习的世界观，我们这里只考虑有监督的学习。如本文开头所说，机器学习是经过训练发现数据的潜在规律，拟合出相应的数学方程，然后加以应用的过程。</p>
+<p>后文讲述两种有监督的学习算法——我不会进行任何的数学证明，只讲述我个人理解的数学意义。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

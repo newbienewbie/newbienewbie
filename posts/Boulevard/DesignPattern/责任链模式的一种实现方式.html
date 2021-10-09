@@ -1,0 +1,266 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/DesignPattern/责任链模式的一种实现方式.html">
+                    责任链模式的一种实现方式
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-06-03
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>Java</code> 是一门讲究模式的语言（笑）。用其实现责任链模式，传统的做法都为上一个处理器设置好下一个处理器，然后依次调用。也就是说，每个处理器都要意识到下个处理器的存在。我个人觉得这解耦的不够完全——更好的效果是要让每一个处理器意识不到下一个处理器的存在。</p>
+<p>对于<code>JavaScript</code>这种动态语言而言，可以借助函数对象实现出一种更优雅的责任链模式——并不是说<code>Java</code>无法实现这种这种优雅的方式，只是用<code>JavaScript</code>这种动态语言实现更方便。</p>
+<h2>回归本质——责任链的基本思想</h2>
+<p>所谓责任链处理模式，是把要做的某一件事，交由一系列处理器依次处理，每个处理器只完成自己的职责，一旦完成之后就交由下一个处理器处理。</p>
+<p>这里用<code>JavaScript</code>来描述这个思想，假设有三个处理器函数（<code>Handler</code>），每个函数都以回调的方式触发下一个调用。</p>
+<pre><code class="language-JavaScript">const f1=(next)=&gt;{
+    console.log(`f1`);
+    next();
+};
+const f2=(next)=&gt;{
+    console.log(`f2`);
+    next();
+};
+const f3=(next)=&gt;{
+    console.log(`f3`);
+    next();
+};
+
+const array=[f1,f2,f3];
+</code></pre>
+<p>我们想依次调用 <code>f1</code>、<code>f2</code>、<code>f3</code>三个处理器函数，最直观的思路是：</p>
+<pre><code class="language-JavaScript">f1(f2(f3))
+</code></pre>
+<h2>更优雅的处理方式</h2>
+<p>上面这种回调传参的写法显然不够优雅，假如我们有一百个这样的处理器函数想依次调用呢？一种比较好的思路是把它们封装为一个包装函数，然后调用这个包装函数，从而自动触发所有处理器函数的依次调用。</p>
+<p>观察到这里的处理器数组，有如下特点：</p>
+<ul>
+<li>最后一个处理器是最后第二个处理器函数的回调函数，</li>
+<li>最后第二个处理器是最后第三个的回调函数，</li>
+<li>……</li>
+<li>最后第<code>n</code>个处理器函数总是最后第<code>n+1</code>个处理器函数的回调</li>
+<li>……</li>
+<li>第二个是第一个处理器的回调函数</li>
+</ul>
+<p>对于处理器数组，取两个紧邻的处理器分析。为方便起见，记左边的处理器函数为<code>fl</code>，记右边的处理器为<code>fr</code>，则右边的处理器<code>fr</code>应作为左边的处理器<code>fl</code>回调。这样形成的包装函数为：</p>
+<pre><code class="language-JavaScript">()=&gt;{
+    return fl(fr);
+}
+</code></pre>
+<p>于是，可以针对函数数组的每个元素，都这么两两处理，从而针对整个函数数组的所有处理器合成出一个包装函数：</p>
+<pre><code class="language-JavaScript">const f=array.reduceRight(
+    (p,c,i,a)=&gt;()=&gt; c(p) ,
+    ()=&gt;{console.log(`done`);} // 作为最后一个函数的 next 参数
+);
+</code></pre>
+<p>调用这个合成的包装函数，即可依次触发相关处理器：</p>
+<pre><code class="language-JavaScript">// 调用合成的包装函数：
+f();
+
+// 最终输出为：
+// f1
+// f2
+// f3
+// done
+</code></pre>
+<h2>通用容器</h2>
+<p>有了上面的思路，我们很容易实现一个通用容器，一旦用户在容器中注册一系列相关函数，即可触发自动调用——如同<code>Express</code>和<code>Koa</code>那样。</p>
+<p>通常，处理函数都有相同的目标处理对象，有很多这样的使用场景：</p>
+<ul>
+<li><code>Java Servlet</code>的<code>Filter API</code></li>
+<li><code>Express</code>的<code>req</code>、<code>res</code></li>
+<li><code>Koa</code> 的<code>ctx</code></li>
+</ul>
+<p>我们不妨引入一个上下文对象<code>context</code>作为其参数。假定每一个处理器函数原型都是：</p>
+<pre><code class="language-JavaScript">function(context, next){
+    // 修改context，然后在合适的时候，以同步或者异步的方式触发 next() 调用
+}
+</code></pre>
+<p>可以编写这样一个通用容器：</p>
+<pre><code class="language-JavaScript">
+const container={
+
+    // 私有中间件数组，用于存储一系列处理函数
+    _middlewares:[],
+    
+    use(fn){
+        this._middlewares.push(fn);
+    },
+    
+    run(context={}){
+    
+        // 把数组中的每一个函数两两组合，封装得到最终的包装函数
+        const wrapper=this._middlewares.reduceRight(
+            (p,c,i,a)=&gt;{ return ()=&gt;c(context,p); },// 自右向左
+            ()=&gt;{console.log(`done!`);}
+        );
+        
+        // 调用
+        wrapper();
+    }
+};
+
+</code></pre>
+<p>于是，可以编写这样的客户端程序来使用这个容器:</p>
+<pre><code class="language-JavaScript">container.use((context, next) =&gt; {
+  console.log(`process context with f1`);
+  next();
+})
+
+container.use((context, next) =&gt; {
+  console.log(`process context with f2`);
+  next();
+})
+
+container.use((context, next) =&gt; {
+  console.log(`process context with f3`);
+  next()
+})
+</code></pre>
+<p>运行容器，即可自动依次执行：</p>
+<pre><code class="language-JavaScript">container.run() 
+</code></pre>
+<p>显而易见，这种责任链容器是支持异步的。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

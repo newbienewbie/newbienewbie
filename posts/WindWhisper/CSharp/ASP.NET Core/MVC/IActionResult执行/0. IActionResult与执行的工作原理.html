@@ -1,0 +1,214 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/IActionResult执行/0. IActionResult与执行的工作原理.html">
+                    ASP.NET Core MVC — IActionResult执行(0) IActionResult与执行的工作原理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>IActionResult</code>接口表达了<code>Action</code>执行完毕之后的结果，该接口只规定了一个<code>ExecuteResultAsync(ctx)</code>方法：</p>
+<pre><code class="language-csharp">public interface IActionResult
+{
+    Task ExecuteResultAsync(ActionContext context);
+}
+</code></pre>
+<p>当某个<code>Action</code>返回<code>IActionResult</code>实例之后，此实例的该方法会被<code>MVC</code>调用，从而把相应的<code>IActionResult</code>对象写到响应中。例如，我们可以自定义一个<code>IActionResult</code>实现，用于生成带<code>BOM</code>头的CSV文件流，代码可能长这样（引自<a href="https://stackoverflow.com/a/52492851/10091607">我的SO回答</a>）：</p>
+<pre><code class="language-csharp">public class Utf8ForExcelCsvResult : IActionResult
+{
+    public string Content{get;set;}
+    public string ContentType{get;set;}
+    public string FileName {get;set;}
+    public Task ExecuteResultAsync(ActionContext context)
+    {
+        var Response =context.HttpContext.Response;
+        Response.Headers[&quot;Content-Type&quot;] = this.ContentType;
+        Response.Headers[&quot;Content-Disposition&quot;]=$&quot;attachment; filename={this.FileName}; filename*=UTF-8''{this.FileName}&quot;;
+        using(var sw = new StreamWriter(Response.Body,System.Text.Encoding.UTF8)){
+            sw.Write(Content);
+        }
+        return Task.CompletedTask ;
+    }
+}
+</code></pre>
+<p>对于一个简单的情形这种写法是没有太大问题的，但是对于更复杂的<code>IActionResult</code>，这种方式在代码解耦方面并不好。因为<code>IActionResult</code>更多是在描述结果，而这里参杂了如何把结果写入响应流。比如说我们要根据请求的<code>Accept</code>字段来返回不同的响应，就需要加入更多逻辑。这种逻辑可以纳入<code>IActionResult</code>的执行。<!-- more --></p>
+<p>为了解耦&quot;执行<code>IActionResult</code>&quot;这一过程，<code>MVC</code>又引入了<code>IActionResultExecutor&lt;in TResult&gt;</code>接口：</p>
+<pre><code class="language-csharp">public interface IActionResultExecutor&lt;in TResult&gt; where TResult : IActionResult
+{
+    Task ExecuteAsync(ActionContext context, TResult result);
+}
+</code></pre>
+<p>那么，对于某种<code>IActionResult</code>只要拿到对应的<code>IActionResultExecutor&lt;TResult&gt;</code>，然后转发调用<code>IActionResultExecutor::ExecuteAsync(ctx,result)</code>即可。比如，内置的<code>ObjectResult::ExecuteResultAsync(ctx)</code>的实现即是如此:</p>
+<pre><code class="language-csharp">public class ObjectResult : ActionResult, IStatusCodeActionResult
+{
+    ...
+    
+    public override Task ExecuteResultAsync(ActionContext context)
+    {
+        var executor = context.HttpContext.RequestServices.GetRequiredService&lt;IActionResultExecutor&lt;ObjectResult&gt;&gt;();
+        return executor.ExecuteAsync(context, this);
+    }
+}
+</code></pre>
+<p>当然，这需要把这些<code>IActionResultExecutor&lt;&gt;</code>都提前注册为服务。不过这部分工作并不需要我们操心，相关服务会在<code>AddMvcCore()</code>时被注册到<code>DI</code>容器</p>
+<pre><code class="language-csharp">internal static void AddMvcCoreServices(IServiceCollection services)
+{
+    ...
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;ObjectResult&gt;, ObjectResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;PhysicalFileResult&gt;, PhysicalFileResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;VirtualFileResult&gt;, VirtualFileResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;FileStreamResult&gt;, FileStreamResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;FileContentResult&gt;, FileContentResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;RedirectResult&gt;, RedirectResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;LocalRedirectResult&gt;, LocalRedirectResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;RedirectToActionResult&gt;, RedirectToActionResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;RedirectToRouteResult&gt;, RedirectToRouteResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;RedirectToPageResult&gt;, RedirectToPageResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;ContentResult&gt;, ContentResultExecutor&gt;();
+    ...
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/腾讯云发送邮件的若干问题.html">
+                    腾讯云发送邮件的若干问题
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-12-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>有个一个诡异的问题，连续好些天，都未能解决：网站需要发送邮件，然而本地服务器可以正常发送，一旦部署到远程服务器上就无法工作，就报错说发送失败，什么关键信息也没留下；而远程服务器上相应的出站端口都是开放的，我一度以为是我哪地方的环境配置出了问题，或者是什么边缘情况没考虑到。调试了很久，今天才得以解决，特此记录。</p>
+<ol>
+<li>头些年我用的是网易邮箱的<code>SMTP</code>功能，现在遇到这种情况，第一直觉以为是被其他邮件服务器当作垃圾邮件拦截了：以前使用<code>GMail</code>时被拦截过，不过那时网易邮箱可以正常发送。难道是是网易审核严了，不想提供这种吃力不讨好的免费服务了？</li>
+<li>于是我打算换用域名邮箱试试，搜了一圈，选定了QQ邮箱提供免费的域名邮箱。经过简单设置，本地代码工作正常，然而部署到远程服务器上又他娘跪了。报错信息是一如既往的纱布。</li>
+<li>搜了一下，网上说腾讯的QQ邮箱限制比较多，可能会过滤IP、会限制邮件次数，建议使用腾讯的企业邮箱。似乎有点道理，之前用<code>SendGrid</code>发邮件，确实是有些IP无法发送。难道是我选的国外服务器的IP地址被加入黑名单了？</li>
+<li>我又去申请了一个企业邮箱，重新设置域名<code>DNS</code>的<code>MX</code>记录。等解析正常后，简单修改了网站的本地配置，然而一运行便报错。后来网上检索才发现，<code> System.Net.Mail</code>不支持 implicit ssl ，而且这又是 by design 行为。我又按网上说法使用普通<code>25</code>端口，终于本地代码可以工作了。 然后部署到远程服务器，继续跪了。</li>
+<li>正当我反复比对、调试一筹莫展的时候，我突然想到，是不是我思路有问题？有没有可能问题不在我，而在于在远程服务器的提供商？于是我以腾讯云为关键词搜索，果然发现了猫腻。我一直都以为是我哪里配置不对的问题，完全没想到居然是腾讯云这个家伙在背后做了手脚：</li>
+</ol>
+<!-- more -->
+<blockquote>
+<p>为了提升腾讯云 IP 地址发邮件的质量，默认限制云服务器 TCP 25 端口连接外部地址，如果您没有在云上部署邮件服务，该限制不会影响您的服务；如果您需要使用邮件服务，我们诚挚地向您推荐腾讯企业邮箱。如果您一定要使用云主机向外连接 TCP 25 端口，请确保 TCP 25 端口仅用来连接第三方 SMTP 服务器，从第三方 SMTP 服务器外发邮件。如发现您使用云主机直接 SMTP 发送邮件，腾讯云有权永久封禁 TCP 25 端口，并不再提供相关服务。</p>
+</blockquote>
+<p>真是无力吐槽了。这个默认封禁理由不管你信不信，反正我是无法信(服)的。</p>
+<p>最终解决办法：前往<a href="https://console.cloud.tencent.com/secctrl/smtp">25端口解封界面</a> , 申请解封即可。</p>
+<p>PS: 云这东西，掏点小钱就能租，很方便。然而，说句不客气的话，只用公有云，等同于把自己的命根子交出去让别人攥着。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

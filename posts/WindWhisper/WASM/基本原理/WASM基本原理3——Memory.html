@@ -1,0 +1,229 @@
+<!DOCTYPE html><html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/WASM/基本原理/WASM基本原理3——Memory.html">
+                    WebAssembly基本原理3——Memory
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-01-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>WebAssembly.Memory</code>是一段字节数组（a large array of bytes），用于在<code>WebAssembly</code>和<code>JavaScript</code>之间共享内存。<code>WebAssembly</code>包含诸如<code>i32.load</code>和<code>i32.store</code>指令来实现对线性内存的读写；从<code>JavaScript</code>的角度来看，<code>Memory</code>就是一个可以包含一切内容的、可变尺寸的<code>ArrayBuffer</code>。</p>
+<h2>创建<code>Memory</code>对象</h2>
+<p>如何创建一个<code>WebAssembly.Memory</code>实例？有两种方法，一是使用<code>JavaScript</code>创建一个<code>WebAssembly.Memory</code>对象并导入到<code>WebAssembly</code>模块实例中；二是，当我们不手动提供一个<code>Memory</code>实例时，<code>WebAssembly</code>模块会自动创建一个<code>Memory</code>对象，并把它和相应模块实例挂接起来，我们可以将之导出给<code>JavaScript</code>。</p>
+<h3>如何使用 <code>JavaScript</code> 创建<code>WebAssembly.Memory</code>对象</h3>
+<p><code>JavaScript</code>能够通过<code>WebAssembly.Memory()</code>接口创建<code>WebAssembly.Memory</code>内存实例</p>
+<pre><code class="language-javascript">var memory = new WebAssembly.Memory({initial:10, maximum:100})
+</code></pre>
+<p>内存实例对象拥有一个<code>buffer</code>属性，也即<code>Memory.prototype.buffer</code>，它返回一个指向整个线性内存的<code>ArrayBuffer</code>对象。此外，内存实例对象还有一个<code>grow()</code>方法(每页<code>64KB</code>)，也即<code>Memory.prototype.grow()</code>，这意味着内存实例能够增长，但是由于<code>ArrayBuffer</code>不能改变大小，所以，当增长产生的时候，当前的<code>ArrayBuffer</code>会被移除，然后一个新的<code>ArrayBuffer</code>会被创建，并指向新的、更大的内存。<!--more--></p>
+<h3>导入<code>Memory</code>对象</h3>
+<p>用<code>JavaScript</code>所创建的<code>WebAssembly.Memory</code>对象要和模块实例挂接起来，还需要进行导入：</p>
+<pre><code class="language-javascript">
+// 创建一个Memory对象
+var memory = new WebAssembly.Memory({initial:1});
+
+// 待导入
+var importObj = {
+    js: { 
+        mem: memory 
+    },
+};
+
+fetch('simple.wasm')
+    // 获取字节码
+    .then(response =&gt;response.arrayBuffer())
+    // 编译和实例化
+    .then(bytes =&gt;WebAssembly.instantiate(bytes, importObject))  // 这里传入一个导入对象
+    .then(results =&gt; {
+        results.instance // 使用实例
+    });
+</code></pre>
+<p>这样，这块内存就同时可以在<code>WASM</code>和<code>JavaScript</code>中进行访问了。</p>
+<h2>使用</h2>
+<p>设想这样一个使用场景，我们想在<code>WASM</code>中调用<code>JavaScript</code>中的<code>console.log()</code>函数输出一段字符串。首先当然是要在<code>WASM</code>声明导入一个<code>console.log</code>函数。但是<code>WASM</code>目前只支持<code>i32</code>、<code>i64</code>、<code>f32</code>、<code>f64</code>四种类型，如何输出一个字符串呢？这要借助于<code>WebAssembly.Memory</code>对象。</p>
+<p>从本质上说，一个字符串其实是位于线性内存某处的 <em>字节序列</em> 。为了传递一个字符串，我们所需要做的其实就是传递字符串在线性内存中的偏移量及其长度两个整型变量。
+所以，<code>JavaScript</code>中，该函数的原型类似于：</p>
+<pre><code class="language-javascript">consoleLogString(offset, length) { /* ... */ }
+</code></pre>
+<p>而在<code>WASM</code>中，所要导入的函数原型为：</p>
+<pre><code class="language-wasm">(import &quot;console&quot; &quot;log&quot; (func $log (param i32) (param i32)))
+</code></pre>
+<p>这样，使用普通的<code>call</code>指令即可调用<code>JavaScript</code>函数输出<code>Memory</code>对象中的字符串。</p>
+<p>现在的问题是，怎么实现这个<code>JavaScript</code>函数？其实很简单，借助于文本解码器API就可以把我们的字节解码为一个<code>JavaScript</code>字符串。（这里，我们使用<code>utf8</code>，不过，许多其他编码也是支持的。）</p>
+<pre><code class="language-javascript">consoleLogString(offset, length) {
+    // 在这里，使用闭包来引用`memory`对象
+    var bytes = new Uint8Array(memory.buffer, offset, length);
+    // 解码获取字符串
+    var string = new TextDecoder('utf8').decode(bytes);
+    // 调用输出函数输出字符串
+    console.log(string);
+}
+</code></pre>
+<p>完整的<code>WASM</code>定义如下：</p>
+<pre><code class="language-wasm">(module
+    (import &quot;console&quot; &quot;log&quot; (func $log (param i32 i32)))
+    (import &quot;js&quot; &quot;mem&quot; (memory 1))
+    (data (i32.const 0) &quot;Hi&quot;)      ;; 数据段中写入 Hi
+    (func (export &quot;writeHi&quot;)
+        i32.const 0                ;; 偏移为0 
+        i32.const 2                ;; 偏移为2
+        call $log)           
+)
+</code></pre>
+<p>现在，我们可以从<code>JavaScript</code>中创建一个<code>1</code>页的<code>Memory</code>对象，然后把它传递进去。</p>
+<pre><code class="language-JavaScript">var memory = new WebAssembly.Memory({initial:1});
+
+var importObj = {
+    console: { log: consoleLogString }, 
+    js: { mem: memory },
+};
+
+fetchAndInstantiate('logger2.wasm', importObject)
+    .then(function(instance) {
+        instance.exports.writeHi();
+    });
+</code></pre>
+<p>这会在控制台输出&quot;Hi&quot;。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"></script>
+    <script>
+      
+ // 处理形如 <code>$E=mc^2$</code> 形式的公式
+  var inlineMathNodes=document.querySelectorAll('code');
+  var re=/^\$(.*)\$$/;
+  for(var j=0;j<inlineMathNodes.length;j++){
+    var result=re.exec(inlineMathNodes.item(j).innerText);
+    if(result!==null){
+      katex.render(result[1], inlineMathNodes.item(j));
+    }
+  }
+  function removeNode(node){
+    if(node.remove){
+      node.remove();
+    }else{
+      return first.parentNode.removeChild(node);
+    }
+  };
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
+  for(var i=0;i<nodes.length;i++){
+    var node=nodes.item(i);
+    // 魔术标记所在行 
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+    
+    </script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>
