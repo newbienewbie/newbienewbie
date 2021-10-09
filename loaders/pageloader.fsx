@@ -6,8 +6,8 @@ type Page = {
 }
 
 let loader (projectRoot: string) (siteContent: SiteContents) =
-    siteContent.Add({title = "Home"; link = "/"})
-    siteContent.Add({title = "About"; link = "/about.html"})
-    siteContent.Add({title = "Contact"; link = "/contact.html"})
+    siteContent.Add({title = "Home"; link = ""})
+    siteContent.Add({title = "About"; link = "about.html"})
+    siteContent.Add({title = "Contact"; link = "contact.html"})
 
     siteContent

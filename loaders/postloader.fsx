@@ -94,7 +94,7 @@ let loadFile (rootDir: string) (n: string) =
         |> fun x -> x.[chopLength .. ]
 
     let file = Path.Combine(dirPart, (n |> Path.GetFileNameWithoutExtension) + ".md").Replace("\\", "/")
-    let link = "/" + Path.Combine(dirPart, (n |> Path.GetFileNameWithoutExtension) + ".html").Replace("\\", "/")
+    let link = Path.Combine(dirPart, (n |> Path.GetFileNameWithoutExtension) + ".html").Replace("\\", "/")
 
     let title = config |> Map.find "title" |> trimString
     let author = config |> Map.tryFind "author" |> Option.map trimString

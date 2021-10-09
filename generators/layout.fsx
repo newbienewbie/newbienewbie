@@ -7,6 +7,9 @@
 
 open Html
 
+let baseUrl () =
+    "/newbienewbie"
+
 let injectWebsocketCode (webpage:string) =
     let websocketScript =
         """
@@ -108,6 +111,7 @@ let layout (ctx : SiteContents) active bodyCnt =
             meta [CharSet "utf-8"]
             meta [Name "viewport"; Content "width=device-width, initial-scale=1"]
             title [] [!! ttl]
+            ``base`` [baseUrl () |> Href ]
             link [Rel "icon"; Type "image/png"; Sizes "32x32"; Href "/images/favicon.png"]
             link [Rel "stylesheet"; Href "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
             link [Rel "stylesheet"; Href "https://fonts.googleapis.com/css?family=Open+Sans"]
@@ -123,8 +127,8 @@ let layout (ctx : SiteContents) active bodyCnt =
           nav [Class "navbar"] [
             div [Class "container"] [
               div [Class "navbar-brand"] [
-                a [Class "navbar-item"; Href "/"] [
-                  img [Src "/images/bulma.png"; Alt "Logo"]
+                a [Class "navbar-item"; Href ""] [
+                  img [Src "images/bulma.png"; Alt "Logo"]
                 ]
                 span [Class "navbar-burger burger"; Custom ("data-target", "navbarMenu")] [
                   span [] []
