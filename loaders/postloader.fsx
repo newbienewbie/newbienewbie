@@ -129,5 +129,5 @@ let loader (projectRoot: string) (siteContent: SiteContents) =
     |> Array.map (loadFile projectRoot)
     |> Array.iter siteContent.Add
 
-    siteContent.Add({disableLiveRefresh = false})
+    siteContent.Add({disableLiveRefresh = true})
     siteContent
