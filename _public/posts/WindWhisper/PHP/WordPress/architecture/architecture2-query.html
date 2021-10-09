@@ -1,0 +1,241 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/architecture/architecture2-query.html">
+                    WordPress 前台基础架构分析之二：查询篇
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>WordPress查询过程</h2>
+<p>WordPress查询过程也即<code>wp()</code>函数的调用过程, 该函数定义于<code>wp-includes/functions.php</code>文件中:</p>
+<pre><code class="language-PHP">//wp-includes/functions.php
+
+function wp( $query_vars = '' ) {
+	global $wp, $wp_query, $wp_the_query;
+	$wp-&gt;main( $query_vars );
+
+	if ( !isset($wp_the_query) )
+		$wp_the_query = $wp_query;
+}
+</code></pre>
+<p>这里涉及到三个全局类对象，<code>$wp</code>,<code>$wp_query</code>,<code>$wp_the_query</code>，均定义于<code>wp-settings.php</code>中，其中:</p>
+<ol>
+<li><code>$wp</code>则是的<code>WP</code>类(文件<code>wp-includes/class-wp.php</code>)的实例,表示当前请求的WordPress博客环境信息</li>
+<li><code>$wp_the_query</code>和<code>wp_query</code>为<code>WP_Query</code>类(文件<code>wp-includes/class-wp.php</code>)实例，用于查询(其实是后者是对前者的引用)</li>
+</ol>
+<h3><code>WP</code>类</h3>
+<p><code>$wp</code>有如下关键的属性和方法</p>
+<ul>
+<li>属性
+<ul>
+<li><code>$query_vars</code>和<code>$query_string</code>: 如m,p,posts,w,cat,s,exact,page,more,orderby,tag等等</li>
+<li><code>$request</code> : Permalink或者request URI</li>
+<li><code>$matched_rule</code> 和<code>$matched_query</code> : 重写匹配到的请求</li>
+</ul>
+</li>
+<li>方法
+<ul>
+<li><code>main($query_vars='')</code>: 设置所有的变量到该环境类对象,该方法实际上只是调用这些方法
+<ul>
+<li><code>init();</code>                       #初始化</li>
+<li><code>parse_request($query_args);</code>   #解析请求</li>
+<li><code>send_headers();</code>               #发送响应头</li>
+<li><code>query_posts();</code>                #执行查询</li>
+<li><code>handle_404();</code>                 #处理404</li>
+<li><code>register_globals();</code>           #注册全局变量</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>最值得关注的是这个<code>$wp-&gt;query_posts()</code>方法,其实调用的是在文件<code>settings.php</code>中定义的全局对象<code>$wp_the_query</code>进行调用</p>
+<pre><code class="language-PHP">public function query_posts() {
+    global $wp_the_query;
+    $this-&gt;build_query_string();
+    $wp_the_query-&gt;query($this-&gt;query_vars);    #调用WP_Query类对象的查询方法
+}
+</code></pre>
+<h3>WP_Query</h3>
+<h4>WP_Query的作用</h4>
+<p>除了直接使用$wpdb调用相关的模型层方法，WordPress针对自身的数据库schema和常用功能设计了<code>WP_Query</code>类,该类位于WPINC/query.php文件中。</p>
+<p>该类的构造器接受一个<code>query_string</code>的查询字符串或者对应的数组作为参数,返回一个<code>WP_Query</code>类对象,如：</p>
+<pre><code class="language-PHP">$posts=new WP_Query(array(
+    'showposts'=&gt;10,
+    'offset'=&gt;0,
+    'category'=&gt;0,
+    'orderby'=&gt;'post_date',
+    'order'=&gt;'desc',
+    'include'=&gt;'',
+    'exclude'=&gt;'',
+    'meta_key'=&gt;'',
+    'meta_value'=&gt;'',
+    'post_type'=&gt;'post',
+    'suppress_filters'=&gt;true,
+    'post_status'=&gt;'publish'
+));
+</code></pre>
+<p>当这个<code>$wp_query</code>对象执行查询后,一系列相应的属性会被重新设置。根据这些属性值，Loop过程会加载不同的模板。</p>
+<p>比如，如果<code>$wp_query-&gt;is_search()</code>属性值被设置为真，WordPress会使用<code>search.php</code>模板(如果有的话)。</p>
+<h3>WP_Query的属性和方法</h3>
+<p>该类提供了一系列初始的属性和方法：</p>
+<ul>
+<li>属性
+<ul>
+<li><code>$query</code>    #保存了<code>wp_parse_args($queryString)</code>的返回值;</li>
+<li><code>$query_vars</code>    #<code>$query</code>的关联数组</li>
+<li><code>$queried_object</code>    #保存了请求的category,author,post 或page的信息</li>
+<li><code>$queried_object_id</code></li>
+<li><code>posts</code>           #<code>get_posts()</code>返回值，表示请求的posts</li>
+<li><code>post_count</code>      #<code>get_posts()</code>返回的<code>posts</code>的数量</li>
+<li><code>current_post</code>    #用于迭代，将要被显示的post的index</li>
+<li><code>post</code>            #用于迭代，当前被显示的post</li>
+<li><code>is_xxx</code>   #query flags 属性</li>
+</ul>
+</li>
+<li>方法
+<ul>
+<li><code>init()</code>   #初始化并设置默认值</li>
+<li><code>parse_query()</code> #解析query string或者相应数组,并设置query type booleans</li>
+<li><code>parse_query_vars()</code>    #这个函数只是重新调用<code>parse_query()</code></li>
+<li><code>get_posts()</code>   #从数据库中获取请求的posts，并生成<code>$posts</code>和<code>$post_count</code></li>
+<li><code>query()</code>       #调用<code>parse_query()</code>和<code>get_posts()</code></li>
+<li><code>rewind_posts()</code> #rewind</li>
+<li><code>have_posts()</code>   #是否有posts</li>
+<li><code>next_post()</code>    #在<code>$posts</code>中迭代倒下一个位置，递增<code>$current_post</code>，设置<code>$post</code></li>
+<li><code>the_post()</code>     #迭代到下一个位置，并且设置全局$global变量</li>
+<li><code>get_queried_object()</code></li>
+<li><code>get_queried_object_id()</code></li>
+<li><code>get()</code></li>
+<li><code>set()</code></li>
+<li><code>is_xxx()</code></li>
+</ul>
+</li>
+</ul>
+<p>值得注意的是，<code>query()</code>方法是这里的核心方法，它负责两大业务:</p>
+<ol>
+<li>是解析查询参数(并设置相应的属性值)</li>
+<li>是根据解析参数值进行数据库查询(并设置相应属性)</li>
+</ol>
+<p>实际上只是调用:</p>
+<ol>
+<li><code>parse_query()</code></li>
+<li><code>get_posts()</code></li>
+</ol>
+<p>当执行完查询之后，常用的可用属性包括：</p>
+<ul>
+<li><code>order</code></li>
+<li><code>orderby</code>    #<code>author</code>|<code>date</code>|<code>title</code>|<code>modified</code>|<code>menu_order</code>|<code>parent</code>|<code>ID</code>|<code>rand</code>|<code>meta_value</code>| <code>none</code></li>
+<li><code>cat</code>,<code>tag</code></li>
+<li><code>category_name</code></li>
+<li><code>categroy__and</code>,<code>tag__and</code>    #数组</li>
+<li><code>category__in</code>,<code>tag__in</code>    #数组</li>
+<li><code>category__not_in</code></li>
+<li><code>tag_slug__and</code></li>
+<li><code>tag_slug__in</code></li>
+<li><code>showposts</code></li>
+<li><code>p</code></li>
+<li><code>name</code></li>
+<li><code>page_id</code></li>
+<li><code>pagename</code></li>
+<li><code>post__in</code></li>
+<li><code>post__not_in</code></li>
+<li><code>post__type</code></li>
+<li><code>post_status</code></li>
+<li><code>author</code></li>
+<li><code>author_name</code></li>
+<li><code>hour</code></li>
+<li><code>minute</code></li>
+<li><code>second</code></li>
+<li><code>day</code></li>
+<li><code>monthnum</code></li>
+<li><code>year</code></li>
+<li><code>w</code></li>
+<li><code>paged</code></li>
+<li><code>offset</code></li>
+<li><code>meta_key</code></li>
+<li><code>meta_compare</code></li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

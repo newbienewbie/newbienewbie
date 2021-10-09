@@ -1,0 +1,337 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Python/Python-属性搜索链、descriptor-与-property.html">
+                    Python 属性搜索链、descriptor 与@property
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-04-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2><code>__dict__</code> 魔法属性</h2>
+<p>在类的内部，实例是用字典来实现的，可以用实例的 <code>__dict__</code> 属性访问该字典，这个字典包含的数据对每个实例都是唯一的。</p>
+<p><code>__dict__</code>表示一个对象的内部字段或者映射，用于存储对象属性，默认情况下，<code>Python</code>将对象的自定义成员以键值对的形式保存到<code>__dict__</code>字典中。</p>
+<pre><code class="language-python">class MyClass(object):
+    greetings = &quot;hello,world&quot;
+
+mc=MyClass()
+mc.greetings=&quot;Fuck,world&quot;
+</code></pre>
+<p>这里<code>MyClass</code>这个类对象有一个<code>__dict__</code>字典，内部存储了属性<code>greetings</code>及其值<code>hello,world</code>，现在其实例对象<code>mc</code>也有一个<code>__dict__</code>字典，内部存储了<code>greetings=&quot;Fuck,world&quot;</code>。</p>
+<p>在任何时候，向对象上添加属性，都会改变到<code>__dict__</code>属性上，而任何时候对<code>__dict__</code>的修改，也会同步反应到属性中。</p>
+<p>默认情况下，</p>
+<pre><code class="language-python">obj.keyname=value
+</code></pre>
+<p>等价于：</p>
+<pre><code class="language-python">obj.__setattr__(keyname,value)
+</code></pre>
+<p>这两个方法都会修改<code>__dict__</code>。但是如果对象是一个property或者一个描述符，属性的设置和删除将由相关联的函数执行。</p>
+<p>观察一个有意思的案例：</p>
+<pre><code class="language-python">class Rectangle(object):
+    def __init__(self,width,height):
+        self.__width=width
+        self.__height=height
+    
+    @property
+    def width(self):
+        return self.__width
+
+    @width.setter
+    def width(self,value):
+        self.__width=value
+
+    @property
+    def height(self):
+        return self.__height
+    @height.setter
+    def height(self,value):
+        self.__height=value
+    
+rect=Rectangle(3,4)
+
+print(rect.__dict__)
+print(Rectangle.__dict__)
+</code></pre>
+<p>输出类似于：</p>
+<pre><code class="language-python">{'_Rectangle__width': 3, '_Rectangle__height': 4}
+</code></pre>
+<p>和</p>
+<pre><code class="language-python">{'__module__': '__main__', 'height': &lt;property object at 0x0000000002E105E8&gt;, 'width': &lt;property object at 0x0000000002E10638&gt;, '__dict__': &lt;attribute '__dict__' of 'Rectangle' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Rectangle' objects&gt;, '__doc__': None, '__init__': &lt;function __init__ at 0x0000000002E126D8&gt;}
+</code></pre>
+<ol>
+<li>类的每个实例都有自己的 <code>__dict__</code>，</li>
+<li>类自身也是一个对象，也有 <code>__dict__</code> ，其中存储了attribute、property等</li>
+</ol>
+<h2>属性查找</h2>
+<p>属性查找的关键是两个魔法方法。</p>
+<h3><code>__getattribute__</code>:</h3>
+<pre><code class="language-Python">obj.__getattribute__(self, name)
+</code></pre>
+<p>当访问属性时，此方法会被调用。返回属性值或者引发<code>AttributeError</code> 异常。</p>
+<p>注意此方法相对于 <code>__getattr__()</code> 方法拥有绝对优先权，除非 <code>__getattribute__()</code> 内部显式去调用 <code>__getattr__()</code> 或者引发 <code>AttributeError</code>，否则即使定义了 <code>__getattr__()</code> ，也不会去调用。默认情况下，<code>__getattribute__()</code>，会优先调用<code>data descriptor</code>，然后是实例字典，然后是<code>non-data descriptor</code>，这留待后文详述。</p>
+<h3><code>__getattr__</code>:</h3>
+<pre><code class="language-Python">obj.__getattr__(self,name)
+</code></pre>
+<p>当<code>obj.__getattribute__(name)</code>找不到相应属性，才会发生调用。这是一个兜底方法，要么返回 attribute value，要么抛出 <code>AttributeError</code>异常。</p>
+<h3>查找顺序</h3>
+<p>在<code>Python</code>中查找属性时，<code>Python</code>将调用特殊方法<code>obj.__getattribute__(keyname)</code>，先搜索相关属性；如果搜索失败，<code>Python</code>将试图调用类的<code>__getattr__()</code>方法（如果已经定义）；如果还是失败，就抛出<code>AttributeError</code>。</p>
+<h2>属性设置和删除函数</h2>
+<p><code>Python</code>中，属性的查找通常要回溯到实例的类、超类，这种回溯有利于对象属性的共享；但是属性的赋值、删除更新的是实例字段，永远不会更新类的字典。</p>
+<p>在属性进行赋值、删除时候，如果类中定义了<code>__setattr__()</code>、<code>__delattr__()</code>方法 ，则会被调用。</p>
+<ol>
+<li>属性设置</li>
+</ol>
+<pre><code class="language-python">obj.__setattr__(self,name,value)
+</code></pre>
+<p>当属性赋值的时候触发调用，通常的实现会调用 <code>self.__dict__[name]=value</code></p>
+<ol start="2">
+<li>属性删除</li>
+</ol>
+<p>等价于</p>
+<pre><code class="language-python">obj.__delattr__(self,name)
+</code></pre>
+<p>当执行 <code>del obj.name</code>的时候触发调用。这些方法的默认行为是修改或者删除 obj 的局部 <code>__dict__</code>值，除非请求的属性是一个 property 或者描述符。</p>
+<h2>descriptor</h2>
+<p><code>descriptor</code>(描述符)是本质上是一种拥有绑定行为的对象属性——其属性访问行为（<code>get</code>、<code>set</code>、<code>delete</code>）被 <code>__get__()</code>, <code>__set__()</code>, 和 <code>__delete__()</code>所重写。如果一个对象定义了这三个方法中的任意一个，它即称为一个<code>descriptor</code>。而所谓<code>descriptor</code>协议，其实就是以下三个方法(不一定要全部实现，有任意一个都行）：</p>
+<pre><code class="language-Python">descr.__get__(self, obj, type=None) --&gt; value
+
+descr.__set__(self, obj, value) --&gt; None
+
+descr.__delete__(self, obj) --&gt; None
+</code></pre>
+<p>我们知道，默认情况下属性访问会从对象的字典进行 <code>get</code>、<code>set</code>、<code>delete</code>操作，例如，<code>a.x</code>会先搜索<code>a.__dict__['x']</code>，然后搜索<code>type(a)__dict__['x']</code>，然后继续再在<code>type(a)</code>的基类上找，如此不停寻找（不会找到<code>metaclass</code>）。然而，如果所搜索的值定义了<code>descriptor</code>方法之一，那么<code>Python</code>就会转而调用描述符方法.</p>
+<p>举一个简单的例子:</p>
+<pre><code class="language-python">class MyDescriptor(object):
+
+    def __init__(self, init_val=None ):
+        self.val = init_val
+
+    def __get__(self, obj, objtype):
+        return self.val
+
+    def __set__(self, obj, val):
+        self.val = val
+
+
+class MyClass(object):
+    x = MyDescriptor(10)
+
+print(MyClass.__dict__['x'])
+print(MyClass.__dict__['x'].__set__)
+print(MyClass.__dict__['x'].__get__)
+</code></pre>
+<p>描述符可以分为两种：如果一个描述符只定义了<code>__get__()</code>，称之为<code>non-data descriptor</code>，如果一个描述符同时定义了<code>__get__()</code>、<code>__set__()</code>，则称之为<code>data descriptor</code>。</p>
+<ol>
+<li>如果一个实例的 <em>字典</em> 中，有一项和 <em>描述符对象</em> 有同样的名字，且该描述符是<code>non-data descriptor</code>，则该实例的 <em>字典</em> 优先</li>
+<li>如果一个实例的 <em>字典</em> 中，有一个项和 <em>描述符对象</em> 有同样名字，且该描述符是<code>data descriptor</code>，则该 <em>描述符对象</em> 优先</li>
+</ol>
+<p>关于<code>data descriptor</code>和<code>non-data descriptor</code>的很重要一点区别在于，由于<code>data descriptor</code>优先级更高，属性访问操作和实例的<code>__dict__</code>并不关联；而<code>non-data descriptor</code>则不然，其优先级比实例的字典<code>__dict__</code>更低，故属性访问实际上是在操作<code>__dict__</code>属性。举个例子：</p>
+<pre><code class="language-python">class NonDataDescriptor(object):
+    def __init__(self,key,value):
+        self.key=key
+        self.value=value
+
+    def __get__(self,obj,objtype):
+        return self.value
+    
+class DataDescriptor(object):
+    def __init__(self,key,value):
+        self.key=key
+        self.value=value
+
+    def __get__(self,obj,objtype):
+        return self.value
+    
+    def __set__(self,obj,value):
+        self.value=&quot;### &quot;+value
+
+class MyClass(object):
+    greeting1=NonDataDescriptor(&quot;greeting1&quot;,&quot;### Hello,world&quot;)
+    greeting2=DataDescriptor(&quot;greeting2&quot;,&quot;### Hello,world&quot;)
+
+mc=MyClass()
+print(mc.greeting1)         # 这里，会输出 '### Hello,world'
+mc.greeting1=&quot;Fuck,world&quot;   # 这里，其实是在设置mc.__dict__属性
+mc.greeting2=&quot;Fuck,world&quot;   # 这里，并不会去操作mc.__dict__属性
+print(mc.__dict__)          # 这里，输出的是 {'greeting1': 'Fuck,world'}
+</code></pre>
+<h3>描述符<code>__get__()</code>方法的调用优先级</h3>
+<p>属性查找的默认优先级别链为：</p>
+<ol>
+<li><code>data descriptor</code>优先级最高</li>
+<li><code>instance variables</code> 优先级次之</li>
+<li><code>non-data descriptor</code> 优先级再次之</li>
+<li><code>__getattr__()</code> 优先级最低</li>
+</ol>
+<p>具体调用细节还得区分<code>obj</code>是类和普通对象。
+对于对象的<code>data descriptor</code>属性访问，根据<code>object.__getattribute__(self,name)</code>方法，会将<code>b.d</code>的调用转换为了<code>type(b).__dict__['d'].__get__(b,type(b))</code>，注意，这里先去类的<code>__dict__</code>找，然后再调用所找到的描述符的<code>__get__()</code>方法。
+对于类的<code>data descriptor</code>，根据<code>type.__getattribute()__</code>方法，会将<code>B.d</code>转换为了<code>B.__dict__['d'].__get___(None,B)</code>，根据<a href="https://docs.python.org/3/howto/descriptor.html"><code>Python</code>官方文档</a>，基本上等同于：</p>
+<pre><code class="language-python">def __getattribute__(self, key):
+    &quot;Emulate type_getattro() in Objects/typeobject.c&quot;
+    v = object.__getattribute__(self, key)
+    if hasattr(v, '__get__'):
+        return v.__get__(None, self)
+    return v
+</code></pre>
+<p>不管怎么说，<code>descriptor</code>的<code>__get__()</code>方法是用<code>__getattribute__()</code>方法调用的。如果覆盖<code>__getattribute__()</code>方法，则默认的描述符方法调用行为也会被改写。</p>
+<h3>描述符<code>__set__()</code>方法和<code>__setattr__()</code>的调用优先级</h3>
+<p>实例的属性查找通常需要回溯到超类，而实例属性的设置、删除比然只会操作自身的<code>__dict__</code>字典，不会影响到父类。与这种不对称性相类似的还有<code>__setattr__()</code>方法和<code>__getattr__()</code>相对于<code>descriptor</code>的优先级不对称性！<code>__getattr__()</code>相对于<code>descriptor</code>有最低的优先级；而相对于<code>__set__()</code>，<code>__setattr__()</code>的优先级却更高！</p>
+<p>举个例子:</p>
+<pre><code class="language-python">class DataDescriptor(object):
+    def __init__(self,key,value):
+        self.key=key
+        self.value=value
+
+    def __get__(self,obj,objtype):
+        return self.value
+    
+    def __set__(self,obj,value):
+        print(&quot;### __set__() called : &quot;+ self.key + &quot; = &quot; +value)
+        self.value=&quot;### &quot;+value
+
+class MyClass(object):
+    greeting2=DataDescriptor(&quot;greeting2&quot;,&quot;### Hello,world&quot;)
+
+    def __getattr__(self,name):
+        return object.__getattr__(self,name)
+
+    def __setattr__(self,name,value):
+        print(&quot;@@@ __setattr__() called : &quot;+ name +&quot; = &quot; + value)
+        self.__dict__[name]=&quot;@@@ &quot;+value
+
+mc=MyClass()
+mc.greeting2=&quot;Fuck,world&quot;   # 这里，并不会去操作mc.__dict__属性
+print(mc.greeting2)         # 这里，会输出什么？ 是`### Hello,world` !!
+print(mc.__dict__)          # 这里，输出的是 {'greeting1': '@@@ Fuck,world'}
+</code></pre>
+<p>输出的结果是:</p>
+<pre><code>@@@ __setattr__() called : greeting2 = Fuck,world
+### Hello,world
+{'greeting2': '@@@ Fuck,world'}
+</code></pre>
+<p>这里有两个需要注意的地方：</p>
+<ol>
+<li>对MyClass的实例<code>mc</code>调用<code>mc.__setattr__()</code>方法，并没有触发<code>data descriptor</code>调用。从而改写了对象实例的<code>__dict__</code></li>
+<li>对实例<code>mc</code>调用<code>mc.greeting2</code>，尽管实例的<code>__dict__</code>中存储了<code>greeting2</code>，但是由于<code>data descriptor</code>优先级更高，所以返回的仍然是描述符初始化的<code>### Hello,world</code>。</li>
+</ol>
+<h3>描述符与对象方法调用机制</h3>
+<p>当方法被实例以<code>obj.func()</code>的形式调用，其实可以分成两步：首先会进行属性查找，由于是个<code>descriptor</code>，这一步会利用<code>__get__()</code>返回绑定了<code>self</code>的函数；然后再对函数对象进行调用。</p>
+<p>最终从形式上看，<code>obj.f(*args)</code>的调用等同于<code>f(obj, *args)</code>。其内部机理在于类字典中将方法作为函数来存储，而所有的方法都是定义了<code>__get__()</code>的<code>non-data descriptor</code>。这样每次查找方法时，都会利用描述符的<code>__get__()</code>取到绑定了<code>self</code>对象的相应函数。</p>
+<p>类似的，对于<code>classmethod</code>(类方法)，也会进行绑定，不过绑定对象变成了类。而对于<code>staticmethod</code>(静态方法)，则无需绑定，直接返回原函数。</p>
+<table>
+<thead>
+<tr>
+<th>Transformation</th>
+<th>Called from an Object</th>
+<th>Called from a Class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>function</code></td>
+<td><code>f(obj, *args)</code></td>
+<td><code>f(*args)</code></td>
+</tr>
+<tr>
+<td><code>classmethod</code></td>
+<td><code>f(type(obj), *args)</code></td>
+<td><code>f(klass, *args)</code></td>
+</tr>
+<tr>
+<td><code>staticmethod</code></td>
+<td><code>f(*args)</code></td>
+<td><code>f(*args)</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python">class StaticMethod(object):
+    &quot;Emulate PyStaticMethod_Type() in Objects/funcobject.c&quot;
+
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, objtype=None):
+        return self.f
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

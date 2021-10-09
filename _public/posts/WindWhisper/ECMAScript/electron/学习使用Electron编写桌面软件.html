@@ -1,0 +1,163 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/electron/学习使用Electron编写桌面软件.html">
+                    学习使用Electron编写桌面软件
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-01
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Electron 简介</h2>
+<p>可以复用前端技能（JavaScript、HTML、CSS）来写桌面软件的玩意儿！</p>
+<ol>
+<li>GitHub 出品，于2014年春开源。</li>
+<li>跨平台: Mac, Windows, Linux</li>
+<li>成功案例：<code>Atom</code>编辑器、<code>Visual Studio Code</code> 编辑器，etc</li>
+</ol>
+<p>技术架构：结合<code>Chromium</code>和<code>Node.js</code>二者为一个 runtime（共享同一个 V8 实例）。</p>
+<p>版本更新策略：
+0. <code>Electron</code> 的 <code>Chromium</code> 通常在新的稳定版本发布的一两周内更新。</p>
+<ol>
+<li>每当一个新版本的<code>Node.js</code>发布，<code>Electron</code> 通常会等上一个月才升级（以求更稳定）。</li>
+<li>通常，共用的<code>V8</code>是<code>Chromium</code>所使用的，有时候这意味着要给<code>Node.js</code>打补丁。不管咋说，在<code>Electron</code>中，<code>Node.js</code>和<code>Chromium</code>共享同一个<code>V8</code>。</li>
+</ol>
+<h2>应用编写</h2>
+<p>一个<code>Electron</code>应用就是一个普通的<code>npm</code>包。
+首先在<code>package.json</code>中配好入口文件，顺带设置好脚本启动的命令方便以后从命令行启动：</p>
+<pre><code class="language-JavaScript">{
+    // ...
+    &quot;main&quot;: &quot;start.js&quot;,
+    &quot;scripts&quot;: {
+        &quot;start&quot;: &quot;node_modules/.bin/electron .&quot;,
+    },
+    // ...
+}
+</code></pre>
+<p><code>Electron</code> 执行的时候，会从当前目录的<code>package.json</code>读取<code>main</code>字段规定的入口文件进行启动。</p>
+<p>与普通的JS项目一样，可以无缝使用各种现成的包(轮子)。</p>
+<pre><code class="language-JavaScript">// start.js
+const electron=require('electron');
+const path=require('path');
+
+const app=electron.app;
+const INDEX_HTML_PATH=path.join(__dirname,&quot;dist&quot;,&quot;views&quot;,&quot;login.html&quot;);
+
+let win;
+
+app.on('ready',function(){
+    win=new electron.BrowserWindow();
+    win.loadURL(`file://${INDEX_HTML_PATH}`);
+    win.on('closed',()=&gt;{
+        win=null;
+    });
+});
+
+app.on('window-all-closed', function(){
+    app.quit();
+});
+</code></pre>
+<p>这里 <code>login.html</code> 引用了一个经过<code>webpack</code>打包的脚本，里面使用了<code>React</code>来构建登陆组件——尽管复用我们的前端技能吧！</p>
+<p>运行截图 {% asset_img &quot;electron运行效果截图.jpg&quot; &quot;electron运行效果截图&quot;%}</p>
+<h2>打包</h2>
+<p>我们并不想把所有文件挨个拷给使用者。类似于 <code>Java</code> 的<code>jar</code> 打包，前端界提供了<code>asar</code>。</p>
+<p>安装<code>asar</code>工具，</p>
+<pre><code>&gt; npm install asar -g
+</code></pre>
+<p>打包：</p>
+<pre><code>&gt; asar pack your-proj app.asar
+</code></pre>
+<p><code>asar</code>默认会把<code>node_modules</code>下的文件也打包，在某些时候这是必要的，但是对于大多数前端文件，我们都可以通过<code>webpack</code>整合资源：此时完全可以移除<code>node_modules</code>文件夹再打包，这样总体积就会小很多。</p>
+<h2>分发</h2>
+<p>编写完<code>Electron</code>应用，如何让用户双击执行呢？总不能让用户全局安装<code>electron</code> 在调用命令行启动吧？</p>
+<p>步骤如下：</p>
+<ol start="0">
+<li>首先务必保证，打包好的应用的文件名为<code>app.asar</code></li>
+<li>在应用的工程目录中，找到文件夹<code>node_modules\electron\dist</code>，把<code>dist</code>文件夹整体拷贝出来，</li>
+<li>把打包好的<code>app.asar</code>放入<code>dist/resources/</code>文件夹下</li>
+<li>把<code>dist/electron.exe</code>重命名为你的目标文件名；还可以通过专业工具修改图标、公司名称等。</li>
+<li>把<code>dist</code>文件夹重命名为你任何合适的名称。</li>
+</ol>
+<p>用户双击你重名后的<code>exe</code>文件,即可执行。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

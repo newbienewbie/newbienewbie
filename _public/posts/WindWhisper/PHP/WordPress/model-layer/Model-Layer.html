@@ -1,0 +1,179 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/model-layer/Model-Layer.html">
+                    WordPress Model Layer
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>WordPress虽说并不和现代的MVC模式一致,但是也有独立的数据库操作层。</p>
+<h1>全局对象$wpdb</h1>
+<p>有一个全局对象$wpdb 作为WPINC/wp-db.php中的wpdb类实例对象。该类是
+<code> WordPress Database Access Abstraction</code>。</p>
+<p>可以用其他的类替换之。</p>
+<h2>Adding Data</h2>
+<p>利用$wpdb-&gt;insert()方法，此方法接受三个参赛：</p>
+<ol>
+<li>表名</li>
+<li>数组，字段的名和值对组成的数组</li>
+<li>数组，可选的格式</li>
+</ol>
+<pre><code class="language-PHP">$wpdb-&gt;insert(
+   $wpdb-&gt;posts,
+   array(
+       'post_title'=&gt;'xx',
+       'post_content'=&gt;'xx',
+       'post_type'=&gt;'xx',
+   ),
+   array(&quot;%s&quot;,%s&quot;,&quot;%s&quot;)
+);
+</code></pre>
+<h2>update</h2>
+<p>利用$wpdb-&gt;update()方法，此方法接受5个参数：</p>
+<ol>
+<li>表名</li>
+<li>新记录的数组表示，由各字段的名/值对组成的数组</li>
+<li>where条件数组</li>
+<li>数组,每个元素表示新记录中的值的格式</li>
+<li>数组，表示where条件数组的格式</li>
+</ol>
+<pre><code class="language-PHP">$wpdb-&gt;update(
+    $wpdb-&gt;posts,
+    array(
+       'post_title'=&gt;'new',
+       'post_content'=&gt;'new',
+       'post_type'=&gt;'new',
+    ),
+    array(
+       'ID'=&gt;$post_id,
+    ),
+    array(&quot;%s&quot;,&quot;%s&quot;),
+    array(&quot;%s&quot;)
+);
+</code></pre>
+<h2>Delete</h2>
+<p>$wpdb-&gt;delte()方法可以用来删除行记录。 原型为</p>
+<pre><code class="language-PHP">public function delete( $table, $where, $where_format = null ) 
+</code></pre>
+<p>例如：</p>
+<pre><code class="language-PHP">$wpdb-&gt;delete( 'table', array( 'ID' =&gt; 1 ), array( '%d' ) );
+</code></pre>
+<h2>Retrieving</h2>
+<h3>获取单个值</h3>
+<pre><code class="language-PHP">$post_id=$wpdb-&gt;get_var(
+    &quot;select ID from &quot;.$wpdb-&gt;posts.&quot; where post_author=1 limit 1&quot;
+);
+</code></pre>
+<h3>获取一列值</h3>
+<pre><code class="language-PHP">$wpdb-&gt;get_col(
+    &quot;select ID from &quot;.$wpdb-&gt;posts.&quot; where post_author=1 &quot;,
+    ARRAY_A    # NULL|ARRAY_A|ARRAY_N,默认为object格式的返回值，
+);
+</code></pre>
+<h3>获取一行值</h3>
+<pre><code class="language-PHP">$wpdb-&gt;get_row(
+    &quot;select * from &quot;.$wpdb-&gt;users.&quot; where ID=43;&quot;,
+    ARRAY_N    #NULL|ARRAY_A|ARRAY_N
+);
+</code></pre>
+<h3>获取完整的数据集</h3>
+<pre><code class="language-PHP">$wpdb-&gt;get_results(
+    &quot;select * from &quot;.$wpdb-&gt;users.a&quot;,
+    ARRAY_N    #NULL|ARRAY_A|ARRAY_N
+);
+</code></pre>
+<h2>执行查询</h2>
+<pre><code class="language-PHP">$wpdb-&gt;query(string SqlString);
+</code></pre>
+<h2>SQL 注入与防御</h2>
+<p>WordPress 使用<code>$wpdb-&gt;prepare()</code>防御SQL注入。此方法使用PHP printf()函数的语法为字段进行代换，
+如同printf()那样，这里的占位符也可以使用排序索引。</p>
+<pre><code>$sanitized_sql=$wpdb-&gt;prepare(
+    &quot;'insert into my_plugin_table set field1=%1$d,$field2=$2$s,$field=%3$s,32',32,'Barzell','Washington,DC'&quot;
+);
+$wpdb-&gt;query($sanitized_sql);
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

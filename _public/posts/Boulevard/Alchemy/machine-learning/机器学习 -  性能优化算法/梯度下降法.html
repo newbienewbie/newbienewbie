@@ -1,0 +1,113 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Alchemy/machine-learning/机器学习 -  性能优化算法/梯度下降法.html">
+                    机器学习 梯度下降法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-06-12
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在<a href="/blog/2018/04/10/Boulevard/Alchemy/machine-learning/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%20-%20%E4%B8%96%E7%95%8C%E8%A7%82/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%20%E4%B8%96%E7%95%8C%E8%A7%82%203/">上一篇中机器学习的笔记中</a>，我们讨论了朴素的梯度下降法的思想，本篇给出一个通用的理论。</p>
+<p>假设有一个性能函数<code>$F$</code>(可以类比做之前博文中提到的成本函数)，该性能函数接受多个维度的自变量<code>$x^{1},x^{2},x^{3}, ... $</code>，不妨记为<code>$\bold x$</code>，故该函数可以表示为<code>$F(\bold x)$</code>。</p>
+<p>为了令性能函数<code>$F$</code>取得最低值，可以利用计算机反复迭代：</p>
+<pre><code class="language-math">%% KaTex
+\bold x_{k+1} = \bold x_{k} + \Delta \bold x
+</code></pre>
+<p>其中，<code>$\Delta \bold x = \alpha \bold p$</code>，这里的<code>$\bold p$</code>代表某个方向向量——指向某个搜索方向的向量。要令<code>$F(\bold x)$</code>取得极小值，就要令每次迭代计算后的<code>$F(\bold x_{k+1})$</code>比<code>$F(\bold x_{k})$</code>小。<!-- more --></p>
+<p>将上述迭代式代入<code>$F(\bold x)$</code>函数得到<code>$F(\bold x_{k+1}) = F(\bold x_{k} + \Delta x_{k})$</code>，根据多元函数形式的泰勒公式，对其右侧进行一阶展开，即有:</p>
+<pre><code class="language-math">%% KaTex
+F(\bold x_{k+1}) \approx F(\bold x_{k}) + \underbrace{\nabla F(\bold x)^{T} \vert _{\bold x = \bold x_{k}}}_{\text{记作} \bold g^{T}_{k}} \cdot \underbrace{\Delta \bold x_{k}}_{\text{=} \alpha_{k} \bold p_{k}}
+</code></pre>
+<p>故</p>
+<pre><code class="language-math">%% KaTex
+F(\bold x_{k+1}) = F(\bold x_{k}) + \alpha_{k} \bold g^{T}_{k} \bold p_{k} 
+</code></pre>
+<p>其中，<code>$\alpha_{k}$</code>表示朝当前搜素方向进行迭代的步进速率，<code>$\bold g^{T}_{k}$</code>表示当前的梯度向量，<code>$\bold p_{k}$</code>表示当前的搜素方向。</p>
+<p>根据上式，要让<code>$F(\bold x_{k+1})$</code>比<code>$F(\bold x_{k})$</code>更小，只需要令右式为负值即可。而当<code>$\bold p$</code>和梯度向量方向相反时，二者的点乘取得最小值(绝对值最大，符号为负)。故在每一步迭代时，取<code>$\bold p_{k} = - \bold g_{k}$</code>即意味着沿着最快下降方向进行搜素。所以，迭代式可以写成：</p>
+<pre><code class="language-math">%% KaTex
+\bold x_{k+1} = \bold x_{k} - \alpha_{k} \bold g_{k} 
+</code></pre>
+<p>也即每次沿着梯度的反方向进行迭代搜素。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

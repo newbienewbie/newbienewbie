@@ -1,0 +1,270 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/并发编程/Rust并发编程1——消息传递.html">
+                    Rust并发编程1——消息传递
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>传统的并发编程在共享数据时，往往选择的是共享且可变的多所有权的方式。如今，<code>message passing</code> 是一种越来越流行的应对安全并发的手法，在这种机制下，线程或者<code>actor</code>通过发送包含数据的消息来通讯。<code>Rust</code>提供了<code>channel</code>的机制来实现消息传递，在绝大多数编程语言里，一旦发送端利用<code>channel</code>将数据发出，就再也不能使用该数据，这十分类似于<code>Rust</code>中所有权的世界观设定，因而采用这种方式的并发编程，可以确保并发的安全可控。</p>
+<h3>通道与消息传递</h3>
+<p><code>std::sync::mpsc</code>模块提供了<code>channel()</code>方法，可以生成一对<code>transmitter</code>和<code>receiver</code>，前者是消息的发送端，提供了<code>send()</code>方法，返回一个<code>Result&lt;T,E&gt;</code>对象。后者是消息的接收端，提供<code>recv()</code>、<code>try_recv()</code>方法，用以接收消息，以<code>recv()</code>方法为例：</p>
+<ol>
+<li><code>recv()</code>方法会阻塞当前线程，直到收到消息为止。</li>
+<li>当收到消息，<code>recv()</code>方法便会返回一个<code>Result&lt;T,E&gt;</code>类型</li>
+<li>一旦发送端和接收端的通道(<code>channel</code>)关闭，<code>recv()</code>方法便会返回一个<code>error</code>，以通知以后不会再有新的值被发送。</li>
+</ol>
+<p>举一个例子，子线程每隔一秒产生一个数，主线程负责对子线程生成的数进行处理。</p>
+<pre><code class="language-Rust">use std::thread;
+use std::sync::mpsc;
+
+fn main() {
+    let (tx,rx)=mpsc::channel();
+
+    let _handle= thread::spawn(move||{
+        for x in 0 .. 100 {
+            tx.send(x).unwrap();
+            println!(&quot;sub thread send a : {}&quot;,x);
+            thread::sleep(std::time::Duration::from_secs(1));
+        }
+    });
+
+    while let Ok(received)=rx.recv(){
+        println!(&quot;main thread received a : {}&quot;,received);
+    }
+    println!(&quot;done&quot;);
+}
+</code></pre>
+<h3>迭代器模式</h3>
+<p>这种不停地循环调用<code>rx.recv()</code>直至通道关闭，十分类似于迭代器模式。为此，<code>Rust</code>提供了<code>recv.iter()</code>方法，返回一个迭代器<code>std::sync::mpsc::Iter</code>结构体，每次迭代取值，都会调用<code>rx.recv().ok()</code>：</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/Rust-WASM/Rust与WebAssembly 1——编译.html">
+                    Rust与WebAssembly 1——编译
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>如何编译到<code>WebAssembly</code></h2>
+<p>目前而言，<code>WebAssembly</code>并无<code>GC</code>，各种其他能力也还在蓬勃开发之中。根据<a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Concepts">Mozilla文档</a>，当下能靠谱的编译到<code>WebAssembly</code>尚只有三种语言：</p>
+<ol>
+<li><code>C</code></li>
+<li><code>C++</code></li>
+<li><code>Rust</code></li>
+</ol>
+<p>对于<code>Rust</code>而言，目前可以采用如下方案:</p>
+<ol>
+<li>Rust with Emscripten ：走<code>C/C++</code>一样的路线</li>
+<li>Rust without Emscripten : 2017年11月底的时候，<code>Rust</code>的<code>nightly</code>版本支持<code>target=wasm32-unknown-unkonwn</code>，可以无需<code>emscripten</code>直接编译<code>wasm</code></li>
+</ol>
+<h3>工具链和编译目标的安装</h3>
+<p>这里以编译到<code>wasm32-unknown-unknown</code>为例。编译目标设置为<code>wasm32-unknown-unnkown</code>，好处是不用再依赖<code>emscripten</code>，不过目前而言，此特性尚未加到<code>stable</code>中去，只能在<code>nightly</code>版本中使用(随着<code>Rust</code>官方在<code>WebAssembly</code>领域的持续发力，这个方案会越来越成熟)。首先当然是需要安装<code>nightly</code>版本：</p>
+<pre><code>rustup toolchain install nightly     
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/Rust-WASM/Rust与WebAssembly 2——stdweb.html">
+                    Rust与WebAssembly 2——stdweb
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在上一篇笔记里，记录了<code>Rust</code>如何编译到<code>WASM</code>，这一篇我们将重点放在<code>stdweb</code>编写一个<code>Hello,world</code>上。首先创建一个项目：</p>
+<pre><code>cargo new helloworld --bin
+</code></pre>
+<p>添加依赖：</p>
+<pre><code class="language-toml">[dependencies]
+stdweb =&quot;0.4&quot;
+</code></pre>
+<p>然后即可开始编码了。</p>
+<h2>如何控制浏览器</h2>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/智能指针/Rust智能指针3——引用、原始指针与内部可变性.html">
+                    Rust智能指针3——引用、原始指针与内部可变性
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>本文是正式开始智能指针之前的基础知识之三：引用、原始指针、与内部可变性。</p>
+<h2>引用和原始指针</h2>
+<p><code>Rust</code>中的引用在本质上就是指针，并没有什么黑魔法。对于原始指针和普通引用，在运行时，二者所指的内容完全一致。事实上，普通引用(<code>&amp;T</code>、<code>&amp;mut T</code>)都会被编译器隐式转化为原始指针(<code>*const T</code>、<code>*mut T</code>)，只不过这个转化是安全的。在<code>Rust</code>中，有两类原始指针：</p>
+<ol>
+<li><code>*const T</code> : 类似于 <code>&amp;T</code>引用，不可变</li>
+<li><code>*mut T</code>   : 类似于 <code>&amp;mut T</code>，可变</li>
+</ol>
+<p>以<code>*const T</code>为例，可以把<code>&amp;T</code>进行显式转换：</p>
+<pre><code class="language-Rust">let x = 42;
+let raw_pointer = &amp;x as *const i32;
+</code></pre>
+<p>或者可以写成这样：</p>
+<pre><code class="language-Rust">let x: i32 = 10;
+let raw_pointer: *const i32 = &amp;x;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/智能指针/Rust智能指针4——引用计数型智能指针.html">
+                    Rust智能指针4——引用计数型智能指针
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>智能指针并非什么新概念，<code>C++</code>里随处可见。所谓智能指针，其本身是一个数据结构，可以表现得像一个指针(得益于<code>Deref</code>)，往往还能自动析构资源(益于<code>Drop</code>)。</p>
+<p><code>Rust</code>在标准库中提供了很多种智能指针。这篇笔记要说的都是引用计数型指针，比如</p>
+<ol>
+<li><code>Rc&lt;T&gt;</code>(及<code>std::rc::Weak&lt;T&gt;</code>) : 引用计数型智能指针，适用于单线程场景的共享。</li>
+<li><code>Arc&lt;T&gt;</code>(及<code>std::sync::Weak&lt;T&gt;</code>) ：原子的引用计数型智能指针，适用于多线程场景的共享。</li>
+<li><code>RefCell&lt;T&gt;</code>等。</li>
+</ol>
+<h2><code>std::rc::Rc&lt;T&gt;</code>及<code>std::rc::Weak&lt;T&gt;</code></h2>
+<p>所谓<code>Rc</code>，意指<code>Reference Count</code>，也即“引用计数”。还记得 <a href="http://www.itminus.com/blog/2017/12/29/WindWhisper/Rust/%E6%89%80%E6%9C%89%E6%9D%83%E7%B3%BB%E7%BB%9F/%E6%89%80%E6%9C%89%E6%9D%83%E7%B3%BB%E7%BB%9F1%E2%80%94%E2%80%94%E4%B8%96%E7%95%8C%E8%A7%82/">所有权规则</a> 吗？</p>
+<blockquote>
+<ol>
+<li><code>Rust</code>中每个值都有一个相应的变量，称之为<code>owner</code>。</li>
+<li>一个值在一个时刻只能有一个<code>owner</code>。</li>
+<li>一旦到了作用域(<code>scope</code>)之外，与<code>owner</code>相应的值就会被丢弃(<code>drop</code>)。</li>
+</ol>
+</blockquote>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page8.html">
+          Previous
+        </a>
+        10 of 32
+        <a href="/posts/page10.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

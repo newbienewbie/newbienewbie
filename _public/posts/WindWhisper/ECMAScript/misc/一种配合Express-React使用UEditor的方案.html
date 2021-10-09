@@ -1,0 +1,225 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/misc/一种配合Express-React使用UEditor的方案.html">
+                    一种配合Express+React使用UEditor的方案(1)
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-10-15
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这是一种配合Express+React使用UEditor的方案的第(1)篇。</p>
+<p><a href="http://ueditor.baidu.com/website/index.html">UEditor</a>是由百度推出的一款所见即所得富文本web编辑器，开源，基于MIT协议。</p>
+<p>笔者十分喜欢这款产品，并在一个实际改造项目(基于<code>ASP.NET</code>)中替换原来老旧的<code>FCKEditor</code>，收到了很不错的效果。
+虽说大家对百度近些年来某些商业行为的口碑不太好，但是不得不说，他们工程师的技术造诣仍旧是我等低级码农学习之典范。</p>
+<p>本文只讲在<code>JavaScript</code>的前、后端应用中使用<code>UEditor</code>遇到的两个问题及解决方案：</p>
+<ol>
+<li>后端方面：官方网站上只给出了<code>.NET</code>、<code>Java</code>、<code>PHP</code>的后端示例，并未提供<code>Node.js</code>版，目前官网、和npm上有几款相关包，可惜功能都有欠缺。以<a href="https://github.com/netpi/ueditor/">netpi/ueditor</a>为例，并不像官方提供的<code>.NET</code>、<code>PHP</code>、<code>Java</code>的后台示例那样支持自配置功能。</li>
+<li>前端方面：<code>React</code> 现在大红大紫，如何使用 <code>React</code> 包装一个 <code>UEditor</code> 元素来使用？ 如何避免<code>SPA</code>应用中的多次加载 <code>UEditor</code> 的坑？</li>
+</ol>
+<p>于是笔者写了两个包解决这两个问题。</p>
+<h2>为 UEditor 编写 Express 支持</h2>
+<p><code>UEditor</code>这块产品本身是一个纯前端项目，每次与后端交互，都会向一个控制器发起请求，并在<code>action</code>参数中附上动作名。笔者编写了一个npm包<code>express-ueditor</code>来实现相关功能。</p>
+<h3>相关地址：</h3>
+<ul>
+<li><a href="https://www.npmjs.com/package/express-ueditor">npm安装主页</a></li>
+<li><a href="https://github.com/newbienewbie/express-ueditor">GitHub源码</a></li>
+</ul>
+<h3>安装与测试</h3>
+<pre><code>&gt; # 安装
+&gt; npm install
+&gt; # 测试
+&gt; npm run test
+</code></pre>
+<h3>使用方法</h3>
+<p>使用方法非常简单，只需要简单记住以下3条规则即可：</p>
+<ol>
+<li><code>UEditor</code>类是<code>express-ueditor</code>各功能的统一出入口，</li>
+<li>可以在实例化<code>UEditor</code>的时候提供自定义选项：</li>
+</ol>
+<pre><code class="language-JavaScript">const ueditor=new UEditor({
+    // 支持官方提供的其他语言Demo的所有自定义配置
+    // ...如果不提供，则使用默认参数
+});
+</code></pre>
+<ol start="3">
+<li>各组件以高阶函数的形式提供，比如config(),upload(actionStr)分别返回一个中间件函数。可参考的demo如下：</li>
+</ol>
+<pre><code class="language-JavaScript">const app=express();
+const router=express.Router();
+
+const ueditor=new UEditor({
+    videoMaxSize:5*1014*1024*1024,  
+});
+
+router.post(&quot;/image&quot;,ueditor.upload(&quot;uploadimage&quot;));
+router.post(&quot;/video&quot;,ueditor.upload(&quot;uploadvideo&quot;));;
+
+app.use(router);
+</code></pre>
+<h2>React 包装 UEditor</h2>
+<p>目前官方给予的前端使用方式：</p>
+<ol>
+<li>直接引入UEditor的前端配置文件<code>ueditor.config.js</code></li>
+<li>直接引入相关脚本文件<code>ueditor.all.js</code>，</li>
+<li>编写自定义JavaScript完成UEditor的生成。</li>
+</ol>
+<p><a href="http://fex.baidu.com/ueditor">相关代码</a>为:</p>
+<pre><code class="language-HTML">&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;ueditor demo&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+    &lt;!-- 加载编辑器的容器 --&gt;
+    &lt;script id=&quot;container&quot; name=&quot;content&quot; type=&quot;text/plain&quot;&gt;
+        这里写你的初始化内容
+    &lt;/script&gt;
+    &lt;!-- 配置文件 --&gt;
+    &lt;script type=&quot;text/javascript&quot; src=&quot;ueditor.config.js&quot;&gt;&lt;/script&gt;
+    &lt;!-- 编辑器源码文件 --&gt;
+    &lt;script type=&quot;text/javascript&quot; src=&quot;ueditor.all.js&quot;&gt;&lt;/script&gt;
+    &lt;!-- 实例化编辑器 --&gt;
+    &lt;script type=&quot;text/javascript&quot;&gt;
+        var ue = UE.getEditor('container');
+    &lt;/script&gt;
+&lt;/body&gt;
+
+&lt;/html&gt;
+</code></pre>
+<p>有一个不方便的地方在于，目前<code>UEditor</code>并不支持<code>npm</code>安装。
+如果要简单的包装为一个React组件<code>UEditor</code>，还需要预先在页面中手工引入<code>ueditor.config.js</code>、<code>ueditor.config.js</code>。
+如果是传统的多页面应用问题倒不严重，因为只有在访问特定页面的时候在会加载。
+单若是开发单页面应用，就比较麻烦了：</p>
+<ol>
+<li>对于特定角色的用户，SPA的功能可能只有一部分被使用，如何确保只在用户执行了某个操作的时候才加载这两个脚本文件？</li>
+<li>SPA在用户切换到其他功能后再切换回来时，因为UE.getEditor()已经有现成实例，无法重新获取编辑器。</li>
+</ol>
+<p>针对问题1，解决方案是：</p>
+<ol>
+<li>每当组件加载前，都判断相应的脚本<code>Script</code>是否存在，如果不存在，创建之。</li>
+<li>每当组件加载完，尝试获取编辑器<code>UE.getEditor()</code>，如果无法获取，则稍后再试，如此往复。</li>
+</ol>
+<p>针对问题2，解决方案是：</p>
+<p>每次组件卸载前，都触发一次<code>UE.delEditor()</code>来删除编辑器。</p>
+<p>笔者已经将之封装为到UI组件<code>simple-react-ui</code>中。</p>
+<h3>相关地址</h3>
+<p><a href="https://www.npmjs.com/package/simple-react-ui">npm安装主页</a>
+<a href="https://github.com/newbienewbie/simple-react-ui">GitHub源码</a></p>
+<h3>安装</h3>
+<pre><code>npm install simple-react-ui --save
+</code></pre>
+<h3>使用</h3>
+<ul>
+<li>把UEditor相应的文件包放置在浏览器端可以访问的URL路径下，比如，<code>/static</code></li>
+<li>引入 simple-react-ui 的 UEditor 组件，提供相应的属性</li>
+</ul>
+<pre><code class="language-JavaScript">import React from 'react';
+import UEditor from 'simple-react-ui/dist/ueditor';
+
+const Add=React.createClass({
+
+    render:function () {
+
+        return (&lt;div className=&quot;col-sm-9 col-sm-offset-3 col-md-8 col-md-offset-2 main&quot;&gt;
+            &lt;form action=&quot;&quot; method='post' className=&quot;container&quot; &gt;
+                &lt;input name='title'/&gt;
+                &lt;UEditor id=&quot;ueditorContainer&quot; name=&quot;content&quot; 
+                    width={800} height={500} 
+                    uconfigSrc='/static/ueditor/ueditor.config.js'
+                    ueditorSrc='/static/ueditor/ueditor.all.min.js'
+                /&gt;
+                &lt;input className=&quot;btn btn-warning&quot; type='submit' name=&quot;提交&quot; value='提交'/&gt;
+            &lt;/form&gt;
+        &lt;/div&gt;);
+    }
+});
+
+
+export default Add;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

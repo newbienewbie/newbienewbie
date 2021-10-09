@@ -1,0 +1,152 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/DataStructureAndAlgo/最短路径算法-Floyd算法.html">
+                    数据结构与算法笔记 最短路径算法——Floyd算法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-11-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>Floyd-Warshall</code> 算法也称 Floyd's 算法，是用于求解任意点对之间最短路径的算法。叫这个奇怪的名字是因为<code>Robert Floyd</code>和<code>Stephen Warshal</code>这两人在同一年(1962年)各自独立提出了这个算法。<code>Floyd-Warshall</code>算法是典型的动态规划算法。</p>
+<p>对于图<code>$G=(V,E)$</code>，各顶点之间弧<code>$&lt;i,j&gt;$</code>的权重表示为<code>$weight(i,j)$</code>，当两个顶点重合时(也就是<code>$i=j$</code>)，规定<code>$weight(i,j)=0$</code>；当两个顶点之间无弧连接时，规定<code>$weight(i,j)=\infty$</code>。对于稠密图，我们可以执行<code>$|V|$</code>次<code>Dijkstra</code>算法来获取任意点对的最短路径，但是对于稀疏图，采用结构更简单的<code>Floyd</code>算法更简单。</p>
+<h2>Floyd's algorithm</h2>
+<p>在<code>Dijkstra</code>算法中我们指定始点为<code>$v_0$</code>，并将<code>$D_{v_0,k}(j)$</code>定义为从<code>$v_0$</code>到<code>$k$</code>只用到<code>$\{1,2,...,j\}$</code>的子集作为中间顶点的最短路径的值。现在我们把始点和终点扩展到任意点对：<code>$D_{p,q}(j)$</code>表示从始点<code>$p$</code>到终点<code>$p$</code>，期间可能经过、或者不经过、但是最多只能经过集合<code>$\{1,2,...,j\}$</code>中顶点的最短路径的长度。<!-- more --></p>
+<ol>
+<li>显然，当不经过其他任何中间顶点，有<code>$D_{p,q}(0)=weight(p,q)$</code></li>
+<li>当<code>$k&gt;0$</code>，每次加入新的顶点<code>$k$</code>，最短路径必然只可能有以下几种情况：
+<ol>
+<li>最短路径还是不经过其他任何中间节点的弧<code>$&lt;p,q&gt;$</code>，故最短路径为<code>$D_{p,q}=weight(p,q)$</code>。这等同于初始情况。</li>
+<li>尽管加入了顶点<code>$k$</code>，但是最短路径<code>$p \rightarrow q$</code>并不穿过顶点<code>$k$</code>，所以最短路径值仍然为<code>$D_{p,q}(k-1)$</code>。</li>
+<li>加入了顶点<code>$k$</code>，有新的更短路径<code>$p \rightarrow q$</code>穿过了<code>$k$</code>。也就是最短路径由路径<code>$p \rightarrow k$</code>和<code>$k \rightarrow q$</code> 合成，在这两个分段路径中，由于<code>$k$</code>要么作为始点，要么作为终点，都不作为中间节点，故二者都只是最多只穿过了前<code>$(k-1)$</code>个顶点。即有<code>$D_{p,q}(k)= D_{p,k}(k-1)+D_{k,q}(k-1)$</code>。</li>
+</ol>
+</li>
+</ol>
+<p>综合以上情况，我们可以把<code>$D_{p,q}(k)$</code>的初值设置为<code>$D_{p,q}(0)=weight(p,q)$</code>，这样在每次迭代推算的过程中，必然就有<code>$D_{p,q}(k)=\displaystyle\min(D_{p,q}(k-1) \enspace,\enspace   D_{p,k}(k-1)+D_{k,q}(k-1) )$</code>。</p>
+<p>注意，递推关系表明：经过、或者不经过、但是最多只经过中间顶点集<code>$\{1,2,3,...,k\}$</code>(规模为<code>$k$</code>)的问题可以分解为规模为<code>$k-1$</code>的问题。根据这个关系，很容易设计出相应算法。
+首先引入一个集合<code>$S$</code>，表示中间顶点集。我们将按照序号从小到大的顺序，依次把顶点<code>$i\in V$</code>加入到集合<code>$S$</code>中，然后计算加入顶点<code>$i$</code>之后的各点对最短路径。经过<code>$k$</code>次加入后，集合<code>$S=\{1,2,3,...,k\}$</code>，最终当<code>$V-S=\emptyset$</code>时算法结束。为了不失一般性，我们分析图的任意两个顶点<code>$v_p$</code>和<code>$v_q$</code>，并用<code>$D[p,q]$</code>来表示从顶点<code>$p$</code>到顶点<code>$q$</code>最短路径长度。另外由于在上述过程只计算了最短路径长度，为了记录相应的路径，我们可以引入一个矩阵<code>$P[][]$</code>，其中元素<code>P[p][q]</code>表示始点<code>$p$</code>到终点<code>$p$</code>的最短路径一定经过顶点<code>$k$</code>，为了区分中间无节点的的情况，可以将其中每个元素初始化为<code>$-1$</code>。
+，为了计算<code>$D[p,q]$</code>，我们需要逐步递推。</p>
+<ol>
+<li>在初始状态下，如果二者有弧连接，则<code>$&lt;v_p,v_q&gt;$</code>可能是最短路径（相应的路径长可能为<code>$D[p,q]=weight(p,q)$</code>）。这里说“可能”，是因为两点之间直接相连的弧的权重不一定比分段连接的弧的权重之和要小。具体是不是，还需要在后续计算过程中加以甄别，如果后续计算过程发现了比之前计算的<code>$D[p,q]$</code>更小，则更新之。如果二者之间没有弧链接，我们暂时标记<code>$D[p,q]=\infty$</code>，留待后续处理。总而言之，我们在这一步令<code>$D[p,q]=weight(p,q)$</code>。</li>
+<li>根据递推关系，在每一步推算过程中，选择顶点<code>$k$</code>，准备加入到集合<code>$S$</code>，计算<code>$D[p,k]+D[k,q]$</code>，与之前的<code>$D[p,q]$</code>相比，取较小者作为新的最短路径；如果发现是<code>$D[p,k]+D[k,q]$</code>更小，同时更新<code>$P[p,q]=k$</code>表示此最短路径一定穿过中间节点<code>$k$</code>。</li>
+<li>经过不停迭代，直至集合<code>$S$</code>包含了<code>$V$</code>中所有的顶点（也就是<code>$V-S=\emptyset$</code>），算法结束。</li>
+</ol>
+<p>那么如何根据矩阵<code>$P$</code>知道任意两点最短路径<code>$p \rightarrow q$</code>中间节点细节呢？根据<code>$P[p][q]=k$</code>知道<code>$p \rightarrow q$</code>一定穿过<code>$k$</code>，所以问题分解为<code>$P[p][k]$</code>和<code>$P[k][q]$</code>两个子问题，如此递归层层分解，直至不含中间节点即可。</p>
+<h2>示例</h2>
+<p>例如，有图结构如下：</p>
+<pre><code>+---+                  2            +---+
+|   +-------------------------------&gt;   |
+| 0 |                               | 1 |
+|   +----------------+              |   |
++-^-+       8        |              +-+-+
+  |                  |                |
+  |                +-v-+              |
+  |                |   |       4      |
+  |     5          | 2 &lt;--------------+
+  +----------------+   |
+                   +---+
+</code></pre>
+<ol>
+<li>设置初值：<code>$S=\{\}$</code>，<code>$D=\begin{bmatrix} 0 &amp; 2 &amp; 8 \\ \infty &amp; 0 &amp; 4 \\ 5 &amp; \infty &amp; 0 \end{bmatrix}$</code></li>
+<li>加入<code>$k=0$</code>：<code>$S=\{0\}$</code>。<code>$D=\begin{bmatrix} 0 &amp; 2 &amp; 8 \\ \infty &amp; 0 &amp; 4 \\ 5 &amp; \xcancel{\infty}\,7 &amp; 0 \end{bmatrix}$</code></li>
+<li>加入<code>$k=1$</code>：<code>$S=\{0,1\}$</code>。<code>$D=\begin{bmatrix} 0 &amp; 2 &amp; \xcancel{8}\,6 \\ \infty &amp; 0 &amp; 4 \\ 5 &amp; 7 &amp; 0 \end{bmatrix}$</code></li>
+<li>加入<code>$k=2$</code>：<code>$S=\{0,1,2\}$</code>。<code>$D=\begin{bmatrix} 0 &amp; 2 &amp; 6 \\ \xcancel{\infty}\,9 &amp; 0 &amp; 4 \\ 5 &amp; 7 &amp; 0 \end{bmatrix}$</code></li>
+</ol>
+<h2>算法实现</h2>
+<p>说起来很啰嗦，但是代码实现非常简单，去掉初始化代码，剩下的推算过程核心只有几行：</p>
+<pre><code class="language-c">// 逐步加入顶点k到集合S中
+for(int k=0;k&lt;n;k++){
+    // 计算新的D[p][q]
+    for(int p=0;p&lt;n;p++){
+        for(int q=0;q&lt;n;q++&gt;){
+            // 一旦发现更短的路径，就更新到D[p][q]中
+            if(D[p][q] &gt; D[p][k]+D[k][q]){ 
+                D[p][q] = D[p][k]+D[k][q]; 
+                P[p][q]=k;
+            }
+        }
+    }
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,249 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (4) 自定义授权机制.html">
+                    Authorization — (4) 自定义授权机制
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>自定义 <code>Policy</code></h2>
+<p>通常情况下，我们可以为<code>AuthorizationOptions</code>配置多种<code>Policies</code>：</p>
+<pre><code class="language-csharp">services.AddAuthorization(opts=&gt; {
+    opts.AddPolicy(&quot;CanEnterSecurity&quot;, policyBuilder =&gt; policyBuilder.RequireClaim(&quot;FullName&quot;, &quot;Itminus&quot;));
+    
+    // a function that can executed at runtime 
+    opts.AddPolicy(&quot;CanDoRuntime&quot;,policyBuilder =&gt; policyBuilder.RequireAssertion(async context =&gt; {
+        await Task.Run(()=&gt; { /* pretend doing some sth*/ });
+        if (context.User.Identity.Name.Contains(&quot;admin&quot;)) {
+            return true;
+        }
+        return false;
+    }));
+    
+    opts.AddPolicy(&quot;ResourceOwnnershipCheck&quot;,pb=&gt; pb.RequireAssertion(async(context) =&gt;{
+        var resource = (Dictionary&lt;string,string&gt;)context.Resource;
+        return resource[&quot;P1&quot;].Contains(&quot;World&quot;);
+    }));
+});
+</code></pre>
+<p>有时候，这种<code>inline</code>风格的代码对于解决复杂问题稍显乏力。这种情况下，我们可以自定义<code>Requirement</code>和相应的<code>AuthorizationHandler&lt;TRequirement&gt;</code>处理器，然后把相关授权处理器注册为相关服务即可。</p>
+<p>绝大部分需求都可以使用以上的方法解决。下面看一个自定义<code>AuthorizationPolicyProvider</code>的例子。<!-- more --></p>
+<h2>自定义<code>AuthorizationPolicyProvider</code></h2>
+<h3>需求</h3>
+<p>有这样一个<a href="https://stackoverflow.com/questions/56572424/net-core-authorize-or-instead-of-and-for-permission-test/56575666#56575666">需求</a>，传统的<code>[Authorize]</code>属性对<code>Policy</code>、<code>Roles</code>是逻辑和的要求，比如:</p>
+<pre><code class="language-csharp">[Authorize(Policy = &quot;New York&quot;, Roles = &quot;admin&quot;)]
+</code></pre>
+<p>要求用户满足<code>New York</code>这个<code>Policy</code>，且<code>Roles</code>包含<code>admin</code>。现在我们需要逻辑<code>Or</code>——满足二者之一即可通过授权验证。</p>
+<h3>设计</h3>
+<p>对于这个问题，我们可以更深一步，设计出这样一种<code>Policy</code>风格：</p>
+<pre><code>Choice: policy='New York'| role= ADMIN
+Choice: policy='New York'| role= 'ADMIN'
+Choice: policy='New York'| policy = 'WC' | role= root | role = 'GVN'
+</code></pre>
+<p>规则是:</p>
+<ol>
+<li>需要逻辑<code>Or</code>的策略，应以<code>Choice:</code>打头，随后可以跟可选的空格。</li>
+<li><code>Policy</code>以<code>policy=policyName</code>的形式指定，如果<code>policyName</code>中含有空格，需以单引号<code>'</code>包裹。可以定义多个<code>Policeis</code></li>
+<li><code>Role</code>以<code>role=roleName</code>的形式指定，如果<code>roleName</code>中含有空格，需以单引号<code>'</code>包裹。可以定义多个<code>Roles</code>。</li>
+<li>各个<code>Policies</code>和<code>Roles</code>之间以<code>|</code>分隔，分隔符<code>|</code>前后可以跟一个可选的空格。</li>
+</ol>
+<p>这样开发者只需使用诸如<code>[Authorize(Policy=&quot;Choice: policy='New York'| policy='Chicago' | role= ADMIN&quot;)]</code>的形式即可指定授权策略。下面给出实现。</p>
+<h3>代码实现</h3>
+<p>首先定义一个<code>Requirement</code>以容纳所有的<code>Policies</code>：</p>
+<pre><code class="language-csharp">public class LogicalOrRequirement : IAuthorizationRequirement
+{
+    public IList&lt;AuthorizationPolicy&gt; Policies { get; }
+
+    public LogicalOrRequirement(IList&lt;AuthorizationPolicy&gt; policies)
+    {
+        this.Policies = policies;
+    }
+}
+</code></pre>
+<p>针对这些子<code>Policy</code>，如果能满足其中任意一个策略，则意味着整个<code>Requirement</code>都成功：</p>
+<pre><code class="language-csharp">public class LogicalOrAuthorizationHandler : AuthorizationHandler&lt;LogicalOrRequirement&gt;
+{
+
+    public LogicalOrAuthorizationHandler(IHttpContextAccessor httpContextAccessor)
+    {
+        this._httpContextAccessor = httpContextAccessor;
+    }
+
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, LogicalOrRequirement requirement)
+    {
+        var httpContext = this._httpContextAccessor.HttpContext;
+        var policyEvaluator = httpContext.RequestServices.GetRequiredService&lt;IPolicyEvaluator&gt;();
+        foreach (var policy in requirement.Policies)
+        {
+            var authenticateResult = await policyEvaluator.AuthenticateAsync(policy, httpContext);
+            if (authenticateResult.Succeeded)
+            {
+                context.Succeed(requirement);
+            }
+        }
+    }
+}
+</code></pre>
+<p>不过在我们的设计中，<code>Policy</code>名字的解析需要定制，所以这里我们新建一个<code>PolicyProvider</code>，负责解析以<code>Choice:</code>开头的策略；其<code>FallbackPolicyProvider</code>为默认的<code>DefaultAuthorizationPolicyProvider</code>：</p>
+<pre><code class="language-csharp">public class LogicalOrPolicyProvider : IAuthorizationPolicyProvider
+{
+    const string POLICY_PREFIX = &quot;Choice&quot;;
+    const string TOKEN_POLICY=&quot;policy&quot;;
+    const string TOKEN_ROLE=&quot;role&quot;;
+    public const string Format = &quot;Choice: policy='p3' | policy='p2' | role='role1' | ...&quot;; 
+
+    private AuthorizationOptions _authZOpts { get; }
+    public DefaultAuthorizationPolicyProvider FallbackPolicyProvider { get; }
+
+    public LogicalOrPolicyProvider(IOptions&lt;AuthorizationOptions&gt; options )
+    {
+        _authZOpts = options.Value;
+        FallbackPolicyProvider = new DefaultAuthorizationPolicyProvider(options);
+    }
+
+
+    // Choice: policy= | policy= | role= | role = ...
+    public Task&lt;AuthorizationPolicy&gt; GetPolicyAsync(string policyName)
+    {
+        if (policyName.StartsWith(POLICY_PREFIX, StringComparison.OrdinalIgnoreCase))
+        {   
+            var policyNames = policyName.Substring(POLICY_PREFIX.Length);
+            var startIndex = policyNames.IndexOf(&quot;:&quot;);
+            if(startIndex == -1 || startIndex == policyNames.Length)
+            {
+                throw new ArgumentException($&quot;invalid syntax, must contains a ':' before tokens. The correct format is {Format}&quot;);
+            }
+            // skip the &quot;:&quot; , and turn it into the following list
+            //     [[policy,policyName],[policy,policName],...[role,roleName],...,]
+            var list= policyNames.Substring(startIndex+1)
+                .Split(&quot;|&quot;)
+                .Select(p =&gt; p.Split(&quot;=&quot;).Select(e =&gt; e.Trim().Trim('\'')).ToArray() )
+                ;
+
+            // build policy for roleNames
+            var rolesPolicyBuilder = new AuthorizationPolicyBuilder();
+            var roleNames =list.Where(arr =&gt; arr[0].ToLower() == TOKEN_ROLE)
+                .Select(arr =&gt; arr[1])
+                .ToArray();
+            var rolePolicy = rolesPolicyBuilder.RequireRole(roleNames).Build();
+
+            // get policies with all related names
+            var polices1= list.Where(arr =&gt; arr[0].ToLower() == TOKEN_POLICY);
+            var polices=polices1 
+                .Select(arr =&gt; arr[1])
+                .Select(name =&gt; this._authZOpts.GetPolicy(name))  // if the policy with the name doesn exit =&gt; null
+                .Where(p =&gt; p != null)                            // filter null policy
+                .Append(rolePolicy)
+                .ToList();
+
+            var pb= new AuthorizationPolicyBuilder();
+            pb.AddRequirements(new LogicalOrRequirement(polices));
+            return Task.FromResult(pb.Build());
+        }
+
+        return FallbackPolicyProvider.GetPolicyAsync(policyName);
+    }
+
+    public Task&lt;AuthorizationPolicy&gt; GetDefaultPolicyAsync()
+    {
+        return FallbackPolicyProvider.GetDefaultPolicyAsync();
+    }
+}
+</code></pre>
+<p>最后，把相关类注册为服务：</p>
+<pre><code class="language-csharp">services.AddSingleton&lt;IAuthorizationPolicyProvider, LogicalOrPolicyProvider&gt;();
+services.AddSingleton&lt;IAuthorizationHandler, LogicalOrAuthorizationHandler&gt;();
+</code></pre>
+<p>这样我们就可以使用传统的<code>[Authorize()]</code>属性来进行逻辑或的授权控制了：</p>
+<pre><code class="language-csharp">[Authorize(Policy=&quot;Choice: policy='New York'| role= ADMIN&quot;)]
+public IActionResult Privacy()
+{
+    return View();
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

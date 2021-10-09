@@ -1,0 +1,187 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/所有权系统/所有权系统2——生命周期.html">
+                    Rust所有权系统2——生命周期
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-12-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>上文说到，<code>Rust</code>会拒绝编译认为有悬空引用的代码。从本质上说，悬空引用是对引用的生命周期(<code>lifetime</code>)管理不当引发的。所谓引用的<code>lifetime</code>，也就是引用的有效作用域，引用的<code>lifetime</code>必须要落在被引用的对象的作用域之内。</p>
+<p>为了在编译期就发现悬空引用问题，就需要编译器具备能够对引用的<code>lifetime</code>进行检查能力，<code>Rust</code>编译器中负责此类工作的部分称作借用检查器（<code>borrow checker</code>）。和类型一样，大多数情况下<code>lifetime</code>是可以隐式推导的，我们并不需要手工干预，比如<code>Rust</code>可以自动推导出以下代码存在悬空引用问题：</p>
+<pre><code class="language-rust">{
+    let r;
+    {
+        let i=5;
+        r=&amp;i;
+    }                 // i 的作用域已经结束，r成了悬空引用
+    println!(&quot;{}&quot;,r); // 妄图使用r这个引用是错的
+}
+</code></pre>
+<p>然而有时候编译器并不能推导出来相关引用的<code>lifetime</code>，这时候需要显式地以注解的形式告诉编译器。不过需要说明的是，<code>lifetime</code>的注解并不会真的影响引用能活多久，其作用只是给编译器添加一种标注提示而已。<code>lifetime</code>的注解语法看起来稍稍有点古怪：</p>
+<!-- more -->
+<pre><code>&amp;'&lt;lifetime_name&gt; &lt;ref_type&gt;
+</code></pre>
+<p>其中，按惯例，<code>&lt;lifetime_name&gt;</code> 部分的命名通常由简短的小写字母组成，例如：</p>
+<pre><code class="language-rust">&amp;'a i32;
+&amp;'a mut i32;
+</code></pre>
+<p>除了自定义的<code>lifetime</code>之外，<code>Rust</code>还有一个很特别的静态生存期：<code>'static</code>，也就是整个程序的持续期间。比如，在<code>Rust</code>中，所有的字符串字面量都有<code>'static</code>的<code>lifetime</code>，完整的注解类似于：</p>
+<pre><code class="language-rust">let s:&amp;'static str =&quot;hello,world&quot;;
+</code></pre>
+<h2>函数签名中的<code>lifetime</code>注解</h2>
+<p>如同泛型类型参数一样，函数的泛型<code>lifetime</code>参数也需要放在尖括号<code>&lt;&gt;</code>之间。函数返回的引用，其生命周期参数需要和参数之一的生命周期相匹配。如果函数所返回的引用未引自任一参数，那么唯一的可能就是返回值引用了在函数中创建的值，这意味着一旦函数作用域结束，该值所在内存就会被回收，从而导致悬空引用。本质上，<code>lifetime</code>语法是在描述函数参数和返回值的生命周期的关联，一旦它们建立了关联关系，<code>Rust</code>编译器就有了足够的信息来允许内存安全的操作、禁止那些会产生悬空指针或者违法内存安全的事。注意的是，函数的<code>lifetime</code>注解是对函数签名而言的，与函数体并没有关系。</p>
+<p>当函数返回一个引用，很可能是一件要当心的事儿。我们把函数参数的<code>lifetime</code>称之为<code>input lifetimes</code>，函数返回值的<code>lifetime</code>称之为<code>output lifetimes</code>。考虑我们有一个函数，随机返回两个参数之一：</p>
+<pre><code class="language-rust">fn foo&lt;'a&gt;(p1:&amp;'a str ,p2:&amp;'a str) -&gt; &amp;'a str {
+    // ...
+    p1 // 假装我们随机返回了参数之一
+}
+</code></pre>
+<p>没什么问题对不对？然而，这个函数签名实际上是在要求：调用函数的时候，务必保证接收函数返回值的变量的<code>lifetime</code>不能落在任一函数参数的<code>lifetime</code>之外：</p>
+<pre><code class="language-rust">fn main() {
+    let s1=String::from(&quot;hello,world&quot;);
+    let result;    // 注意这里用于接收函数返回值的变量生命周期
+    {
+        let s2=String::from(&quot;shit happens&quot;);
+        result=foo(s1.as_str(),s2.as_str());
+    };
+}
+</code></pre>
+<p>这里<code>Rust</code>会拒绝编译，因为<code>Rust</code>编译器发现第二个参数会被先于<code>result</code>回收，从而可能导致悬空引用问题：</p>
+<pre><code>error[E0597]: `s2` does not live long enough
+  --&gt; src\main.rs:12:5
+   |
+11 |         result=foo(s1.as_str(),s2.as_str());
+   |                                -- borrow occurs here
+12 |     };
+   |     ^ `s2` dropped here while still borrowed
+13 | }
+   | - borrowed value needs to live until here
+</code></pre>
+<p>在一些情况下，<code>Rust</code>也能自动推断出函数中引用的<code>lifetime</code>，无需手工标注。考虑以下函数：</p>
+<pre><code class="language-rust">fn foo(p1: &amp; str)-&gt; &amp; str{
+    p1
+}
+</code></pre>
+<p>这种写法可以通过编译吗？其实是可以的。原因在于，如果没有显式地为引用型的函数参数注解<code>lifetime</code>，则<code>Rust</code>编译器会分别为每个引用型函数参数指定一个各不相同的<code>lifetime</code>。并且，由于<code>output lifetime</code>只可能来自于<code>input lifetimes</code>，恰好这里只有一个引用型的输入参数，所以这里的<code>output lifetime</code>可以自动推导出来，从而函数签名中的所有引用的<code>lifetime</code>都可以隐式推断。类似的，以下代码也是可以省略<code>lifetime</code>注解的：</p>
+<pre><code class="language-rust">fn foo(p1: &amp; str, p2:i32)-&gt; &amp; str{
+    p1
+}
+</code></pre>
+<h2><code>Struct</code>与<code>lifetime</code>注解</h2>
+<p>每一个引用都有其<code>lifetime</code>，除了用在函数签名，<code>struct</code>定义也是常需要手工注解的地方：</p>
+<pre><code class="language-rust">struct Foo&lt;'a&gt;{
+    f1: &amp;'a str,
+}
+
+impl&lt;'a&gt; Foo&lt;'a&gt;{
+    fn bar&lt;'b&gt;(&amp;self, s:&amp;'b str) -&gt; &amp;'b str{
+        s
+    }
+}
+
+fn main() {
+    let s1=String::from(&quot;hello,world&quot;);
+    let s2=String::from(&quot;hello,rust&quot;);
+    let foo=Foo{
+        f1:s1.as_str()
+    };
+    let s=foo.bar(s2.as_str());
+    println!(&quot;{}&quot;,s);
+}
+</code></pre>
+<p>得益于<code>Rust</code>编译器的自动推导，有时候我们也可以在方法签名中省略对引用的<code>lifetime</code>声明，例如：</p>
+<pre><code class="language-rust">struct Foo&lt;'a&gt;{
+    f1: &amp;'a str,
+}
+
+impl&lt;'a&gt; Foo&lt;'a&gt;{
+    fn bar(&amp;self, s:&amp;str) -&gt; &amp; str{
+        self.f1
+    }
+}
+</code></pre>
+<p>这里方法签名中，<code>&amp;self</code>的引用生命周期由编译器自动为我们指定；至于第二个参数<code>s</code>，编译器会为其指定一个单独的生命周期；由于未显式标注<code>output lifetime</code>注解，<code>Rust</code>编译器会自动把<code>self</code>的<code>lifetime</code>指定给它。这种规则使得书写方法签名更加简洁明了。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

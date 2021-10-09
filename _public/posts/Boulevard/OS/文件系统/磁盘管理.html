@@ -1,0 +1,135 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/OS/文件系统/磁盘管理.html">
+                    操作系统笔记 文件系统—磁盘管理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>空闲块管理</h2>
+<p>如何跟踪磁盘的空闲块？通常有三种方式：一种是采用磁盘块表法，一种是采用磁盘块链法，另一种可选办法是采用位示图表示法。</p>
+<h3>空闲表法</h3>
+<p>适合于文件的连续分配方式。操作系统为每个文件分配一个连续的存储空间，并为所有的存储空间建立一个空闲表，每个空闲区对应一个空闲表项，表项包括空闲区第一块号和空闲区空闲块数等信息。</p>
+<h3>空闲链法</h3>
+<p>在每个空闲块下设置了指向下一个空闲物理块的指针，所有的空闲块连接构成了一个空闲块链表。</p>
+<h3>位示图法</h3>
+<p>为了表示磁盘块的使用情况，位示图表示法对每个磁盘块用一个比特位记录其使用情况，n个块的磁盘需要采用n位位图。</p>
+<p>例如：设有磁盘总容量为<code>$200GB=200*2^{30}Bytes$</code>，若每个磁盘块大小为<code>$1MB=1*2^{20}Bytes$</code>，则共需<code>$ 200 \times 2^{30} \div 2^{20}=200\times 2^{10} $</code>个比特位来记录磁盘使用情况。如果系统字长为32位，则位图大小为<code>$200\times 1024 \div 32=6400$</code>个字。其中，第一个字描述磁盘块号的范围是<code>$[0,31)$</code>，第二个字描述的磁盘块号的范范围是<code>$[32,64)$</code>，... ... ，第N个字描述的磁盘块范围是<code>$[32(N-1),32N)$</code>。<!--more--></p>
+<h2>多级索引结构</h2>
+<p>单级索引至少存在两个问题，一个是当把整个索引表都载入内存时会浪费内存空间，另一个问题是文件大小的尺寸受限。</p>
+<p>例如有一个文件系统，设磁盘块大小为512Bytes，每个块号占用3Bytes，则每个磁盘块最多存放170个块号，故采用一级索引时，文件最多采用170个磁盘块存储，故文件大小的上限为<code>$170*512B/1024=85KB$</code>。如果采用二级索引，文件的最大长度为<code>$170*170*512B/1024=14450KB$</code>。</p>
+<p>再如，有一个文件系统，设文件索引有7个地址项，分别是4个直接地址索引，2个一级间接地址索引，和1个二级间接地址索引。每个地址项占据4个字节，若磁盘索引块和数据块大小均为256Bytes，则单个文件的最大长度的计算过程为：</p>
+<ol>
+<li>4个直接地址索引可以引用的数据块数为4，故相应的容量<code>$F0$</code>为<code>$4*256$</code> Bytes。</li>
+<li>2个一级间接地址索引可以引用2个索引块，每个索引块中最多含有<code>$256/4$</code>个索引，每一项索引可以索引一个磁盘块，故相应的容量<code>$F1$</code>为 <code>$2*(256/4)*256 $</code>Bytes</li>
+<li>1个二级间接地址索引可以引用1个二级索引块，每个二级索引块可以引用<code>$256/4$</code>个一级索引块，这些一级索引块继续索引<code>$(256/4) \times (256/4)$</code>个磁盘块，故相应的容量<code>$F2$</code>为<code>$ (256/4) \times (256/4) \times 256 $</code>Bytes。</li>
+<li>最终，文件最大长度为：<code>$F0+F1+F2= 1057KB$</code>。</li>
+</ol>
+<h2>Unix 系统实现</h2>
+<p>Unix系统的实现更为复杂，其中每个文件都有一个<code>inode</code>节点，每个<code>inode</code>都包含了：</p>
+<ul>
+<li>di-mod   : 文件属性</li>
+<li>di-nlike : 共享数</li>
+<li>di-uid   : 主用户标识</li>
+<li>di-gid   : 组用户标识</li>
+<li>di-size  : 文件大小</li>
+<li>di-add   : 存放文件所在物理块号的索引表</li>
+<li>di-atime : 文件最近访问时间</li>
+<li>di-mtime : 文件最近修改时间</li>
+<li>di-ctime ：文件最近创建时间</li>
+</ul>
+<p><code>inode</code>共有13个指针用于空间分配。</p>
+<ul>
+<li>前10个指向可以直接访问的磁盘块，对于小文件而言，一个索引块就够了。</li>
+<li>剩下的3个指针指向间接块(不包含文件数据)。
+<ul>
+<li>第1个指针指向一级间接块。一级间接块也是索引块，包含了指向数据块的指针。</li>
+<li>第2个指针指向二级间接块。</li>
+<li>第3个指针指向三级间接块。</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,190 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/electron/electron-主进程和渲染器进程通信.html">
+                    Electron 主进程和渲染器进程通信
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-27
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在使用<code>Electron</code>开发中，经常有这样一种需求场景：</p>
+<ol>
+<li>用户点击网页界面中的<code>button</code>元素</li>
+<li>触发<code>Electron</code>执行一些系统操作，比如调用外部的系统命令、执行<code>Node.js</code>程序，</li>
+<li>执行完程序后再将结果反馈到网页中。</li>
+</ol>
+<p>为解决此类文件，需要使用<code>IPC</code>通讯。</p>
+<p>首先定义两种进程：</p>
+<ul>
+<li>把运行<code>package.json</code>的<code>main</code>脚本的进程称之为<code>Main Process</code>;</li>
+<li>每一个网页都运行在独立的进程里，称之为<code>Renderer Process</code>。</li>
+</ul>
+<h2>Main Process 和 Renderer Process</h2>
+<p><code>Main Process</code>通过创建<code>BrowserWindow</code>实例来创建网页。每一个<code>BrowserWindow</code>实例都在独立的<code>Renderer Process</code>里运行网页。每当<code>BrowserWindow</code>实例被销毁，相应的<code>Renderer Process</code>也会终止。<code>Main Process</code>负责管理所有的网页和相应的<code>Renderer Processes</code>,每一个<code>Renderer Process</code>都相互独立。
+<code>Main Process</code>和<code>Renderer Process</code>之间可以采用<code>IPC</code>机制通讯。</p>
+<h2>ipcMain 和 ipcRenderer</h2>
+<p><code>ipcMain</code>模块、<code>ipcRenderer</code>模块都是<code>EventEmitter</code>的一个实例，
+<code>ipcMain</code>会处理来自于<code>Renderer Process</code>的异步消息和同步消息。<code>Renderer Process</code>发来的消息会被提交到这个模块。
+<code>ipcRenderer</code>可以发送以同步或者异步的方式从渲染进程到主进程发送消息。也可以利用它从主进程接收消息。</p>
+<ul>
+<li>和<code>EventEmitter</code>那样，<code>ipcMain</code>和<code>ipcRenderer</code>进程都利用<code>.on(eventName,(event,arg)=&gt;{})</code>方法响应事件(处理消息)。</li>
+<li><code>ipcRenderer</code>进程利用<code>.send(eventName,msgObj)</code>将消息发送给<code>ipcMain</code>进程。</li>
+<li>可以使用<code>event.sender.send(...)</code>异步的把消息回发给发送人</li>
+</ul>
+<pre><code class="language-JavaScript">ipcMain.on(eventName,(event,arg)=&gt;{
+    event.sender.send('eventName','ping');
+});
+</code></pre>
+<h2>示例</h2>
+<p>主进程：</p>
+<pre><code class="language-JavaScript">const path=require('path');
+const {app,ipcMain,BrowserWindow}=require('electron');
+
+ipcMain.on('asynchronous-message', (event, arg) =&gt; {
+    console.log(arg)  // prints &quot;ping&quot;
+    event.sender.send('asynchronous-reply', 'pong')
+})
+
+
+const INDEX_HTML_PATH=path.join(__dirname,&quot;dist&quot;,&quot;views&quot;,&quot;index.html&quot;);
+let win;
+app.on('ready',function(){
+    win=new BrowserWindow();
+    win.openDevTools();
+    win.loadURL(`file://${INDEX_HTML_PATH}`);
+    win.on('closed',()=&gt;{
+        win=null;
+    });
+
+});
+app.on('window-all-closed', function(){
+    app.quit();
+});
+</code></pre>
+<p>主进程将要创建的网页的<code>HTML</code>页面代码为：</p>
+<pre><code class="language-HTML">&lt;html&gt;
+&lt;head&gt;&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;app&quot;&gt;
+        hello,world
+    &lt;/div&gt;
+    &lt;script src=&quot;../js/index.js&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html
+</code></pre>
+<p>此页面<code>script</code>加载的<code>index.js</code>代码为：</p>
+<pre><code class="language-JavaScript">const {ipcRenderer} = require('electron')
+
+ipcRenderer.on('asynchronous-reply', (event, arg) =&gt; {
+  console.log(arg) // prints &quot;pong&quot;
+})
+ipcRenderer.send('asynchronous-message', 'ping')
+</code></pre>
+<p>则最终会在运行主程序的控制台、和<code>Electron</code>的开发工具控制台中分别输出消息，如下图所示：</p>
+<p>{% asset_img &quot;electron运行效果截图.jpg&quot; &quot;electron运行效果截图&quot;%}</p>
+<h2>使用<code>webpack</code>编译<code>Electron</code>网页部分的代码</h2>
+<p>在使用<code>webpack</code>打包<code>Electron</code>网页部分的程序代码中，经常遇到这种情况:</p>
+<ol>
+<li>需要在渲染器进程中通过<code>const {ipcRenderer}=require('electron')</code>引入<code>ipcRenderer</code></li>
+<li>然而<code>webpack</code>默认情况下会尝试把<code>electron</code>模块也编译来来，触发报错——找不到<code>fs</code>之类的模块。</li>
+</ol>
+<p>由于<code>webpack</code>默认的编译目标是浏览器环境，直接套用默认情况然然是不合理的。我们编译后的文件并非在浏览器中执行，而是在<code>Electron</code>的<code>Renderer Process</code>中进行，这里直接把<code>webpack</code>的编译<code>target</code>设置为<code>electron-renderer</code>即可解决问题:</p>
+<pre><code class="language-JavaScript">module.exports={
+
+    // for electron renderer process
+    target:'electron-renderer', 
+
+    entry:{
+        // ... 省略
+    },
+    output:{
+        // ... 省略 
+    },
+    module:{
+        // ... 省略 
+    },
+};
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

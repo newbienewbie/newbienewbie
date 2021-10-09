@@ -1,0 +1,748 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/yeoman/yeoman-与文件系统交互.html">
+                    yeoman 与文件系统交互
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>.yo-rc.json</code>文件定义了一个<code>yeoman</code>项目的根目录（<code>root</code>）。 这个文件允许用户运行在子目录里运行命令。</p>
+<h2>两个 context</h2>
+<p><code>yeoman</code>文件功能都是基于这样一个简单设想：在磁盘上，你总是有两个 <code>location contexts</code>。大部分情况下是从一个地方读，然后向另一个地方写。</p>
+<h3>destination context</h3>
+<p><code>destination context</code>被定义为当前工作目录或者最近一级包含<code>.yo-rc.json</code>文件的父目录。</p>
+<ul>
+<li>使用<code>destinationRoot()</code>方法获取<code>destination path</code></li>
+<li>使用<code>.destinationPath('sub/path')</code>方法来连接一个<code>path</code></li>
+</ul>
+<h3>template context</h3>
+<p><code>template context</code>是存放模板文件的地方。<code>template context</code>默认定义为<code>./templates/</code>。可以通过使用调用<code>sourceRoot('new/template/path')</code>方法覆盖这个默认值。</p>
+<ul>
+<li>使用<code>sourceRoot()</code>方法获取<code>path</code>值。</li>
+<li>使用<code>.templatePath('app/index.js')</code>连接一个<code>path</code></li>
+</ul>
+<h2>in-memory file System 和 文件功能</h2>
+<p>由于异步<code>API</code>难以使用, <code>yeoman</code>提供了同步的<code>file-system API</code>，将所有的文件都写到<code>in-memory</code>文件系统，当<code>yeoman</code>完成运行后，再写到磁盘。<code>in-memory</code>文件系统在所有的<code>composed generators</code>之间共享.
+<code>Generator</code>通过<code>this.fs</code>暴露所有的文件方法，<code>this.fs</code>是<code>mem-fs editor</code>的一个实例。</p>
+<h3>拷贝模板文件</h3>
+<p>使用<code>copyTpl()</code>方法来拷贝模板，此方法使用<code>ejs</code>模板语法：</p>
+<pre><code class="language-HTML">&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+  &lt;/head&gt;
+&lt;/html&gt;
+</code></pre>
+<p>调用的时候只要像渲染视图文件那样进行就可以了：</p>
+<pre><code class="language-JavaScript">class extends Generator {
+  writing() {
+    this.fs.copyTpl(
+      this.templatePath('index.html'),
+      this.destinationPath('public/index.html'),
+      { title: 'Templating with Yeoman' }
+    );
+  }
+}
+</code></pre>
+<h3>更新已经存在的文件内容</h3>
+<p>更新已经存在的文件内容是很复杂的工作，最可靠的方法是把文件解析为<code>AST</code>，然后编辑之。一些流行的<code>AST parser</code>包括：</p>
+<ul>
+<li><code>Cheerio</code>：解析<code>HTML</code>。</li>
+<li><code>Esprima</code>：解析<code>JavaScript</code>。</li>
+<li>对于<code>JSON</code>文件，使用原生的<code>JSON</code>对象方法。</li>
+<li>对于<code>Gruntfile</code>，使用<code>Gruntfile Editor</code>。</li>
+</ul>
+<p>使用<code>Regex</code>解析一个代码文件是邪道。</p>
+<h2>通过流转换输出文件</h2>
+<p><code>Generator</code>系统允许对每一个文件使用定制的<code>filter</code>,比如美化文件等。一旦<code>yeoman</code>通过<a href="https://github.com/gulpjs/vinyl">vinyl</a>处理完，再把每一个修改过的文件写入磁盘。</p>
+<p>通过调用<code>registerTransformStream()</code>方法即可注册一个新的修改器：</p>
+<pre><code class="language-JavaScript">var beautify = require('gulp-beautify');
+this.registerTransformStream(beautify({indentSize: 2 }));
+</code></pre>
+<p>需要注意的是，每一个文件都会被这个<code>stream</code>处理。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/yeoman/yeoman-与用户交互.html">
+                    yeoman 与用户交互
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-18
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>输出信息</h2>
+<p>在<code>yeoman</code>中，想要输出信息给用户非常简单，直接调用<code>log</code>方法即可：</p>
+<pre><code class="language-JavaScript">const Base=require('yeoman-generator');
+
+class MyGenerator extends Base{
+
+  constructor( ...args ) {
+    super(...args);
+  }
+
+  get prompting(){
+      return {
+          double:function(){
+              this.log(`${this.appname} double kill`);
+          },
+          triple:function(){
+              this.log(`${this.appname} triple kill`);
+          }
+      };
+  }
+
+  method1() {
+    this.log(`The name is: ${ this.appname }`);
+  }
+
+  default(){
+      this.log(`holy shit`);
+  }
+
+  initializing(){
+      this.log(`first blood`);
+  }
+
+} 
+
+module.exports=MyGenerator;
+</code></pre>
+<h2>处理用户输入</h2>
+<p>处理用户输入包括两类情况，一类是主动进行<code>Prompt</code>问询，一类是接收传递来的参数。</p>
+<h3>Prompts</h3>
+<p><code>Prompt</code>是与用户互动的主要方式。此模块背后是通过<a href="https://github.com/SBoudrias/Inquirer.js">Inquirer.js</a>支撑的。根据预设的运行优先级，应该把相关代码放入<code>prompting</code>中。</p>
+<pre><code class="language-JavaScript">class MyGenerator extends Base{
+
+  constructor(...args) {
+    super(...args);
+  }
+
+  prompting(){
+    return this.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'Your project name',
+            default: this.appname 
+        }, 
+        {
+            type: 'confirm',
+            name: 'safe',
+            message: 'safe mode ?'
+        }
+    ]).then((answers) =&gt; {
+      this.log('app name', answers.name);
+      this.log('safe mode', answers.safe);
+    });
+  }
+
+} 
+
+</code></pre>
+<h3>Arguments 和 Options</h3>
+<p><code>Arguments</code>是直接从命令行传递的，而<code>Options</code>则是利用附带<code>flag</code>标记进行传递：</p>
+<pre><code>yo yeo --email webbot@webbot.com --username webbot myarg
+</code></pre>
+<p>比如这里的 <code>--email</code>、<code>--username</code> 即为<code>Options</code>，则 <code>myarg</code> 则为<code>Arguments</code>。</p>
+<ul>
+<li>为了告知<code>yeoman generarator</code>我们将来要接收一个<code>Argument</code>参数，应该在构造函数中调用<code>this.argument()</code>方法。</li>
+<li>为了告知<code>yeoman generarator</code>我们将来要接收这样一个<code>Option</code>选项，应该在构造函数中调用<code>this.option()</code>方法。</li>
+</ul>
+<p>这两个方法的签名类似，都接收两个参数：</p>
+<ol>
+<li><code>name</code></li>
+<li><code>hash</code></li>
+</ol>
+<p>第二参数<code>hash</code>是可选的，可接收多个键值对:</p>
+<ul>
+<li><code>desc</code>：一段描述</li>
+<li><code>required</code>：是否必填的<code>Boolean</code></li>
+<li><code>type</code>：<code>String</code>, <code>Number</code>, <code>Array</code>或者自定义函数</li>
+<li><code>default</code>：默认值</li>
+</ul>
+<p>默认的<code>Arguments</code>是<code>String</code>类型，而默认的<code>Options</code>是<code>Boolean</code>类型。</p>
+<h2>示例：</h2>
+<pre><code class="language-JavaScript">class MyGenerator extends Base{
+
+  constructor(...args) {
+    super(...args);
+    this.argument('hello');
+    this.option('email',{type:String});
+    this.option('username',{type:String});
+  }
+
+  prompting(){
+    // 异步依次问询
+    return this.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'Your project name',
+            default: this.appname 
+        }, 
+        {
+            type: 'confirm',
+            name: 'safe',
+            message: 'safe mode ?'
+        }
+    ]).then((answers) =&gt; {
+      this.log('app name', answers.name);
+      this.log('safe mode', answers.safe);
+    });
+  }
+
+  default(){
+      this.log(this.options.hello);
+      this.log(this.options.email);
+      this.log(this.options.username);
+  }
+
+} 
+</code></pre>
+<p>若在一个<code>activiti-client</code>项目中执行命令：</p>
+<pre><code>yo yeo myarg --email webbot@itminus.com --username webbot
+</code></pre>
+<p>则交互效果将类似于：</p>
+<pre><code>? Your project name activiti client
+? safe mode ? Yes
+app name activiti client
+safe mode true
+myarg
+webbot@itminus.com
+webbot
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/Node.js/Node-js-和-Java-如何调用外部程序.html">
+                    Node.js 和 Java 如何调用外部程序
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-03
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Java 语言中是如何执行外部程序</h2>
+<p><code>Java</code>中执行一个外部程序的通常方式是利用<code>Runtime.getRuntime().exe()</code>，该方法的签名是：</p>
+<pre><code class="language-Java">public Process exec(String[] cmdarray, String[] envp, File dir) throws IOException
+</code></pre>
+<p>返回的<code>Process</code>对象用于管理子进程。由于子进程的标准输入、标准输出、标准错误都会被重定向到父进程，故而可以使用父进程为子进程提供输入，也可以利用父进程获取子进程的标准输出、标准错误。</p>
+<p>比如<code>Java</code>想运行<code>Windows</code>机器上的<code>ping</code>命令测试网络连通性，然后读取输出：</p>
+<pre><code class="language-Java">public static void main(String[] args) {
+
+    String cmd=&quot;ping baidu.com&quot;;
+    try {
+        Process p=Runtime.getRuntime().exec(cmd);
+        p.waitFor();
+        BufferedReader r=new BufferedReader(new InputStreamReader(p.getInputStream(),&quot;GBK&quot;));
+        String s=&quot;&quot;;
+        while((s=r.readLine())!=null){
+            System.out.println(s);
+        }
+    } catch (IOException ex) {
+        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (InterruptedException ex) {
+        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}
+</code></pre>
+<p>其输出为：</p>
+<pre><code>正在 Ping baidu.com [220.181.57.217] 具有 32 字节的数据:
+来自 220.181.57.217 的回复: 字节=32 时间=124ms TTL=51
+来自 220.181.57.217 的回复: 字节=32 时间=114ms TTL=51
+来自 220.181.57.217 的回复: 字节=32 时间=126ms TTL=51
+来自 220.181.57.217 的回复: 字节=32 时间=134ms TTL=51
+
+220.181.57.217 的 Ping 统计信息:
+    数据包: 已发送 = 4，已接收 = 4，丢失 = 0 (0% 丢失)，
+往返行程的估计时间(以毫秒为单位):
+    最短 = 114ms，最长 = 134ms，平均 = 124ms
+</code></pre>
+<h2>Node.js 如何调用外部程序</h2>
+<p><code>Node.js</code>提供了<code>child_process</code>模块，以类似的方式对外部程序进行调用。</p>
+<h3>spawn()</h3>
+<p>和<code>Java</code>的机制类似,<code>spawn</code>会孵化出子进程，并为之在与<code>Node.js</code>父进程之间建立<code>stdin</code>, <code>stdout</code> and <code>stderr</code> 的管道。</p>
+<p><code>Node.js</code>官方提供了这样一个<a href="https://nodejs.org/api/child_process.html">例子</a>：</p>
+<pre><code class="language-JavaScript">const spawn = require('child_process').spawn;
+const ls = spawn('ls', ['-lh', '/usr']);
+
+ls.stdout.on('data', (data) =&gt; {
+  console.log(`stdout: ${data}`);
+});
+
+ls.stderr.on('data', (data) =&gt; {
+  console.log(`stderr: ${data}`);
+});
+
+ls.on('close', (code) =&gt; {
+  console.log(`child process exited with code ${code}`);
+});
+</code></pre>
+<p>调用外部程序可以有以下几种方式：</p>
+<ul>
+<li><code>spawn()</code> 和 <code>spawnSync()</code></li>
+<li><code>exec()</code> 和 <code>execSync()</code></li>
+<li><code>execFile()</code> 和 <code>execFileSync()</code></li>
+<li><code>fork()</code></li>
+</ul>
+<p>所有的可选方式，都是建立在<code>spawn()</code> 和 <code>spawnSync()</code>的基础之上。</p>
+<h3>exec() 和 execFile()</h3>
+<p><code>child_process.exec()</code> 会孵化一个<code>shell</code>，然后再在其中运行一个命令，一旦完成，即将<code>stdout</code> and <code>stderr</code>作为参数传递给<code>callback</code>回掉函数。</p>
+<pre><code class="language-JavaScript">const exec = require('child_process').exec;
+
+exec('cat *.js bad_file | wc -l', (error, stdout, stderr) =&gt; {
+  if (error) {
+    console.error(`exec error: ${error}`);
+    return;
+  }
+  console.log(`stdout: ${stdout}`);
+  console.log(`stderr: ${stderr}`);
+});
+</code></pre>
+<p>和<code>exec()</code>不同，<code>execFile()</code>并不会孵化出一个<code>shell</code>,而是直接执行一个<code>executable file</code>，由于没有使用<code>shell</code>，此方法并不支持<code>I/O</code>重定向。</p>
+<pre><code class="language-JavaScript">const execFile = require('child_process').execFile;
+
+const child = execFile('node', ['--version'], (error, stdout, stderr) =&gt; {
+  if (error) {
+    throw error;
+  }
+  console.log(stdout);
+});
+</code></pre>
+<h3>fork()</h3>
+<p><code>fork()</code>和<code>spawn()</code>的不同之处在于，它孵化的出来的是新的<code>Node.js</code>进程。和<code>spawn()</code>一样，它返回一个子进程对象。</p>
+<pre><code class="language-JavaScript">const fork = require('child_process').fork;
+const child = fork(`${__dirname}/sub.js`);
+
+child.on('message', (m) =&gt; {
+  console.log('PARENT got message:', m);
+});
+
+child.send({ hello: 'world' });
+</code></pre>
+<p><code>sub.js</code>文件类似于：</p>
+<pre><code class="language-JavaScript">process.on('message', (m) =&gt; {
+  console.log('CHILD got message:', m);
+});
+
+process.send({ foo: 'bar' });
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/ASP-NET-与-Node-js-的协作实践.html">
+                    ASP.NET 与  Node.js 的协作实践
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>背景</h2>
+<p>单位有个老旧的网站系统，是用 <code>ASP.NET WebForm</code> 技术编写的，由于大量使用了服务端组件技术，加载一个首页就要接近两秒时间。经过小半年的改造，包括首页在内的绝大部分页面的响应速度都提升了2~8倍。尽管随着BOSS突然调离，其对我的奖励承诺再无兑现可能，我还是不能甩手这个网站系统的维护工作。</p>
+<p>听说阿里用<code>Node.js</code>全面替换了最好的语言<code>PHP</code>，雪球也用<code>Node.js</code>替换了<code>JSP</code>，并收效甚好。于是我也想用<code>Node.js</code>逐渐替换这个老旧的网站。</p>
+<h2>分析</h2>
+<p>此网站系统大家每天都需要使用，而且历史包袱众多，如要推倒重来，成本和风险都过大，比如<code>Sequelize</code>和<code>SQL Server 2005</code>搭配还存在一些日期上的兼容问题——我并不打算升级数据库，没有费用出口。由于不能抛弃 legeacy code ，所以更好的选择是要让<code>ASP.NET</code>和<code>Node.js</code>两套技术栈共存。</p>
+<h3>两套技术栈并存</h3>
+<p>两套技术栈共存的问题容易解决，引入<code>Nginx</code>架设反向代理即可：</p>
+<pre><code>                                                                           
+                              +---------------------------------------+    
+                              |                                       |    
+                          +---------+          +-----------------+    |    
+  /------------\          |         |          |                 |    |    
+  |            |          |         |  Proxy   | IIS       4000  |    |    
+  |            |----------&gt;         |----------&gt;                 |    |    
+  |            |          |  Nginx  |          +-----------------+    |    
+  |  Browser   |   HTTP   |         |                                 |    
+  |            |          |   80    |          +-----------------+    |    
+  |            &lt;----------|         |          |                 |    |    
+  |            |          |         |  Proxy   | Node.js   5000  |    |    
+  \------------/          |         -----------&gt;                 |    |    
+                          +---------+          +-----------------+    |    
+                              |                                       |    
+                              |                                       |    
+                              +---------------------------------------+    
+                                                                           
+</code></pre>
+<p>这里，<code>IIS</code>和<code>Node.js</code>可以位于不同机器上，比如：</p>
+<ul>
+<li><code>IIS</code>位于 10.16.160.14 上，监听端口：4000</li>
+<li><code>Node.js</code>位于 10.16.160.14 上，监听端口：5000</li>
+</ul>
+<p>当然，为了测试方便，也可以将两个程序放在同一个机器上。</p>
+<p>通过<code>Nginx</code>，可以把相关请求转发到遗留的老系统上，而把符合相应特征的请求转发给<code>Node.js</code>，从而实现两套技术的共存。比如今年在胜利高培党校参加培训的时候财务老总要求新开发的荣誉积分项目，其中第一版是<code>C#</code>写的，第二版就是改用<code>Node.js</code>写的，二者通过<code>Nginx</code>协作。</p>
+<h3>共享认证和授权</h3>
+<p><code>Nginx</code>解决了两套技术共存问题，但是如何让<code>ASP.NET</code>和<code>Node.js</code>共享登陆状态、权限管理策略？
+由于历史原因，<code>ASP.NET</code>原来只支持<code>用户名-密码</code>登陆模式模式。后来经过我2016年5月份的改造，网站也同时支持<code>中石化AD域</code>登陆模式。如何让<code>Node.js</code>也支持这两套认证和授权机制？</p>
+<p>比较好的思路有：</p>
+<ol>
+<li>搭建一个认证授权中心，<code>Node.JS</code>和<code>ASP.NET</code>以类似于<code>OAuth2.0</code>的机制，从认证授权中心获取用户登陆状态和角色权限信息。</li>
+<li>利用已有的成果：将<code>ASP.NET</code>上已有的认证授权机制以服务的方式暴露给<code>Node.js</code>。</li>
+<li>利用已有的代码：使用 <code>Edge.js</code>之类的技术调用<code>C#</code>代码。</li>
+</ol>
+<p>第三种思路似乎并不具备可伸缩性，只能在同一个机器上部署，排除之。前两种思路各有利弊，但考虑到新建一个内部认证授权中心（支持中石化AD域统一身份查询），需要申请权限、层层审批，而且总部正在推行统一身份认证系统，于是决定采用方案2。</p>
+<h2>实践</h2>
+<h3>Nginx 架设反向代理集成 ASP.NET 和 Node.js</h3>
+<p>要让网站系统集成<code>ASP.NET</code> 和 <code>Node.js</code>两个子系统，首先是利用<code>Nginx</code>架设反向代理。</p>
+<p>为方便测试起见，假设<code>ASP.NET</code>、<code>Node.js</code>子系统和<code>Nginx</code>均部署在 <code>IP</code> 为 <code>10.16.160.14</code> 的服务器上，使用的端口分别为<code>4000</code>、<code>5000</code>和<code>80</code>（实际情况下，这几个Web Server 可以根据需求架设在多个机器上）。防火墙只对<code>Nginx</code>使用的<code>80</code>端口流量放行。Nginx负责根据<code>location</code>将流量转发到后端的<code>IIS</code>服务器或者<code>Node.JS</code>服务器上。
+由于 <code>ASP.NET</code> 网站系统的代码老旧、历史久远，目前已有重定向使用的方式有如下几种：</p>
+<p>使用<code>meta</code>重定向：</p>
+<pre><code class="language-CSharp">// 历史代码一：使用 绝对`URL` 重定向
+String uri = Request.ServerVariables[&quot;HTTP_HOST&quot;];
+Response.Write(&quot;&lt;meta http-equiv='refresh' content='0.1;url=http://&quot;+uri+&quot;' /&gt;&quot;);
+
+// 历史代码二：使用 `path` 重定向
+Response.Write(&quot;&lt;meta http-equiv='refresh' content='0.1;url=/' /&gt;&quot;);
+</code></pre>
+<p>使用HTTP协议重定向：</p>
+<pre><code class="language-CSharp">// 历史代码三
+Response.Redirect('/');
+</code></pre>
+<p>由于以上历史代码大量共存，加上遗留代码完全没有单元测试，短期仓促修改容易引入新的<code>bug</code>，所以在尽量不修改源码的前提下，就需要对<code>Nginx</code>反向代理的<code>proxy_set_header</code>、<code>proxy_redirect</code>字段进行配置，否则会重定向到错误主机。</p>
+<p><code>Nginx</code>配置如下：</p>
+<pre><code>http {
+
+    # ...其他配置省略
+
+    upstream aspnet_upstream{
+        server 10.16.160.14:4000;
+    }
+    upstream nodejs_upstream{
+        server 10.16.160.14:5000;
+    }
+
+    server {
+        listen       80;
+
+        location / {
+            proxy_pass http://aspnet_upstream;
+            proxy_set_header Host $host;
+            proxy_redirect http://10.16.160.14:4000/ /;
+        }
+
+        location /node {
+            proxy_pass http://nodejs_upstream;
+        }
+
+        # ...其他配置省略
+    }
+}
+</code></pre>
+<h3>认证授权共享</h3>
+<p>解决了两套技术栈共存问题，另一个迫切需要解决的问题是如何实现<code>认证</code>和<code>授权</code>机制的共享。</p>
+<p>假设有这样一个业务场景：</p>
+<ol>
+<li>用户已经通过<code>ASP.NET</code>编写的登陆界面完成登陆操作。</li>
+<li>用户向由<code>Node.js</code>子系统下编写的某个页面发送请求，此页面要求用户登陆、或者具备某种权限角色。</li>
+</ol>
+<p>问题是<code>Node.js</code>子系统如何根据已登陆的<code>ASP.NET</code>子系统的 <code>SessionID</code> (<code>cookie</code>) 来判断用户登陆状态和权限信息？</p>
+<p>一个简单的认证流程过程为:</p>
+<ol>
+<li><code>Node.js</code>子系统收到用户的浏览器请求，然后读取<code>ASP.NET</code>子系统的的<code>SessionID</code></li>
+<li>利用<code>SessionID</code>和事先配置好的凭据（如APPID和密钥），向<code>ASP.NET</code>子系统暴露的服务接口发送请求</li>
+<li><code>ASP.NET</code>子系统对收到的请求进行凭据验证，如果成功，则返回与<code>SessionID</code>对应的用户信息。</li>
+<li><code>Node.js</code>子系统根据返回的用户信息，决定是否拦截来自浏览器的请求。</li>
+</ol>
+<h4><code>ASP.NET</code>提供用户信息服务</h4>
+<p><code>ASP.NET</code>暴露服务，根据当前用户的角色：</p>
+<p>代码为：</p>
+<pre><code class="language-CSharp">// SnpUserService.ashx
+
+public class SnpUserService : IHttpHandler, System.Web.SessionState.IRequiresSessionState {
+
+    public void ProcessRequest (HttpContext context) {
+
+        // ... 省略对 Node.js 子系统的凭据验证
+
+        User user=(User)context.Session[&quot;User&quot;];
+        String json = JsonConvert.SerializeObject(user);
+        context.Response.ContentType = &quot;application/json&quot;;
+        context.Response.Write(json);
+    }
+
+    public bool IsReusable {
+        get { return false; }
+    }
+
+}
+</code></pre>
+<h4>Node.js 消费服务</h4>
+<p><code>Node.js</code>以异步的方式对<code>ASP.NET</code>暴露的服务进行调用。<code>登陆检查器</code>代码为：</p>
+<pre><code class="language-JavaScript">const loginChecker=function(req){
+    if(req.session.username){return true;}
+
+    const url=`http://10.16.160.14/SnpUserService.ashx`;
+    const aspnetSessionId=req.cookies['ASP.NET_SessionId'];
+
+    return fetch(url,{
+        method:&quot;post&quot;,
+        headers:{ &quot;Cookie&quot;:`ASP.NET_SessionId=${aspnetSessionId}` },
+        body:JSON.stringify({/*凭据*/}),
+    }).then(resp=&gt;resp.json())
+    .then(user=&gt;{
+        // ...省略校验 user
+        return user;
+    }).catch(err=&gt;{
+        console.log(err);
+        return false;
+    });
+};
+</code></pre>
+<p>有了<code>登陆检查器</code>，就可以方便得进行请求拦截，当然，为了提高效率，避免大量重复请求，还可以设置缓存，避免网络IO。</p>
+<h3>登陆拦截器</h3>
+<p>直接使用<code>登陆检查器</code>进行登陆验证、拦截请求并不方便。借助于笔者编写的<code>express-security</code>包，可以进一步将<code>登陆检查器</code>包装为一个异步拦截器。<code>express-security</code>是一个通用的<code>npm</code>包，可以接受同步或者异步的<code>登陆检查器</code>、<code>角色访问器</code>，生成<code>express</code> 中间件，从而实现对请求进行拦截，相应地址为：</p>
+<ul>
+<li><code>npm</code> 主页：https://www.npmjs.com/package/express-security</li>
+<li><code>GitHub</code> 源码地址：https://github.com/newbienewbie/express-security</li>
+</ul>
+<p>利用<code>express-security</code>实现一个<code>异步登陆拦截器</code>的参考代码为：</p>
+<pre><code class="language-JavaScript">const security=require('express-security');
+const fetch=require('node-fetch');
+
+// loginChecker= ... 
+
+const interceptor=new security.AuthenticationInterceptor( loginChecker );
+
+module.exports=interceptor;
+</code></pre>
+<p>然后即可以中间件的方式进行请求拦截：</p>
+<pre><code class="language-JavaScript">const express=require('express');
+const interceptor=require('../service/auth/interceptor');
+
+const router=express.Router();
+
+router.use('/secret',cookieParser(),interceptor.requireLogin(&quot;/SnpLogin.aspx&quot;),(req,res)=&gt;{
+    res.send(`您已经登陆，所以可以访问这里`);
+});
+
+module.exports=router;
+</code></pre>
+<p>这样，当用户访问此路径，如果是未登录<code>ASP.NET</code>状态，则会被拦截并重定向至 &quot;/SnpLogin.aspx&quot; ；否则会正常显示相应的业务内容。</p>
+<h3>角色拦截器</h3>
+<p>同理，实现一个异步的<code>角色访问器</code>，然后包装为异步的<code>角色拦截器</code>，以中间件的形式进行调用，即可实现授权拦截。由于原理一致，此处不再赘述。</p>
+<h3>使用后端数据库</h3>
+<p>老系统的数据库是<code>SQL Server 2005</code>，由于经费的原因，我并不打算升级它。而<code>Sequelize</code>操作老版本的<code>SQL Server 2005</code>会有日期兼容问题，所以采用如下策略：</p>
+<ul>
+<li>新的不相干的子系统采用<code>MySQL</code>，比如日后要与生产指挥系统同步的话，可以采用之。</li>
+<li>部分要新增的且与原功能关系密切的，可以使用<code>ASP.NET</code>编写<code>ashx</code>通过<code>REST</code>服务暴露给<code>Node.js</code></li>
+<li>部分要新增的且与原功能稍有关系的，可以使用<code>Sequelize</code>的查询之（包括通过<code>raw query</code>的方式）。</li>
+</ul>
+<h2>总结</h2>
+<p>通过<code>Nginx</code>架设反向代理，可以在保留现有技术资产的前提下，引入<code>Node.js</code>做新功能的快速原型开发，以实现各语言、各软件系统之间充分互动。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/yeoman/yeoman-基本原理.html">
+                    yeoman 基本原理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-22
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>yeoman</code> 是与编程语言无关的通用脚手架系统。通过使用自己编写的或者别人编写的<code>yeoman</code>的生成器，我们可以很方便地生成任意编程语言的项目。
+与通过<code>mocha</code>、<code>Jest</code>来执行测试文件一样，我们所写的<code>generator</code>脚本都要基于<code>yo</code>来执行的，所以我们得先安装好这个全局依赖。</p>
+<pre><code>npm install -g yo
+</code></pre>
+<p>在接下来的行文中，我们要编写自己的<code>generator</code>脚本，最后通过<code>yo</code>来执行。</p>
+<h2>约定</h2>
+<p><code>yeoman</code> 有许多约定，诸如：</p>
+<ul>
+<li><code>package.json</code>的<code>name</code>必须以<code>generator-</code>为前缀（强制要求）</li>
+<li><code>package.json</code>的<code>keywords</code>字段必须包含<code>yeoman-generator</code>（本地安装可以忽略此字段）</li>
+<li><code>package.json</code>的<code>files</code>字段必须为由<code>generator</code>使用的文件或者路径名所组成的数组（本地安装可以忽略此字段）</li>
+</ul>
+<p>此外，<code>yeoman</code>对文件结构也有自己的约定。默认的文件夹结构为：</p>
+<pre><code>package.json
+app/          # 默认模块
+    index.js
+其他子模块1/
+    index.js
+其他子模块2/
+    index.js
+</code></pre>
+<p>如果不喜欢这种默认约定的文件结构，可以在<code>package.json</code>的<code>files</code>字段另行<a href="http://yeoman.io/authoring/">配置</a>。</p>
+<h2>命令执行</h2>
+<p>通过<code>yo</code>执行生成器文件，基本的命令格式为：</p>
+<pre><code>&gt; yo xxx:subcommnad
+&gt; # `xxx` 为生成器名(不包含`generartor-`前缀)
+&gt; # `subcommand` 为子命令
+</code></pre>
+<p>按照约定，此命令会执行的生成器文件为<code>subcommand/index.js</code>。</p>
+<p>如果省略<code>:subcommand</code>，则默认为<code>app</code></p>
+<pre><code>&gt; yo xxx
+</code></pre>
+<p>此命令会执行<code>app/index.js</code>。</p>
+<h2>编写生成器</h2>
+<p>借助于官方提供的<code>yeoman-generator</code>模块，我们可以很方便地创建自己的生成器，官方提供 demo 代码书写方式类似于：</p>
+<pre><code class="language-JavaScript">// app/index.js 
+const Generator=require('yeoman-generator');
+
+const proj=Generator.extend({
+    info:function(){
+        console.log('hello,world');
+    },
+    shutup:function(){
+        console.log('fuck,world');
+    }
+});
+
+module.exports=proj;
+</code></pre>
+<p>当然，这种写法相当守旧，既然<code>ES6</code>已经普及，我们可以直接这样写：</p>
+<pre><code class="language-JavaScript">const Generator = require('yeoman-generator');
+
+class MyGenerator extends Generator{
+  constructor( ...args ) {
+    super(...args);
+  }
+  method1() {
+    console.log(`The name is: ${ this.appname }`);
+  }
+} 
+
+module.exports = MyGenerator;
+</code></pre>
+<p>在版本<code>1.0.0</code>之后，官方已经推荐使用<code>ES6</code>的写法。</p>
+<p>ok，如果安装了这个生成器，搭配高版本<code>Node.js</code>，无需<code>babel</code>转换，即可完美运行。比如在一个叫<code>test-redis</code>的<code>npm</code>包下执行这个生成器，则会输出：</p>
+<pre><code>The name is: test redis
+</code></pre>
+<h2>安装与执行生成器</h2>
+<p>我们当然可以把生成器传到官方的仓库里供其他人使用，但是这并不是必须的。我们可以添加当前模块的软连接到全局：</p>
+<pre><code>npm link 
+</code></pre>
+<p>这样就可以在本地进行调用：</p>
+<pre><code>yo xxx
+</code></pre>
+<p>文件<code>app/index.js</code> 会被执行。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page20.html">
+          Previous
+        </a>
+        22 of 32
+        <a href="/posts/page22.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

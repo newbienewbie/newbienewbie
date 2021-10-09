@@ -1,0 +1,134 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/misc/Express-Hexo建站实践.html">
+                    Express-Hexo建站实践
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-10-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>之前的域名<a href="xuanpinmen.com">玄牝门</a>过期了，而且我也不打算再续。</p>
+<h2>WordPress 和 有道云笔记</h2>
+<p>当时用的是WordPress，尽管使用插件可以使之从 GitHub 同步 Markdown 笔记，但是还是觉得不够方便：</p>
+<ol>
+<li>插件对 Markdown 语法支持不够完备，从 GitHub 拉取后还要手工调整下局部不兼容问题。</li>
+<li>代码高亮得自己配，还有乱七八糟的代码自折行问题；需要自己添加钩子修改CSS。</li>
+<li>在线编辑器不能使用<code>VIM</code>模式，打字没有手感。</li>
+<li>无法全程使用键盘，不够Geek。</li>
+</ol>
+<p>于是一直使用自己最趁手的编辑器（<code>Vim</code>、<code>VSCode</code>）+有道云笔记作为替代方案。
+{% asset_img &quot;youdaonote.png&quot; &quot;有道云笔记&quot; %}</p>
+<p>这两日又觉得有个域名还是蛮方便的，于是又重新萌发了搞个网站的想法。</p>
+<h2>Express + Hexo</h2>
+<p>搞网站，极速开发，语言选择，当然是通吃百家饭的 JavaScript 。</p>
+<h3>技术栈</h3>
+<p>既然追求极速、Geek，当然既要利用现有的轮子，又要充分定制:</p>
+<ul>
+<li><code>Hexo</code> 是成熟的记笔记方案，但是 <code>hexo server</code> 的可定制化程度不高；</li>
+<li>HTML在线编辑器：使用笔者之前编写的<code>express-ueditor</code>和<code>simple-react-ui</code>下的ueditor，可以极速搭建一个HTML在线编辑器，但是对 Markdown 支持得多敲代码。</li>
+<li>在HTML在线编辑器的基础上使用Markdown纯文本：图片相对路径设置、皮肤、插件等功能都得自己实现。</li>
+</ul>
+<p>采用的方案如下：</p>
+<ol>
+<li>记笔记采用 <code>Hexo</code> ，纯静态化为前端文件；</li>
+<li>为了可以随时添加其他功能，采用 <code>Express</code> 作为基础框架。</li>
+<li>最起码提供两分支，一套<code>blog</code>分支管理笔记文件，一套<code>master</code>分支管理网站源码。</li>
+</ol>
+<h3>代码</h3>
+<p>代码本身极其简单，具体实现不复赘言。笔者已经将其做成了适用于<code>Openshift</code>的一个<a href="https://github.com/newbienewbie/Express-Hexo">通用型应用</a>。</p>
+<p>Openshift v2 提供了一个可以运行 Node.JS Latest <a href="https://openshift.redhat.com/app/console/application_type/quickstart!243">Host方案</a>，</p>
+<p>{% asset_img &quot;Create-a-New-Application.png&quot; &quot;利用代码仓库创建博客网站&quot; %}</p>
+<p>在 Source Code 字段，填写<code>源码地址</code>、<code>分支</code>，经过半分钟左右，即可生成网站。如果导入的是<code>blog</code>分支，则会直接完成网站文章的导入。</p>
+<h3>工作流</h3>
+<p>完整工作流如下：</p>
+<ol>
+<li>利用最趁手的编辑器<code>VSCode</code>记笔记、调试、预览、提交</li>
+<li>推送 <code>commit</code> 到 <code>github</code>作为备份</li>
+<li>推送 <code>commit</code> 到展示网站</li>
+<li>部署后自动触发钩子，对<code>Hexo</code>笔记进行静态化</li>
+<li>网站对外采用<code>Express</code>展示静态化的<code>blog</code></li>
+</ol>
+<p>{% asset_img &quot;express-hexo-vscode-git-browser.png&quot; &quot;工作流&quot; %}</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

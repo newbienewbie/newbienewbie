@@ -1,0 +1,154 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/wordpress-plugin-dev/Widget.html">
+                    WordPress Widget
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Widget</h2>
+<p>WordPress2.8之后提供了<code>WP_Widget</code>类(位于文件<code>wp-includes/widgets.php</code>中)，用以简化小部件的管理。</p>
+<pre><code class="language-PHP">
+class WP_Widget extends WP_Widget{
+
+	public function __construct( $id_base, $name, $widget_options = array(), $control_options = array() ) {
+
+    }
+
+    function form($instance) {
+        // widget form in admin dashboard
+    }
+
+    function update($new_instance, $old_instance) {
+        // save widget options
+    }
+
+    function widget($args, $instance) {
+        // display the widget
+    }
+}
+
+</code></pre>
+<h2>Widget的实例化</h2>
+<p>Widget的注册是通过函数</p>
+<pre><code class="language-PHP">register_widget('MyWidgetClassName');
+</code></pre>
+<p>此函数实际只是简单利用调用全局对象<code>$wp_widget_factory</code>来进行的;</p>
+<pre><code class="language-PHP">// wp-includes/widgets.php
+
+function register_widget($widget_class) {
+	global $wp_widget_factory;
+
+	$wp_widget_factory-&gt;register($widget_class);
+}
+</code></pre>
+<p><code>WP_Widget_Factory</code>类是一个非常简单的类，内部维护了已注册的widegets数组。</p>
+<pre><code class="language-PHP">// wp-includes/widgets.php
+
+class WP_Widget_Factory {
+
+	public $widgets = array();
+
+    //...
+
+    public function register( $widget_class ) {
+        $this-&gt;widgets[$widget_class] = new $widget_class();
+    }
+
+	public function unregister( $widget_class ) {
+		unset( $this-&gt;widgets[ $widget_class ] );
+	}
+
+    //...
+}
+</code></pre>
+<h2>钩子</h2>
+<p>可以通过WordPress的<code>widget_init</code>事件布置widget的注册代码。</p>
+<pre><code class="language-PHP">add_action('widget_init',function(){
+    register_widget('MyWidgetClassName');
+})
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

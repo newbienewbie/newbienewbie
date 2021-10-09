@@ -1,0 +1,166 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/爬虫/Fetch-API-使用代理.html">
+                    Fetch API 使用代理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-01
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>关于<code>node-fetch</code>如何使用代理来发送请求，其官网文档只简单提示可以用<code>agent</code>进行代理：</p>
+<pre><code class="language-JavaScript">{
+    method: 'GET'
+    , headers: {}        // request header. format {a:'1'} or {b:['1','2','3']}
+    , redirect: 'follow' // set to `manual` to extract redirect headers, `error` to reject redirect
+    , follow: 20         // maximum redirect count. 0 to not follow redirect
+    , timeout: 0         // req/res timeout in ms, it resets on redirect. 0 to disable (OS limit applies)
+    , compress: true     // support gzip/deflate content encoding. false to disable
+    , size: 0            // maximum response body size in bytes. 0 to disable
+    , body: empty        // request body. can be a string, buffer, readable stream
+    , agent: null        // http.Agent instance, allows custom proxy, certificate etc.
+}
+</code></pre>
+<p>在<code>npm</code>上搜了下，貌似这个<code>http-proxy-agent</code>包还不错，提供了<code>http.Agent</code>的实现。恰好前两天有人问爬虫问题，顺手就找个免费的代理来测试下：</p>
+<pre><code class="language-JavaScript">const fetch=require('node-fetch');
+const HttpProxyAgent = require('http-proxy-agent');
+ 
+// HTTP/HTTPS proxy to connect to 
+let proxy ='http://112.226.72.152:8888';
+const agent = new HttpProxyAgent(proxy);
+
+fetch('http://gs.amac.org.cn/amac-infodisc/api/pof/manager?page=0&amp;size=20',{
+    method:'POST',
+    headers:{
+        'content-type':'application/json',
+        'referer':'http://gs.amac.org.cn/amac-infodisc/res/pof/manager/index.html',
+        'user-agent':&quot;Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0&quot;,
+    },
+    body:JSON.stringify({}),
+    agent:agent,
+}).then(resp=&gt;{
+    return resp.json();
+})
+.then(info=&gt;{
+    console.log(info);
+})
+.catch(e=&gt;{
+    console.log(e);
+});
+</code></pre>
+<p>顺利的拿到了结果:</p>
+<pre><code>{ content:                                                                                          
+   [ 
+        { 
+            id: '138',                                                                                   
+            managerName: '平安道远投资管理（上海）有限公司',                                             
+            artificialPersonName: '杨晓华',                                                              
+            // ...其他信息省略                                                      
+            primaryInvestType: '证券投资基金' 
+        },
+        {
+            id: '194',                                                                                   
+            managerName: '上海重阳投资管理股份有限公司',                                                 
+            artificialPersonName: '裘国根',                                                              
+            // ...其他信息省略                                                      
+        },           
+        // ...其他信息省略
+   ],
+    totalPages: 899,                                                                                  
+    totalElements: 17973,                                                                             
+    last: false,                                                                                      
+    numberOfElements: 20,                                                                             
+    first: true,                                                                                      
+    sort:                                                                                             
+    [ { direction: 'ASC',                                                                            
+        property: 'registerDate',                                                                    
+        ignoreCase: false,                                                                           
+        nullHandling: 'NATIVE',                                                                      
+        ascending: true } ],                                                                         
+    size: 20,                                                                                         
+    number: 0 
+} 
+</code></pre>
+<p>貌似效果还不错。看来这两天可以写个代理池来提供服务了。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

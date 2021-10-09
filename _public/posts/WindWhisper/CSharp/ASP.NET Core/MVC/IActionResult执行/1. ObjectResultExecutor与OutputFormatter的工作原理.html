@@ -1,0 +1,169 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/IActionResult执行/1. ObjectResultExecutor与OutputFormatter的工作原理.html">
+                    ASP.NET Core MVC — IActionResult执行(1) ObjectResultExecutor与OutputFormatter的工作原理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在命名空间<code>Microsoft.AspNetCore.Mvc.Infrastructure</code>下，有一个<code>ObjectResultExecutor</code>类，继承自<code>IActionResultExecutor&lt;ObjectResult&gt;</code>，负责执行<code>ObjectResult</code>。其构造函数会注入被两个参数：</p>
+<ul>
+<li><code>OutputFormatterSelector</code>: 用于选择当前输出格式</li>
+<li><code>IHttpResponseStreamWriterFactory</code>: 用于向 HttpResponse 写入Stream的Writer</li>
+</ul>
+<pre><code class="language-csharp">public class ObjectResultExecutor : IActionResultExecutor&lt;ObjectResult&gt;
+{
+    public ObjectResultExecutor( OutputFormatterSelector formatterSelector,IHttpResponseStreamWriterFactory writerFactory, ILoggerFactory loggerFactory)
+    {
+        if (formatterSelector == null) { /* throw ;*/ }
+        if (writerFactory == null) { /* throw ;*/ }
+        if (loggerFactory == null) { /* throw ;*/ }
+
+        FormatterSelector = formatterSelector;
+        WriterFactory = writerFactory.CreateWriter;
+        Logger = loggerFactory.CreateLogger&lt;ObjectResultExecutor&gt;();
+    }
+    
+    ...
+}
+</code></pre>
+<p>这里的<code>ObjectResultExecutor</code>所依赖的服务是在<code>AddMvcCore()</code>时自动注册的</p>
+<pre><code class="language-csharp">services.TryAddSingleton&lt;IHttpResponseStreamWriterFactory, MemoryPoolHttpResponseStreamWriterFactory&gt;();
+...
+services.TryAddSingleton&lt;OutputFormatterSelector, DefaultOutputFormatterSelector&gt;();
+</code></pre>
+<p>注意这里的<a href="https://github.com/aspnet/AspNetCore/blob/c565386a3ed135560bc2e9017aa54a950b4e35dd/src/Mvc/Mvc.Core/src/Infrastructure/MemoryPoolHttpResponseStreamWriterFactory.cs#L15"><code>MemoryPoolHttpResponseStreamWriterFactory</code></a>会生成一个<a href="https://github.com/aspnet/AspNetCore/blob/92cae6faab9cd414eccf77eab687c32c7a6a0f1b/src/Http/WebUtilities/src/HttpResponseStreamWriter.cs#L18"><code>HttpResponseStreamWriter</code></a>向 HttpResponse中写入文本数据：</p>
+<pre><code class="language-csharp">internal class MemoryPoolHttpResponseStreamWriterFactory : IHttpResponseStreamWriterFactory
+{
+    ...
+    
+    public TextWriter CreateWriter(Stream stream, Encoding encoding)
+    {
+        if (stream == null) { /* throw ;*/ }
+        if (encoding == null){ /* throw ;*/ }
+
+        return new HttpResponseStreamWriter(stream, encoding, DefaultBufferSize, _bytePool, _charPool);
+    }
+}
+</code></pre>
+<p>总之，借助于此工厂函数生成的<code>TextWriter</code>,我们可以把<code>Text</code>型数据（不可用于<code>Binary</code>数据）输出到响应流。</p>
+<p><code>ObjectResultExecutor</code>的关键方法实现如下:</p>
+<pre><code class="language-csharp">public virtual Task ExecuteAsync(ActionContext context, ObjectResult result)
+{
+    if (context == null) { /* throw ;*/ }
+    if (result == null) { /* throw ;*/ }
+
+    InferContentTypes(context, result);
+
+    var objectType = result.DeclaredType;
+    if (objectType == null || objectType == typeof(object))
+    {
+        objectType = result.Value?.GetType();
+    }
+    
+    // 构建格式器上下文
+    var formatterContext = new OutputFormatterWriteContext( context.HttpContext,  WriterFactory, objectType, result.Value);
+    // 生成对应的Formatter
+    var selectedFormatter = FormatterSelector.SelectFormatter( formatterContext, (IList&lt;IOutputFormatter&gt;)result.Formatters ?? Array.Empty&lt;IOutputFormatter&gt;(), result.ContentTypes);
+    
+    if (selectedFormatter == null) { /* sttauscode=406 */ }
+
+    Logger.ObjectResultExecuting(result.Value);
+    // change result.ContentTypes
+    result.OnFormatting(context);  
+    
+    // 使用指定的格式化器写数据
+    return selectedFormatter.WriteAsync(formatterContext);
+}
+</code></pre>
+<p>总体逻辑是：</p>
+<ol>
+<li>构建格式化上下文(<code>OutputFormatterWriteContext</code>)</li>
+<li>选择对应的输出格式化器(<code>IOutputFormatter</code>)</li>
+<li>执行<code>IOutputFormatter::WriteAsync(formatterContext)</code></li>
+</ol>
+<p>这里的<code>FormatterSelector</code>服务类似于一个<code>Provider</code>，会根据指定的<code>FormatterContext</code>等信息生成一个<code>IOutputFormatter</code>。从而根据运行时的外部请求和特定条件把<code>ObjectResult</code>转换成特定格式的输出。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

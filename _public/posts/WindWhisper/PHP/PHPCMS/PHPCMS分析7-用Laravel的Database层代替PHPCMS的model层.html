@@ -1,0 +1,132 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/PHPCMS/PHPCMS分析7-用Laravel的Database层代替PHPCMS的model层.html">
+                    PHPCMS分析7-用Laravel的Database层代替PHPCMS的model层
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Laravel框架的Database层安装</h2>
+<p>尽管PHPCMS号称现代CMS，但是它的模型层用起来总觉得少了些现代气息——我说的是和Laravel比起来。</p>
+<p>不过由于PHPCMS采用了典型的MVC分层架构，我们完全可以替换掉它本身的Model层；另一方面，Laravel框架的Database也是独立的组件（在github的仓库为Illuminate/Database）,我们完全可以采用composer安装后取代PHPCMS原来的Model层。</p>
+<p>目前只支持PHP&gt;=5.4</p>
+<h2>使用</h2>
+<p>首先在一个可以自动运行的位置——比如在libs/fucntions/extention.func.php中，引入以下代码。</p>
+<pre><code class="language-PHP">use Illuminate\Database\Capsule\Manager as Capsule;
+require(PC_PATH.&quot;Illuminate/Database/vendor/autoload.php&quot;);
+$dbconfig=pc_base::load_config('database','default');
+$capsule = new Capsule;
+$capsule-&gt;addConnection([
+    'driver'    =&gt; 'mysql',
+    'host'      =&gt; $dbconfig['hostname'],
+    'database'  =&gt; $dbconfig['database'],    //dbname
+    'charset'   =&gt; $dbconfig['charset'],
+    'username'  =&gt; $dbconfig['username'],          
+    'password'  =&gt; $dbconfig['password'],
+]);
+$capsule-&gt;setAsGlobal();
+</code></pre>
+<p>然后在模型层中即可以方便的使用了</p>
+<pre><code class="language-PHP">use Illuminate\Database\Capsule\Manager as Capsule;
+
+$po=Capsule::table('product_order')-&gt;
+    join('products',&quot;product_order.product_id&quot;,&quot;=&quot;,&quot;products.id&quot;)-&gt;
+    leftJoin('member',&quot;product_order.userid&quot;,&quot;=&quot;,&quot;member.userid&quot;)-&gt;
+    where(array('product_order.state'=&gt;$state))-&gt;
+    skip($offset)-&gt;take($perPage) -&gt;
+    select(&quot;member.username as user&quot;,
+        &quot;product_order.id as id&quot;,
+        &quot;products.name as product&quot;,
+        &quot;product_order.price as price&quot;,
+        &quot;product_order.state as state&quot;
+    )-&gt;
+    get();
+
+Capsule::table('product_order')-&gt;where(array('id'=&gt;$id))-&gt;increment('state',1);
+Capsule::table('product_order')-&gt;where(array('id'=&gt;$id))-&gt;decrement('state',1);
+
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

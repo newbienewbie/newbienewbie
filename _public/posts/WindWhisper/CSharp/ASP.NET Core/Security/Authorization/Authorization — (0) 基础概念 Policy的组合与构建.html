@@ -1,0 +1,294 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (0) 基础概念 Policy的组合与构建.html">
+                    Authorization — (0) 基础概念 Policy的组合与构建
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>ASP.NET Core</code>中，<code>Authorization</code>和<code>Authentication</code>机制有很大的相似之处：</p>
+<ol>
+<li>一个<code>WebApp</code>中，可以有多种<code>AuthenticationScheme</code>；类似的，也可以指定多种<code>AuthorizationPolicy</code>。</li>
+<li><code>Authentication</code>通过<code>AuthentionOptions</code>来配置认证行为；类似的，<code>Authorization</code>通过<code>AuthorizationOptions</code>来配置授权行为。</li>
+<li><code>AuthenticationOptions</code>提供<code>AddScheme(name,func)</code>方法来注册认证模式，并提供通过<code>AuthenticationBuilder</code>来构建<code>AuthenticationOptions</code>；而<code>AuthorizationOptions</code>提供<code>AddPolicy(name,func)</code>方法来添加授权策略，<code>AuthorizationBuilder</code> 则负责多个<code>Requirements</code>/<code>Policy</code>的组合，从而构建出最终的<code>AuthorizationOptions</code>。</li>
+<li>认证处理器<code>AuthenticationHandler&lt;TSchemeOptions&gt;</code>依据某种具体模式选项进行认证；而授权处理器<code>AuthorizationHandler&lt;TRequirement&gt;</code>则依据某种具体的<code>TRequirement</code>进行授权。</li>
+<li><code>Authentication</code>提供了一个中间件来自动认证；<code>Authorization</code>也提供了一个<code>MVC</code> <code>Filter</code>来授权，在3.0之后，甚至还添加了一个<code>AuthorizationMiddleware</code>来做授权工作。</li>
+</ol>
+<p>当然，在细节上，二者的实现还有很大的不同。比如<code>Authorization</code>并没有向<code>Authentication</code>那样，提供一个方法自动为用户注册自定义的<code>AuthorizationHandler&lt;TRequirement&gt;</code>（需要开发者手工注册）。这些具体的细节会后续几篇源码分析笔记中讲述。</p>
+<h3><code>Policy</code> 和 <code>Requirement</code></h3>
+<p><code>Requirement</code>只是表达“要求”这个概念的一个空接口：</p>
+<pre><code class="language-csharp">public interface IAuthorizationRequirement { }
+</code></pre>
+<p>一个授权<code>Policy</code>由多条要求组成：</p>
+<pre><code class="language-csharp">public class AuthorizationPolicy
+{
+    public AuthorizationPolicy(IEnumerable&lt;IAuthorizationRequirement&gt; requirements, IEnumerable&lt;string&gt; authenticationSchemes)
+    {
+        if (requirements == null) { /* throw */ }
+        if (authenticationSchemes == null){ /* throw */ }
+        if (requirements.Count() == 0){ /* throw */ }
+        
+        Requirements = new List&lt;IAuthorizationRequirement&gt;(requirements).AsReadOnly();
+        AuthenticationSchemes = new List&lt;string&gt;(authenticationSchemes).AsReadOnly();
+    }
+
+    public IReadOnlyList&lt;IAuthorizationRequirement&gt; Requirements { get; }
+
+    public IReadOnlyList&lt;string&gt; AuthenticationSchemes { get; }
+}
+</code></pre>
+<!-- more -->
+<h2><code>AuthorizationPolicyBuilder</code></h2>
+<p><code>AuthorizationPolicyBuilder</code>的核心是两个<code>Requirement</code>列表和<code>AuthenticationSchemes</code>列表两个字段：</p>
+<pre><code class="language-csharp">public class AuthorizationPolicyBuilder
+{
+    public IList&lt;IAuthorizationRequirement&gt; Requirements { get; set; } = new List&lt;IAuthorizationRequirement&gt;();
+    public IList&lt;string&gt; AuthenticationSchemes { get; set; } = new List&lt;string&gt;();
+    
+    // ...
+    
+    public AuthorizationPolicy Build()
+    {
+        return new AuthorizationPolicy(Requirements, AuthenticationSchemes.Distinct());
+    }
+}
+</code></pre>
+<p>可以看到<code>Build()</code>方法非常简单，只是简单用自身的<code>Requirements</code>和<code>AuthenticationSchemes</code>创建一个新的<code>AuthenticationPolicy</code>。<code>Policy</code>的构建过程，本质上对认证模式、Requirement、Policy的组合过程。<code>Builder</code>为组合这些字段提供了一系列<code>RequireXyz()</code>辅助方法。</p>
+<h3>RequireXyz()等系列方法</h3>
+<p><code>AuthorizationPolicyBuilder</code>还提供了一系列添加<code>Requirement</code>的辅助方法：</p>
+<ul>
+<li><code>RequireClaim()</code>系列</li>
+<li><code>RequireRole()</code>系列</li>
+<li><code>RequireUserName()</code></li>
+<li><code>RequireAuthenticatedUser()</code></li>
+<li><code>RequireAssertion()</code>系列</li>
+</ul>
+<h4><code>RequireClaim()</code>系列：</h4>
+<pre><code class="language-csharp">public class AuthorizationPolicyBuilder
+{
+    // ...
+    
+    public AuthorizationPolicyBuilder RequireClaim(string claimType, params string[] allowedValues)
+    {
+        if (claimType == null){ /*  throw  */ }
+        return RequireClaim(claimType, (IEnumerable&lt;string&gt;)allowedValues);
+    }
+
+    public AuthorizationPolicyBuilder RequireClaim(string claimType, IEnumerable&lt;string&gt; allowedValues)
+    {
+        if (claimType == null){ /*  throw  */ }
+        Requirements.Add(new ClaimsAuthorizationRequirement(claimType, allowedValues));
+        return this;
+    }
+
+    public AuthorizationPolicyBuilder RequireClaim(string claimType)
+    {
+        if (claimType == null){ /*  throw  */ }
+        Requirements.Add(new ClaimsAuthorizationRequirement(claimType, allowedValues: null));
+        return this;
+    }
+    
+    // ...
+}
+</code></pre>
+<h4><code>RequireRole()</code>系列</h4>
+<pre><code class="language-csharp">public class AuthorizationPolicyBuilder
+{
+    //  ...
+    public AuthorizationPolicyBuilder RequireRole(params string[] roles)
+    {
+        if (roles == null){ /*  throw  */ }
+        return RequireRole((IEnumerable&lt;string&gt;)roles);
+    }
+
+    public AuthorizationPolicyBuilder RequireRole(IEnumerable&lt;string&gt; roles)
+    {
+        if (roles == null){ /*  throw  */ }
+        Requirements.Add(new RolesAuthorizationRequirement(roles));
+        return this;
+    }
+</code></pre>
+<h4><code>NameAuthorizationRequirement</code>和<code>DenyAnonymousAuthorizationRequirement</code></h4>
+<pre><code class="language-csharp">    public AuthorizationPolicyBuilder RequireUserName(string userName)
+    {
+        if (userName == null){ /*  throw  */ }
+        Requirements.Add(new NameAuthorizationRequirement(userName));
+        return this;
+    }
+
+    public AuthorizationPolicyBuilder RequireAuthenticatedUser()
+    {
+        Requirements.Add(new DenyAnonymousAuthorizationRequirement());
+        return this;
+    }
+
+}
+</code></pre>
+<h4><code>AssertionRequirement</code>系列</h4>
+<pre><code class="language-csharp">    public AuthorizationPolicyBuilder RequireAssertion(Func&lt;AuthorizationHandlerContext, bool&gt; handler)
+    {
+        if (handler == null){ /*  throw  */ }
+        Requirements.Add(new AssertionRequirement(handler));
+        return this;
+    }
+    
+    public AuthorizationPolicyBuilder RequireAssertion(Func&lt;AuthorizationHandlerContext, Task&lt;bool&gt;&gt; handler)
+    {
+        if (handler == null){ /*  throw  */ }
+        Requirements.Add(new AssertionRequirement(handler));
+        return this;
+    }
+</code></pre>
+<h3>认证模式，Requirement，和Policy的组合</h3>
+<p><code>AuthorizationPolicyBuilder</code>提供了三个帮助方法来向这两个列表字段中添加新的认证模式、<code>Requirement</code>、和<code>Policy</code></p>
+<pre><code class="language-csharp">public class AuthorizationPolicyBuilder
+{
+    // ...
+    
+    public AuthorizationPolicyBuilder AddAuthenticationSchemes(params string[] schemes)
+    {
+        foreach (var authType in schemes){
+            AuthenticationSchemes.Add(authType);
+        }
+        return this;
+    }
+
+    public AuthorizationPolicyBuilder AddRequirements(params IAuthorizationRequirement[] requirements)
+    {
+        foreach (var req in requirements){
+            Requirements.Add(req);
+        }
+        return this;
+    }
+
+    public AuthorizationPolicyBuilder Combine(AuthorizationPolicy policy)
+    {
+        if (policy == null) { /*  throw  */ }
+        AddAuthenticationSchemes(policy.AuthenticationSchemes.ToArray());
+        AddRequirements(policy.Requirements.ToArray());
+        return this;
+    }
+    // ...
+}
+</code></pre>
+<h3>AuthorizationPolicy 类自身的三个辅助方法</h3>
+<p>此外，在<code>AuthorizationPolicyBuilder</code>的基础上，<code>AuthorizationPolicy</code>还提供了两个静态的<code>Combine()</code>帮助方法，用于组合一组<code>Policy</code>：</p>
+<pre><code class="language-csharp">public static AuthorizationPolicy Combine(IEnumerable&lt;AuthorizationPolicy&gt; policies)
+{
+    if (policies == null){ /* throw */ }
+    var builder = new AuthorizationPolicyBuilder();
+    foreach (var policy in policies){
+        builder.Combine(policy);
+    }
+    return builder.Build();
+}
+
+public static AuthorizationPolicy Combine(params AuthorizationPolicy[] policies)
+{
+    if (policies == null){ /* throw */ }
+    return Combine((IEnumerable&lt;AuthorizationPolicy&gt;)policies);
+}
+</code></pre>
+<p>最后，<code>AuthorizatinoPolicy</code>还提供了一个<code>CombineAsync(policyProvider, authorizeData)</code>方法从<code>PolicyProvider</code>中动态生成<code>Policy</code>：</p>
+<pre><code class="language-csharp">public static async Task&lt;AuthorizationPolicy&gt; CombineAsync(IAuthorizationPolicyProvider policyProvider, IEnumerable&lt;IAuthorizeData&gt; authorizeData)
+{
+    if (policyProvider == null){ /* throw */ }
+    if (authorizeData == null) { /* throw */ }
+
+    // Avoid allocating enumerator if the data is known to be empty
+    var skipEnumeratingData = false;
+    if (authorizeData is IList&lt;IAuthorizeData&gt; dataList)
+    {
+        skipEnumeratingData = dataList.Count == 0;
+    }
+
+    AuthorizationPolicyBuilder policyBuilder = null;
+    // ...
+
+    return policyBuilder?.Build();
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

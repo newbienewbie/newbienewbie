@@ -1,0 +1,185 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/wordpress-plugin-dev/Custom-Post-Type.html">
+                    WordPress Custom Post Type
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>WordPress自带了5种Post Type：</p>
+<ol>
+<li>Post</li>
+<li>Page</li>
+<li>Attachment</li>
+<li>Revision</li>
+<li>Nav Menus</li>
+</ol>
+<p>对于一个基本的博客，这些类型足以应付大多数需求。但是当情况复杂后，就需要定制自己的Post Type了。</p>
+<h2>Custom Post Type</h2>
+<p>定制的Post Type可能是任何东西，不仅仅是面向公众的内容碎片。比如，可以定制自己的Post Type来跟踪程序中错误。</p>
+<p>WordPress提供的Custom Post Type功能使得WP的Post足以模拟任何实体——“The only limitation is your imagination”。</p>
+<h3>注册定制的Post Type</h3>
+<p>注册新的Post Type类型可以用以下函数实现：</p>
+<pre><code class="language-PHP">
+register_post_type($post_type,$args_array);
+</code></pre>
+<p>一般都在<code>init</code>时进行注册：</p>
+<pre><code class="language-PHP">add_action('init',function(){
+    register_post_type(
+        'mytesttype',
+        array(
+            'labels' =&gt; array( 'name' =&gt; 'MyTester' ), 
+            'public' =&gt; true, 
+        )
+    );
+});
+
+</code></pre>
+<h3>定制Post Type参数</h3>
+<p>函数<code>register_post_type()</code>的第二个参数提供了众多定制Post Type的选项：</p>
+<ul>
+<li><code>public</code>    # 前台是否公众可见?默认为false</li>
+<li><code>show_ui</code>   # 是否创建默认UI?默认为<code>public</code>定义的值</li>
+<li><code>publicy_queryable</code>    # 前台公共可查？默认为<code>public</code>定义的值</li>
+<li><code>exclude_from_search</code>  # 从搜索结果中排除?默认为<code>public</code>定义的值</li>
+<li><code>show_in_nav_menus</code>    # nav menu可见?默认为<code>public</code>定义的值</li>
+<li><code>supports</code>  # 哪些meta boxes?
+<ul>
+<li><code>title</code></li>
+<li><code>editor</code></li>
+<li><code>author</code></li>
+<li><code>thumbnail</code></li>
+<li><code>excerpt</code></li>
+<li><code>comments</code></li>
+<li><code>trackbacks</code></li>
+<li><code>custom-fields</code></li>
+<li><code>page-attributes</code></li>
+<li><code>revision</code></li>
+<li><code>post-formats</code></li>
+</ul>
+</li>
+<li><code>labels</code>         # array，用于各种情况下显示的标签</li>
+<li><code>hierarchial</code>    # 默认为false</li>
+<li><code>has_archive</code></li>
+<li><code>can_export</code>     # 可导出？默认为true</li>
+<li><code>taxonomies</code>     # array</li>
+<li><code>menu_position</code>  # 默认在评论菜单之后</li>
+<li><code>menu_icon</code>      # 图标</li>
+<li><code>show_in_menu</code>   # 是否在admin menu中显示</li>
+<li><code>show_in_admin_bar</code>   # 是否在admin bar中显示</li>
+<li><code>capability_type</code>     #</li>
+<li><code>capability</code>          # an array of custom capabilities ( 改、删、阅、发布)</li>
+<li><code>query_var</code>           # 查询变量</li>
+<li><code>rewrite</code>             # 创建permalink</li>
+</ul>
+<p>其中，<code>labels</code> 接受一个数组，用于各种情况下，需要显示的标签</p>
+<ul>
+<li><code>name</code>                # 通用名，常为复数</li>
+<li><code>singular_name</code>       # 单数形式</li>
+<li><code>add_new</code>             # Add New submenu item</li>
+<li><code>add_new_item</code>        # 列表页新建一个Post</li>
+<li><code>edit_item</code></li>
+<li><code>new_item</code></li>
+<li><code>view_item</code></li>
+<li><code>all_items</code></li>
+<li><code>menu_name</code></li>
+<li><code>name_admin_bar</code></li>
+<li><code>search_items</code></li>
+<li><code>not_found</code></li>
+<li><code>not_found_in_trash</code></li>
+<li><code>parent_item_colon</code></li>
+</ul>
+<h2>Post Type 相关的常用函数</h2>
+<ul>
+<li><code>get_post_types($args,$output,$operator)</code>    # 获取指定条件下的Post Types</li>
+<li><code>get_post_type($post)</code>                       # 获取指定post的Post Type</li>
+<li><code>post_type_exists($post_type)</code>               # 是否存在指定类型的Post Type</li>
+<li><code>add_post_type_support($post_type,$sups)</code>    # 增加support</li>
+<li><code>remove_post_type_support($post_type,$sups)</code> # 增加support</li>
+<li><code>set_post_type($postid,$post_type)</code>          # 设置Post Type类型</li>
+<li><code>is_post_type_hierarchical('super_duper')</code>   # 是否是有等级的</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

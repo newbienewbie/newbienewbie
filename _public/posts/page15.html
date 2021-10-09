@@ -1,0 +1,1064 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/misc/一种-Admin-UI-设计思路——兼谈Admin-UI的自动生成.html">
+                    一种 Admin UI 设计思路——兼谈Admin UI的自动生成
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-08
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>后台管理很多都是在简单的增删改查，本文讨论的就是如何自动生成增删改查的界面。</p>
+<p>对于创建、修改工作，大部分时候我们都需要使用表单。一个普通的表单负责前端验证、简单错误提示，并将数据发送到后端。但是编写这样的代码并不愉快。
+首先，创建表单和编辑表单在很大概率上是一样的，或者差异比较小的，起码验证逻辑、错误提示的规则配置是几乎一致的。其次，为每个模型都去编写创建界面/编辑界面/删除界面/查询界面，非常琐碎、耗时。
+我们的目标就是要尽可能地少些代码，尽可能地多自动生成增删改查的管理界面。</p>
+<h2>从普通的视图组件说起</h2>
+<h3>PlainForm</h3>
+<p>必须只包含视图内容，不得含有任何远程交互代码，甚至不得含有任何远程交互的意图。必须提供 <code>initialValues</code> 属性，来设置初始值。</p>
+<pre><code class="language-js">// 一个纯粹的视图组件，将来可以用于新增或者编辑角色模型
+class PlainAddOrEditForm extends React.Component{
+    constructor(props){
+        super(props);
+    }
+
+    render(){
+        const {getFieldDecorator,getFieldsError, getFieldError, isFieldTouched,validateFields}=this.props.form;
+        const hasFieldError=(fieldname)=&gt;isFieldTouched(fieldname) &amp;&amp; getFieldError(fieldname);
+        const hasErrors=(fieldsError)=&gt;Object.keys(fieldsError).some(field =&gt; fieldsError[field]);
+        const FormItem=Form.Item;
+        return (
+        &lt;Form &gt;
+            &lt;FormItem label='角色名' validateStatus={hasFieldError('name')} help={hasFieldError('name')||''} &gt;
+            {
+                getFieldDecorator('name',{
+                    rules:[{required:true,message:'角色名必填'}],
+                    initialValue:this.props.initialValues.name,
+                })(
+                    &lt;Input placeholder='角色名' /&gt;
+                )
+            }
+            &lt;/FormItem&gt;
+        
+            &lt;FormItem label='描述' validateStatus={hasFieldError('description')} help={hasFieldError('description')||''} &gt;
+            {
+                getFieldDecorator('description',{
+                    rules:[{required:true,message:'角色描述必填'}],
+                    initialValue:this.props.initialValues.description,
+                })(
+                    &lt;Input placeholder='description' /&gt;
+                )
+            }
+            &lt;/FormItem&gt;
+        
+        &lt;/Form&gt;);
+        
+    }
+}
+</code></pre>
+<!-- more -->
+<h3>PlainViewComponent</h3>
+<p><code>PlainForm</code>可以不经过嵌套直接使用(为了方便，将之表示为 <code>PlainForm组件</code> )。
+我们大可以在其中加入<code>button</code>控制其提交，但是这会带来代码复用的问题。因为这相当于假定这个表单已经有了一个我们定义的提交按钮了。如果我们需要在对话框中显示这个表单，当点击对话框右下侧的取消按钮，我们希望什么也不做，关闭对话框；当我们单机对话框右下侧的确定按钮，表单会进行提交。这样我们就有了两个提交按钮，这无疑很扯蛋。</p>
+<p>为了更好的代码复用，一个更好的办法是让<code>PlainForm</code>本身不包含提交或者取消这类控制指令的视图元素，而是<code>PlainForm</code>嵌套在其他组件中 (表示为<code>聚合PlainForm的纯视图组件</code>)。
+一个最简单的例子是：</p>
+<pre><code class="language-js">class PlainAddOrEditFormWithSubmitButton extends React.Component{
+    constructor(props){
+        super(props);
+    }
+    render(){
+        return &lt;div&gt;
+            &lt;PlainAddOrEditForm form={this.props.form} initialValues={this.props.initialValues}/&gt;
+            &lt;Button htmlType=&quot;submit&quot; type=&quot;primary&quot; onClick={this.props.onOk}&gt; 提交 &lt;/Button&gt;
+        &lt;/div&gt;;
+    }
+}
+</code></pre>
+<p>在这里我们组合了一个新的组件，注意作为<code>PlainForm</code>的<code>PlainAddOrEditForm</code>组件并不含<code>button</code>元素。为了设置对用户点击提交按钮时的响应，我们添加了一个<code>Button</code>组件，然后将其<code>onClick</code>属性设置为由父组件传递的<code>props.onOk</code>。</p>
+<p>为了表示方便，把<code>PlainForm</code>组件或者<code>聚合PlainForm的纯视图组件</code>统称为<code>PlainViewComponent</code>。</p>
+<p>无论如何，<code>PlainViewComponent</code>都不应该包含任何的服务端交互意图；作为补偿，必须对外暴露这样几个<code>props</code>：</p>
+<ul>
+<li>initialValues : 设置初始值</li>
+<li>onOk : 钩子函数，作为提交表单时触发的 callback</li>
+<li>onCancel : 钩子函数，作为取消表单时触发的 callback</li>
+</ul>
+<h3>表单验证、错误提示</h3>
+<p>既然<code>PlainViewComponent</code>只负责显示，那么如何控制其表单验证逻辑、错误提示呢？
+这块工作可以剥离出来，我们可以根据<code>PlainViewComponent</code>和相应的字段验证规则、错误提示等配置信息，自动生成一个包装组件。最后利用包装组件对表单进行验证、错误提示、提取当前值。</p>
+<p>所幸这块工作已经有人替我们想到了，由 <code>antd.Form.create()(PlainViewComponent)</code>可以完成这种工作。包装生成的新组件，会被注入<code>form</code>属性。从而可以控制表单的验证、错误显示和提取当前值操作。</p>
+<p>为了方便，把表示为这种经过包装的组件称之为<code>DecoratedFormComponent</code></p>
+<h2>用于创建模型的表单</h2>
+<p>既然已经有了以上<code>PlainViewComponent</code>机制，让我们先来编写一个用于创建模型的表单来热热身：</p>
+<p>假设我们有:</p>
+<ul>
+<li>一个<code>model</code>定义，其中<code>model.methods.create()</code>方法定义了如何与服务器交互创建一个新的模型对象。</li>
+<li>一个经过包装的<code>DecoratedFormComponent</code>表单组件<code>AddOrEditForm</code>。</li>
+</ul>
+<p>则一个跟远程服务器通讯的的用于添加模型的表单，可以写成这种形式：</p>
+<pre><code class="language-js">class AddForm extends React.Component{
+    constructor(props){
+        super(props);
+        this.formRef=null;
+    }
+
+    onOk(){
+        return this.formRef.validateFields((err,value)=&gt;{
+            if(!err){
+                model.methods.create(value)
+                    .then(resp=&gt;{
+                        message.success(`创建成功`);
+                        this.formRef.resetFields();
+                    })
+                    .catch(e=&gt;{
+                        message.error(`失败`+e);
+                    });
+            }
+        });
+    }
+
+    render() {
+        return &lt;AddOrEditForm ref={form=&gt;this.formRef=form} onOk={this.onOk} /&gt; ;
+    }
+}
+</code></pre>
+<p>看起来很傻对不对？绕了一大圈，却只是为了一个用于创建模型的表单，为什么要这么麻烦？</p>
+<p>但是仔细观察上面这段代码，我们会发现，我们编写的这个组件除了依赖<code>model</code>和<code>DecoratedFormComponent</code>，其他完全都是样板代码！所以，根据<code>DRY</code>原则，我们可以编写这样一个函数：</p>
+<pre><code class="language-js">(model,AddOrEditForm)=&gt;AddComponent
+</code></pre>
+<p>以后只要针对具体的模型提供<code>model</code>定义、和<code>AddOrEditForm</code>即可动态生成表单。为了方便，我们还可以编写一个用于创建默认的<code>AddOrEditForm</code>的函数：</p>
+<pre><code class="language-js">createDecoratedAddOrEditForm(PlainAddOrEditForm) =&gt; DecoratedFormComponent
+</code></pre>
+<p>这样，就可以利用<code>PlainAddOrEditForm</code>创建一个<code>DecoratedFormComponent</code>，再加上一个<code>model</code>定义，我们就可以自动生成最终的添加模型的表单。</p>
+<h2>Datagrid</h2>
+<p>有了上面的思路，我们可以轻而易举封装出一个通用的<code>Datagrid</code>组件，其基本功能包括：</p>
+<ul>
+<li>列表显示</li>
+<li>每行最后一列可以针对当前行执行相应操作
+<ul>
+<li>删除当前行记录 ：有对话框确认</li>
+<li>修改当前行记录 ：保持页面不跳转，弹出对话框，编辑当前行记录</li>
+</ul>
+</li>
+<li>带分页功能</li>
+</ul>
+<p>此外，还可以添加排序、筛选功能。</p>
+<pre><code class="language-js">class List extends React.Component{
+
+    constructor(props){
+        super(props);
+        this.state={
+            data:[],                   // 当前数据源
+            pagination:{},             // 当前分页
+            loading:true,              // 表格是否正在加载，用于控制动画
+            currentRecord:{},          // 执行操作时的当前行记录
+            editModalVisible:false,    // 编辑表单是否可见
+        };
+        // 对 编辑表单组件 的引用
+        this.editForm=null;
+        // bind `this`
+        this.onTableChange=this.onTableChange.bind(this);
+        this.onRemove=this.onRemove.bind(this);
+        this.onEditFormSubmit=this.onEditFormSubmit.bind(this);
+        this.onEditFormCancel=this.onEditFormCancel.bind(this);
+    }
+
+    /**
+     * 当表单发生分页变化、过滤器变化、或者排序器变化时，应该从服务器重新加载数据
+     * @param {*} pagination 
+     * @param {*} filters 
+     * @param {*} sorter 
+     */
+    onTableChange(pagination, filters={}, sorter={}) {
+        const {pageSize,current}=pagination;
+        return model.methods.list(current,pageSize /* ,condition */)
+            .then(result=&gt;{
+                const {count,rows}=result;
+                const pagination = Object.assign({}, this.state.pagination );
+                pagination.total = count;
+                this.setState({ loading: false, data: rows, pagination, });
+            });
+    }
+
+    onRemove(record){
+        return model.methods.remove(record.id)
+            .then(resp=&gt;{
+                console.log(resp);
+                message.warning('删除成功');
+            })
+            // 刷新数据源
+            .then(_=&gt;{
+                return this.onTableChange(this.state.pagination);
+            });
+    }
+
+    onEditFormSubmit(){
+        return this.editForm.validateFields((err,values)=&gt;{
+            if(!err){
+                const {id}=this.state.currentRecord;
+                model.methods.update(id,values)
+                    .then(resp=&gt;{
+                        message.success(`修改成功`);
+                        console.log(resp);
+                        this.setState({editModalVisible:false},()=&gt;{
+                            // 刷新数据源
+                            this.onTableChange(this.state.pagination);
+                        });
+                    })
+            }
+        });
+        
+    }
+
+    onEditFormCancel(){
+        this.setState({editModalVisible:false});
+    }
+
+    componentDidMount(){
+        this.setState({loading:true},()=&gt;{
+            return this.onTableChange(this.state.pagination);
+        });
+    }
+    render() {
+        const {Column,ColumnGroup}=Table;
+        const fields=model.fields;
+        return (&lt;div&gt;
+        &lt;Table dataSource={this.state.data} pagination={this.state.pagination} loading={this.state.loading} onChange={this.onTableChange} &gt;
+            { Object.keys(fields).map(k=&gt;{
+                const field=fields[k];
+                return &lt;Column title={field.title} key={k} dataIndex={k} /&gt;;
+            }) }
+            &lt;Column title='操作' key='action' render={(text, record) =&gt; (
+                &lt;span&gt;
+                    &lt;a onClick={()=&gt;{this.setState({editModalVisible:true,currentRecord:record});return false; }} &gt;修改&lt;/a&gt;
+                    &lt;span className='ant-divider' /&gt;
+                    &lt;Popconfirm title='确认要删除吗' okText='是' cancelText='否' onConfirm={() =&gt; { this.onRemove(record); }} &gt;
+                        &lt;a href='#'&gt;删除&lt;/a&gt;
+                    &lt;/Popconfirm&gt;
+                    &lt;span className='ant-divider' /&gt;
+                &lt;/span&gt;)} /&gt;
+        &lt;/Table&gt;
+
+        &lt;AddOrEditFormModal ref={form=&gt;this.editForm=form} visible={this.state.editModalVisible}
+            initialValues={this.state.currentRecord}
+            onOk={this.onEditFormSubmit}
+            onCancel={this.onEditFormCancel}
+        /&gt;
+
+    &lt;/div&gt;);
+    }
+}
+</code></pre>
+<p>在这里，基于和上面同样的设想，我们把变化的部分提取到了<code>model</code>和<code>AddOrEditFormModal</code>这个<code>DecoratedFormComponent</code>中，从而可以创建这样形式的<code>API</code>：</p>
+<pre><code class="language-js">(model,AddOrEditFormModal)=&gt; DatagridComponent;
+</code></pre>
+<p>为各种模型自动生成一个<code>Datagrid</code>组件。为了方便，我们还可以编写一个用于创建默认的<code>AddOrEditForm</code>的函数：</p>
+<pre><code class="language-js">createDecoratedAddOrEditForm(PlainAddOrEditForm) =&gt; DecoratedFormComponent
+</code></pre>
+<p>这样，就可以利用<code>PlainAddOrEditForm</code>创建一个<code>DecoratedFormComponent</code>，再加上一个<code>model</code>定义，我们就可以自动生成最终的模型<code>Datagrid</code>组件。</p>
+<h2>Admin UI 的自动生成</h2>
+<p>为了方便，我们可以设计一个通用的<code>tiny-admin</code>模块，其基本结构为：</p>
+<pre><code class="language-js">
+// 默认提供的 DecoratedFormComponent 对象，有两个工厂函数，用于创建普通AddOrEdit表单、和带Modal表单
+export const defaultDecoratedForm={
+
+    createDecoratedAddOrEditForm:function(PlainAddOrEditForm){/**/},
+
+    createDecoratedAddOrEditFormModal:function(PlainAddOrEditForm){/**/},  
+};
+
+
+
+export function addform(model,AddOrEditForm){/**/},
+
+export function datagrid(model,AddOrEditFormModal){/**/ },
+</code></pre>
+<p>然后针对具体的模型编写<code>model</code>和<code>PlainAddOrEditForm</code>就可以自动生成后台了。</p>
+<h2>示例</h2>
+<p>比如对于一个角色模型，有角色名、和描述两个字段。</p>
+<p><code>PlainAddOrEditForm</code>定义为：</p>
+<pre><code class="language-js">
+class PlainAddOrEditForm extends React.Component{
+    constructor(props){
+        super(props);
+    }
+
+
+    render(){
+        const {getFieldDecorator,getFieldsError, getFieldError, isFieldTouched,validateFields}=this.props.form;
+        const hasFieldError=(fieldname)=&gt;isFieldTouched(fieldname) &amp;&amp; getFieldError(fieldname);
+        const hasErrors=(fieldsError)=&gt;Object.keys(fieldsError).some(field =&gt; fieldsError[field]);
+        const FormItem=Form.Item;
+        return (
+        &lt;Form &gt;
+            &lt;FormItem label='角色名' validateStatus={hasFieldError('name')} help={hasFieldError('name')||''} &gt;
+            {
+                getFieldDecorator('name',{
+                    rules:[{required:true,message:'角色名必填'}],
+                    initialValue:this.props.initialValues.name,
+                })(
+                    &lt;Input placeholder='角色名' /&gt;
+                )
+            }
+            &lt;/FormItem&gt;
+        
+            &lt;FormItem label='描述' validateStatus={hasFieldError('description')} help={hasFieldError('description')||''} &gt;
+            {
+                getFieldDecorator('description',{
+                    rules:[{required:true,message:'角色描述必填'}],
+                    initialValue:this.props.initialValues.description,
+                })(
+                    &lt;Input placeholder='description' /&gt;
+                )
+            }
+            &lt;/FormItem&gt;
+        
+        &lt;/Form&gt;);
+        
+    }
+}
+
+</code></pre>
+<p>相应的<code>model</code>定义为：</p>
+<pre><code class="language-js">const model={
+    name:&quot;role&quot;,
+    fields:{
+        &quot;name&quot;:{
+            title:'角色名',
+        },
+        &quot;description&quot;:{
+            title:&quot;角色描述&quot;,
+        },
+    },
+    methods:{
+        create:function(record){
+            const {name,description}=record;
+            return createRole(name,description);
+        },
+        remove:removeRole,
+        update:function(id,record){
+            const{name,description}=record;
+            return updateRole(id,name,description);
+        },
+        list:listRoles,
+    }
+};
+</code></pre>
+<p>生成一个用于创建角色的表单：</p>
+<pre><code class="language-js">const AddOrEditForm=defaultDecoratedForm.createDecoratedAddOrEditForm(PlainAddOrEditForm);
+const AddForm=addform(model,AddOrEditForm);
+</code></pre>
+<p>生成一个用于管理角色的<code>Datagrid</code>：</p>
+<pre><code class="language-js">const AddOrEditFormModal=defaultDecoratedForm.createDecoratedAddOrEditFormModal(PlainAddOrEditForm);
+const DG=datagrid(model,AddOrEditFormModal);
+</code></pre>
+<h2>主从式二级联动表单demo</h2>
+<p>{% asset_img &quot;datagrid_admin_demo.gif&quot; &quot;datagrid admin demo&quot; %}</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/数据库理论/数据库并发调度与封锁协议.html">
+                    数据库笔记 数据库并发调度与封锁协议
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-09-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>并发调度</h2>
+<h3>事务</h3>
+<p>事务是在数据库上一个或者多个操作的序列，必须以原子的形式执行。当对数据库进行查询、或者更新的任何SQL语句开始时，事务就开始。</p>
+<p>在SQL中事务的开始语句为<code> begin transaction</code>。</p>
+<p>必须明确地结束一个事务。结束事务通常有两种方式：</p>
+<ul>
+<li>SQL语句 <code>COMMMIT</code> 提交事务，使得事务成功结束，事务对数据库的任何改变都将被存放到数据库中。</li>
+<li>SQL语句 <code>ROLLBACK</code> 回滚事务，使得事务不成功终止，事务对数据库的任何改变都将撤销。</li>
+</ul>
+<p>事务管理必须具有四个特性：</p>
+<ul>
+<li><code>acid</code> 原子性：事务的操作要么都做，要么都不做。</li>
+<li><code>consistency</code> 一致性：当数据库只包含成功事务提交的结果时，称数据库处于一致性状态。事务的执行结果必须保证数据库从一个一致性状态到另一个一致性状态。</li>
+<li><code>isolation</code> 隔离性：事务相互隔离，当多个事务并发执行，任一事务的更新操作直到其成功提交的整个过程，对其他事务不可见。</li>
+<li><code>durability</code> 持久性：一旦事务成功提交，即使数据库崩溃，其对数据库的更新操作也将永久有效。</li>
+</ul>
+<h3>数据不一致</h3>
+<p>并发操作是指多用户可能对同一个数据进行操作。并发不正确调度会带来数据不一致问题，其主要原因是破坏了数据的 <em>隔离性</em> 。</p>
+<!-- more -->
+<p>数据不一致共有三种情况：</p>
+<ul>
+<li><code>丢失修改(lost update)</code>： 事务T1、T2读入同一数据各自修改，T1先完成修改并将更新的数据写回数据库；随后T2也完成修改并将结果写回数据库，从而覆盖T1的修改，导致T1对数据的修改好像从未发生。</li>
+<li><code>读脏数据(dirty read)</code>： 事务T1修改了某数据并将其写回数据库，事务T2 随之读入T1修改过的值，之后T1被撤销修改，则T2读取的值与数据库中的值不同。</li>
+<li><code>不可重复读(non-repeatable read)</code>： 事务T1按一定条件读入若干数据，随后事务T2对其更新并写回数据库，当T1再次按照同一条件读入数据，发现跟刚才不一致。</li>
+</ul>
+<h3>可串行化调度</h3>
+<p>要保证并发操作得到正确的结果，可以去要求所有事务都是串行执行的——一个事务执行过程时完全不受其他事务影响，只有一个事务结束之后，另一个事务才开始运行。</p>
+<p>但是在实际的执行方式上要求事务串行依次执行是不科学的，并发执行是基本需求。那么，怎么样的并发调度才能认为是对的？对于多个事务，其并发执行的结果只要和其中任意一种串行执行的结果相同，即认为是正确的调度，称之为可串行化的调度。</p>
+<p>为了保证对并发操作的调度满足可串行化条件，数据库管理系统必须提供一定的手段，通常采用的是 <em>封锁机制</em></p>
+<h2>封锁管理</h2>
+<p><em>封锁</em> ： 事务在对数据对象操作前，先申请对其加锁，成功加锁之后，事务就对该数据对象有了控制权，只有该事务对其解锁之后，其他事务才能使用它。</p>
+<h3>封锁分类</h3>
+<p>封锁包括两类：</p>
+<ul>
+<li><code>排他锁(exclusive lock，X lock)</code>：事务T对对象A加了X锁，则T可以读取和更新A；在T释放对A的X锁之前，其他事务不能再对A加任何类型的锁（从而不能读也不能写A）。</li>
+<li><code>共享锁(share lock ，S lock)</code> : 事务T 对对象A加了S锁之后，T可以读取，但是不能更新A，在T释放对A的S锁之前，其他事务可以再对A进行加锁，但是不能加X锁。</li>
+</ul>
+<h3>封锁协议（<code>locking protocal</code>）</h3>
+<h4>三级封锁协议</h4>
+<p><em><code>一级封锁协议</code></em>  ：要求事务T在修改数据A之前必须先对其加X锁，直到事务结束才释放该锁。该级协议解决了<code>丢失修改</code>问题。但是它不要求事务在读数据之前进行加锁，故不能解决<code>读脏数据</code>、<code>不可重复读取</code>问题。</p>
+<p><em><code>二级封锁协议</code></em> ：在<code>一级封锁协议</code>的基础上，要求事务T在读取数据A之前必须先对其加S锁，读入数据后立刻是否S锁。这样，不仅解决了<code>丢失修改</code>问题，还防止了<code>读脏数据</code>问题。但是该级协议不能解决<code>不可重复读取</code>问题，例如：</p>
+<ol>
+<li>现有事务T1，尝试读取A，加共享锁 lock-s(A)；读完之后立刻释放共享锁，unlock-s(A)。此时事务T1尚未继续。</li>
+<li>事务T2尝试修改A，加排他锁 lock-x(A)；T2事务执行完毕，释放排他锁，unlock-x(A)。</li>
+<li>事务T1再次尝试读取A，加共享锁 lock-s(A)，按照同一条件读取A之后，释放共享锁 unlock-s(A)。</li>
+</ol>
+<p>此时，即出现了不可重复读问题。</p>
+<p><em><code>三级封锁协议</code></em> ：在<code>二级封锁协议</code>的基础上，要求事务T在读取A之前，必须先对其加S锁，但是直到事务结束，才释放S锁。<code>三级封锁协议</code>解决了<code>丢失修改</code>、<code>读脏数据</code>、<code>不可重复读</code>问题。</p>
+<p>注意，和<code>二级封锁协议</code>规定的共享锁在读完数据后立即释放不同，<code>一级封锁协议</code>、<code>三级封锁协议</code>都要求锁一旦加上，直到事务结束之前，都不能释放。</p>
+<h3>两段锁协议（<code>two-phase locking</code>）</h3>
+<p><em>两段锁协议</em> ： 事务T对数据A进行读写操作以前，必须先活得对A的封锁；并且，在释放一个封锁之后，T不能再获得其他任何封锁。也即事务分成 <em>加锁</em>  和 <em>解锁</em> 两个阶段。</p>
+<p>事务遵循两段封锁协议是保证操作可串行化的充分条件（但不是必要条件）。</p>
+<p>eg: 以下序列遵行两段封锁协议：</p>
+<pre><code>lock-x(A)
+lock-s(B)
+lock-s(C)
+unlock(A)
+unlock(C)
+unlock(B)
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/数据库理论/函数依赖.html">
+                    数据库笔记 函数依赖
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-09-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>函数依赖的定义</h2>
+<p><em>函数依赖</em> 与 <em>函数决定</em>  ：如果关系<code>R</code>的两个元组在属性<code>$A_1,A2_2,A_3,...,A_n$</code>上一致，则它们在另一个属性<code>B</code>上也一致，则称“关系<code>R</code>中属性<code>B</code>函数依赖于属性<code>$A_1 A_2 A_3 ... A_n$</code>”，记作：</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow B
+</code></pre>
+<p>或者称“<code>$A_1,A_2,A_3,...,A_n$</code>函数决定B”，其中，<code>$A_1 A_2 A_3 ... A_n$</code>称为 <em>决定因素</em> 。</p>
+<p>如果有一组属性函数决定：</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow B_1 
+
+A_1 A_2 A_3 ... A_n \rightarrow B_2
+
+A_1 A_2 A_3 ... A_n \rightarrow B_3
+
+A_1 A_2 A_3 ... A_n \rightarrow B_m
+</code></pre>
+<p>则可以简记作：</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow B_1 B_2 B_3 ... B_m
+</code></pre>
+<!-- more -->
+<h2>关系的键码</h2>
+<p>一个或者多个属性的集合 <code>$\{ A_1,A_2,...,A_n \}$</code>如果满足以下条件，则称该集合为关系<code>R</code>的键码(<code>key</code>):</p>
+<ol>
+<li>这些属性 <em>函数决定</em> 关系<code>R</code>的所有其他属性。</li>
+<li>集合的<code>$\{ A_1,A_2,...,A_n \}$</code>任何真子集都不能函数决定关系<code>R</code>的所有其他属性。(键码最小)</li>
+</ol>
+<p>如果只满足条件1，而不满足条件2，则称之为 <em>超键码(superkey)</em></p>
+<h2>函数依赖的原则</h2>
+<h3>合并分解原则</h3>
+<h4>分解原则(spiltting rule)</h4>
+<p><code>$ A_1 A_2 A_3 ... A_n \rightarrow B_1 B_2 B_3 ... B_m $</code> 可以用一组函数依赖<code>$ A_1 A_2 A_3 ... A_n \rightarrow B_i (i=1,2,...,m) $</code>来代替。</p>
+<h4>合并原则(combining rule)</h4>
+<p>一组函数依赖<code>$ A_1 A_2 A_3 ... A_n \rightarrow B_i (i=1,2,...,m) $</code> 可以用一个依赖<code>$ A_1 A_2 A_3 ... A_n \rightarrow B_1 B_2 B_3 ... B_m $</code>来代替。</p>
+<h4>平凡依赖原则(trivial dependency rule)</h4>
+<ul>
+<li>对函数依赖 <code>$ A_1 A_2 A_3 ... A_n \rightarrow B $</code>，如果B是A中的一个，称之为“平凡的”。</li>
+<li>对函数依赖<code>$ A_1 A_2 A_3 ... A_n \rightarrow B_i (i=1,2,...,m) $</code> ，
+<ul>
+<li>如果B是A的子集，则称该依赖是“平凡的”</li>
+<li>如果B中至少一个属性不在A中，则称为该依赖是“非平凡的”</li>
+<li>如果B中所有属性都不在A中，则称为该依赖是“完全非平凡的”</li>
+</ul>
+</li>
+</ul>
+<p>一个平凡的函数依赖，是有冗余信息的。事实上平凡依赖原则的英文表述<code>trivial dependency rule</code>就有 <em>琐碎的、不重要的</em> 的意思。</p>
+<h3>传递规则</h3>
+<p>如果：</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow B_1 B_2 B_3 ... B_m
+
+B_1 B_2 B_3 ... B_m \rightarrow  C_1 C_2 C_3 ... C_k
+</code></pre>
+<p>则有</p>
+<pre><code class="language-math">%% KaTex
+A_1 A_2 A_3 ... A_n \rightarrow  C_1 C_2 C_3 ... C_k
+</code></pre>
+<h2>属性的封闭集(closure)</h2>
+<p>记属性集<code>$\{ A_1,A_2,...,A_n \}$</code>为A，S 为函数依赖集。属性集A 函数决定的属性的集合称之为 <em>属性集A在依赖集S下的封闭集</em> 。</p>
+<p>属性集<code>$\{ A_1,A_2,...,A_n \}$</code>的封闭集记作
+<code>$\{ A_1,A_2,...,A_n \}^+$</code>。</p>
+<p>对于任一函数依赖<code>$A_1 A_2 ... A_n \rightarrow B$</code>，利用依赖集S计算出封闭集<code>$\{ A_1,A_2,...,A_n \}^+$</code>，如果B在此封闭集之中，则说明函数依赖<code>$A_1 A_2 ... A_n \rightarrow B$</code>蕴含于依赖集S中。</p>
+<p>由于键码可以函数决定其他所有属性，故键码属性的封闭集必然是属性全集。反过来看，若某属性集的封闭集为属性全集，则该属性集为键码。</p>
+<h2>冗余、异常及依赖的关系</h2>
+<h3>完全依赖和部分依赖</h3>
+<p>对于函数依赖<code>$W \rightarrow A$</code></p>
+<ul>
+<li>如果<code>$\exists V  \subset W$</code>，使得<code>$V \rightarrow A $</code>，则称A <code>部分依赖(partitial dependency)</code>于W</li>
+<li>如果不存在这种V，则成A<code>完全依赖(full dependency)</code>于W</li>
+</ul>
+<h3>传递依赖与直接依赖</h3>
+<p>对于函数依赖<code>$X \rightarrow Y $</code>，如果<code>$Y \nrightarrow X$</code>，而函数依赖<code>$Y \rightarrow Z$</code>成立，则称<code>Z对X传递依赖(transitive depedency)</code>，传递依赖也称为 <em>间接依赖</em></p>
+<p>如果<code>$X \rightarrow Y$</code> ，且<code>$Y \rightarrow X$</code>，则X和Y相互依赖，称之为 <em>直接依赖</em> 。</p>
+<p>直接依赖和传递依赖反映了属性对键码的函数依赖的性质和程度。</p>
+<h3>冗余和异常的根源</h3>
+<ul>
+<li>关系模式中非主属性对键码的部分依赖和传递依赖是产生数据冗余和更新异常的主要根源</li>
+<li>主属性对键码的部分依赖或传递依赖是产生数据冗余和更新异常的另一个重要根源</li>
+<li>多值依赖</li>
+</ul>
+<h2>关系模式规范化</h2>
+<p>把低级范式的关系模式转换为几个属于高级范式的关系模式的集合，称之为规范化（<code>normalization</code>）。</p>
+<p>从函数依赖的角度来看，关系模式规范化的基本思路就是：从非主属性到主属性，逐步消除决定因素不是键码的非平凡函数依赖，从而使每个决定因素都包含键码（而不是键码的一部分）。</p>
+<p>各级范式的关系图为：</p>
+<pre><code>1NF
+ |  消除非主属性对键码的部分依赖
+ V
+2NF
+ |  消除非主属性对键码的传递依赖
+ V
+3NF
+ |  消除主属性对键码的部分和传递依赖
+ V
+BCNF
+ |  消除非平凡的传递依赖
+ V
+4NF
+</code></pre>
+<h3>1NF</h3>
+<p>关系R的每个属性都不可分割</p>
+<h3>2NF</h3>
+<p>关系R符合第一范式，且每个非主属性都完全函数依赖于键码，即可称之为<code>2NF</code>。也就是说，非主属性，不得有对键码的部分依赖。</p>
+<p>比如有关系<code>$R(SNo,SName,SDept,MName,CName,Grade)$</code>，记录学生学号、姓名、专业、课程名称、授课老师、成绩，键码为<code>$SNo,CName$</code>。存在函数依赖<code>$SNo,CName \rightarrow SName,SDept,MName$</code>。</p>
+<p>显然这里是一个部分依赖，因为可以找函数依赖：<code>$SNo \rightarrow SName,SDept$</code> 。故关系R不符合<code>完全依赖</code>的要求。把R拆分成关系：</p>
+<pre><code class="language-math">%% KaTex
+S_1=(SNo,SName,SDept,MName)
+
+S_2=(SNo,CName,Grade)
+</code></pre>
+<p>则分解后的<code>$S_1$</code>的依赖关系为：</p>
+<pre><code class="language-math">%% KaTex
+SNo \rightarrow SName, SDept,MName
+
+SDept \rightarrow  MName
+</code></pre>
+<p>而分解后的<code>$S_2$</code>的依赖关系为：</p>
+<pre><code class="language-math">%% KaTex
+SNo,CName \rightarrow Grade
+</code></pre>
+<p>故分解后的两个关系均符合<code>2NF</code></p>
+<h3>3NF</h3>
+<p>关系R符合第一范式，且每个非主属性都都不传递依赖于键码，则称之为<code>3NF</code>。也是说，非主属性不得有对键码的间接依赖。</p>
+<p>属于3NF的关系模式必然属于第二模式，因为部分依赖蕴含着传递依赖：</p>
+<p>设关系R有非主属性A和主属性K，且<code>$K \rightarrow A$</code>是部分依赖，则A必然依赖于K的某个真子集<code>$K'$</code>，即<code>$\exists K' \subset K$</code>，使得<code>$K' \rightarrow A$</code>。
+又因为<code>$\exists K' \subset K$</code>，故有平凡依赖<code>$K \rightarrow K'$</code>，且<code>$K' \nrightarrow K $</code> 。
+综上，有：<code>$K \rightarrow K' \rightarrow A$</code>。</p>
+<p>上面分解出的关系<code>$S_1=(SNo,SName,SDept,MName)$</code>存在传递性的函数依赖<code>$SNo \rightarrow SDept \rightarrow  MName$</code>，故不属于<code>3NF</code>，可以继续分解为<code>$S_{11}(SNo,SName,SDept)$</code> 和 <code>$S_{12}(SDept,MName)$</code>。</p>
+<h2>模式分解</h2>
+<h3>原则</h3>
+<p>模式分解主要涉及两个原则</p>
+<h4>无损连接</h4>
+<p>对关系R进行分解时，R的元组分别在相应属性集进行投影产生新的关系。如果对新的关系进行自然连接得到的元组的集合与原关系完全一致，则称为“<code>无损链接(lossless join)</code>”。</p>
+<p>无损连接反映了模式分解的等价性原则。</p>
+<p>实现无损连接的充要条件是：<code>$(R_1 \cap R_2) \rightarrow (R_1 - R_2)$</code> 或者<code>$(R_1 \cap R_2) \rightarrow (R_2 - R_1)$</code> 。
+其中，<code>$R_1 \cap R_2$</code>代表二者的公共属性，二者的差集代表非公共属性部分。这个充要条件实际是在表达：公共属性能函数决定非公共属性部分。</p>
+<h4>保持依赖</h4>
+<p>对关系R进行分解时，R的函数依赖集也将按相应的模式分解。如果分解后的总的函数依赖集与原函数依赖集保持一致，则称之为“<code>保持依赖(preserve dependency)</code>”。</p>
+<p>保持连接反映了模式分解的依赖等价原则，保证了分解后模式与原有的模式在数据语义上一致。</p>
+<h3>分解的方法</h3>
+<h4>方法一、部分依赖归子集，完全依赖随键码</h4>
+<p>升级为2NF：</p>
+<p>从部分依赖中归纳出键码的一个真子集，然后真子集和所有的非主属性合成一个新的模式。</p>
+<p>对键码完全依赖的所有非主属性和键码组合成一个新的模式。</p>
+<h4>方法二、基本依赖为基础，中间属性做桥梁</h4>
+<p>升级为3NF：</p>
+<p>以传递依赖链的两个基本依赖为基础形成两个新的模式。</p>
+<h4>方法三、找违例自成一体，舍左右全集归一；若发现仍有违例，再回首如法炮制。</h4>
+<p>违背BC范式的函数称为BC范式的违例。</p>
+<h2>多值依赖</h2>
+<p>假设模式<code>$R(A,B,C)$</code>，其中A、B、C为属性(集)。如果在A上取特定值，而在B的取值的集合上与C上取值的集合无关，则称多值依赖<code>$A \rightarrow \rightarrow B$</code>在R中成立。也可称A 多值决定B，或者称B多值依赖A。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Compiler/自制编程语言/crowbar源码阅读笔记(3).html">
+                    crowbar源码阅读笔记(3):表达式构建
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这是《自制编程语言》一书中的脚本语言<code>crowbar</code>的源码阅读笔记(3):表达式构建</p>
+<h2>表达式的分类与表示</h2>
+<p>表达式分为布尔表达式、整型表达式、标识符表达式、赋值表达式、函数调用表达式等：</p>
+<pre><code class="language-c">typedef enum {
+    BOOLEAN_EXPRESSION = 1,
+    INT_EXPRESSION,
+    DOUBLE_EXPRESSION,
+    STRING_EXPRESSION,
+    IDENTIFIER_EXPRESSION,
+    ASSIGN_EXPRESSION,
+    ADD_EXPRESSION,
+    SUB_EXPRESSION,
+    MUL_EXPRESSION,
+    DIV_EXPRESSION,
+    MOD_EXPRESSION,
+    EQ_EXPRESSION,
+    NE_EXPRESSION,
+    GT_EXPRESSION,
+    GE_EXPRESSION,
+    LT_EXPRESSION,
+    LE_EXPRESSION,
+    LOGICAL_AND_EXPRESSION,
+    LOGICAL_OR_EXPRESSION,
+    MINUS_EXPRESSION,
+    FUNCTION_CALL_EXPRESSION,
+    NULL_EXPRESSION,
+    EXPRESSION_TYPE_COUNT_PLUS_1
+} ExpressionType;
+</code></pre>
+<!-- more -->
+<p>为了表示表达式，将其类型统一定义为：</p>
+<pre><code class="language-c">struct Expression_tag {
+    ExpressionType type;
+    int line_number;
+    union {
+        CRB_Boolean             boolean_value;
+        int                     int_value;
+        double                  double_value;
+        char                    *string_value;
+        char                    *identifier;
+        AssignExpression        assign_expression;
+        BinaryExpression        binary_expression;
+        Expression              *minus_expression;
+        FunctionCallExpression  function_call_expression;
+    } u;
+};
+</code></pre>
+<p>对于具体类型的表达式，则再具体定义，如：</p>
+<pre><code class="language-c">typedef struct { 
+    Expression *left; 
+    Expression *right; 
+} BinaryExpression;
+
+typedef struct {
+    char *identifier; 
+    ArgumentList *argument;
+} FunctionCallExpression;
+</code></pre>
+<h2>表达式的构建</h2>
+<p>表达式的创建过程都是先申请一块内存，然后再填充具体的字段，最后返回所创建表达式的指针。</p>
+<p>比如创建一个赋值表达式：</p>
+<pre><code class="language-c">Expression * crb_create_assign_expression(char *variable, Expression *operand)
+{
+    Expression *exp;
+    exp = crb_alloc_expression(ASSIGN_EXPRESSION);
+
+    /* 变量 */
+    exp-&gt;u.assign_expression.variable = variable;
+    /* 操作数 */
+    exp-&gt;u.assign_expression.operand = operand;
+    return exp;
+}
+</code></pre>
+<p>这里，<code>crb_alloc_expression()</code>函数是一个辅助函数，负责根据<code>Expression</code>这个结构体开辟一块内存空间，然后设置好表达式类型、行号信息，而具体的联合字段<code>u</code>则留待后续填充：</p>
+<pre><code class="language-c">Expression * crb_alloc_expression(ExpressionType type)
+{
+    Expression  *exp;
+    exp = crb_malloc(sizeof(Expression));
+    exp-&gt;type = type;
+    exp-&gt;line_number = crb_get_current_interpreter()-&gt;current_line_number;
+    return exp;
+}
+</code></pre>
+<p>再比如，创建一个<code>BINARY_EXPRESSION</code>:</p>
+<pre><code class="language-c">Expression * crb_create_binary_expression(ExpressionType operator, Expression *left, Expression *right)
+{
+    /* 如果左右表达式都是整型或者浮点型表达式这种极其简单情况，则直接进行求值——可用于常量折叠 */
+    if ((left-&gt;type == INT_EXPRESSION || left-&gt;type == DOUBLE_EXPRESSION)
+        &amp;&amp; (right-&gt;type == INT_EXPRESSION || right-&gt;type == DOUBLE_EXPRESSION)) 
+    {
+        CRB_Value v;
+        v = crb_eval_binary_expression(crb_get_current_interpreter(), NULL, operator, left, right);
+        /* 覆写左表达式 */
+        *left = convert_value_to_expression(&amp;v);
+        return left;
+    }
+    /* 一般情况下，需要先开辟内存，然后再填充`u`的左表达式字段和右表达式字段  */
+    else {
+        Expression *exp;
+        exp = crb_alloc_expression(operator);
+        exp-&gt;u.binary_expression.left = left;
+        exp-&gt;u.binary_expression.right = right;
+        return exp;
+    }
+}
+</code></pre>
+<p>与之类似的还有<code>MINUS_EXPRESSION</code>:</p>
+<pre><code class="language-c">Expression * crb_create_minus_expression(Expression *operand)
+{
+    /* 可直接求值的情况 */
+    if (operand-&gt;type == INT_EXPRESSION || operand-&gt;type == DOUBLE_EXPRESSION)
+    {
+        CRB_Value v;
+        v = crb_eval_minus_expression(crb_get_current_interpreter(), NULL, operand);
+        *operand = convert_value_to_expression(&amp;v);
+        return operand;
+    } 
+    /* 一般情况下，需要先开辟内存，然后再填充`u.`的`minus_expression`字段  */
+    else {
+        Expression *exp;
+        exp = crb_alloc_expression(MINUS_EXPRESSION);
+        exp-&gt;u.minus_expression = operand;
+        return exp;
+    }
+}
+</code></pre>
+<p>其他诸如<code>IDENTIFIER_EXPRESSION</code>、<code>FUNCTION_CALL_EXPRESSION</code>、<code>BOOLEAN_EXPRESSION</code>等表达式的创建函数，其实现也是先申请内存，然后填充相应字段，不再赘述。</p>
+<p>唯一比较特殊的是<code>NULL_EXPRESSION</code>，开辟内存后，并不填充<code>u</code>字段：</p>
+<pre><code class="language-c">Expression * crb_create_null_expression(void)
+{
+    Expression  *exp;
+    exp = crb_alloc_expression(NULL_EXPRESSION);
+    return exp;
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Compiler/自制编程语言/crowbar源码阅读笔记(4).html">
+                    crowbar源码阅读笔记(4):语句构建
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这是《自制编程语言》一书中的脚本语言<code>crowbar</code>的源码阅读笔记(4):语句构建</p>
+<h2>语句、语句表、与语句块的结构表示</h2>
+<p>如<a href="/2017/08/18/Boulevard/Compiler/%E8%87%AA%E5%88%B6%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/crowbar%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%281%29">《crowbar源码阅读笔记(1):基本的数据结构》</a>中所述，<strong>语句</strong> 、<strong>语句表</strong> 、<strong>语句块</strong> 可以抽象为：</p>
+<pre><code class="language-c">struct Statement_tag {
+    StatementType       type;
+    int                 line_number;
+    union {
+        Expression      *expression_s;
+        GlobalStatement global_s;
+        IfStatement     if_s;
+        WhileStatement  while_s;
+        ForStatement    for_s;
+        ReturnStatement return_s;
+    } u;
+};
+
+typedef struct StatementList_tag {
+    Statement   *statement;
+    struct StatementList_tag    *next;
+} StatementList;
+
+typedef struct {
+    StatementList       *statement_list;
+} Block;
+</code></pre>
+<!-- more -->
+<h2>语句、语句链表、与语句块的构建机理</h2>
+<p>和创建表达式类似，创建语句的时候，也需要申请在内存中开辟一段空间：</p>
+<pre><code class="language-c">static Statement * alloc_statement(StatementType type)
+{
+    Statement *st;
+    st = crb_malloc(sizeof(Statement));
+    st-&gt;type = type;
+    st-&gt;line_number = crb_get_current_interpreter()-&gt;current_line_number;
+    return st;
+}
+</code></pre>
+<p>开辟内存之后，再在其中填充<code>Statement</code>结构成员(类型、行号)；最后针对要创建的具体语句类型，填充<code>u</code>成员的特定字段。</p>
+<p>语句表是用链表实现的，每个节点都包含一个<code>statement</code>成员指向相应语句和一个<code>next</code>成员指向下一个节点。故创建一个语句表的实现即为申请分配一个<code>StatementList</code>结构体大小的内存空间，然后将其<code>statement</code>成员初始化为指定的语句指针即可：</p>
+<pre><code class="language-c">StatementList * crb_create_statement_list(Statement *statement)
+{
+    StatementList *sl;
+    /* 申请开辟一段内存 */
+    sl = crb_malloc(sizeof(StatementList));
+    
+    /* 设置语句链表的第一个节点为指定的语句 */
+    sl-&gt;statement = statement;
+    /* 把下一个节点初始化为NULL */
+    sl-&gt;next = NULL;
+
+    return sl;
+}
+</code></pre>
+<p>仅仅能创建语句链表还不够方便，我们还需要随时可以给某个链表添加语句的功能，与新增变量会放到相关环境中第一个节点不同，新增的语句会作为最后一个节点追加到指定语句链表上：</p>
+<pre><code class="language-c">StatementList * crb_chain_statement_list(StatementList *list, Statement *statement)
+{
+    StatementList *pos;
+
+    if (list == NULL)
+        return crb_create_statement_list(statement);
+
+    /* 跳到链表的最后一个节点 */
+    for (pos = list; pos-&gt;next; pos = pos-&gt;next)
+        ;
+    /* 追加新的语句 */
+    pos-&gt;next = crb_create_statement_list(statement);
+
+    return list;
+}
+</code></pre>
+<p>构建语句块的过程也要先申请开辟内存，然后填充<code>Block</code>结构——把<code>statement_list</code>成员指向相关的语句表即可：</p>
+<pre><code class="language-c">Block * crb_create_block(StatementList *statement_list)
+{
+    Block *block;
+
+    block = crb_malloc(sizeof(Block));
+    block-&gt;statement_list = statement_list;
+
+    return block;
+}
+</code></pre>
+<h2>与关键字相关的语句创建</h2>
+<h3>分支判断语句创建</h3>
+<p><code>crowbar</code>语言所支持的<code>if</code>语句的语法格式类似于：</p>
+<pre><code class="language-ruby"># condition
+if(condition)
+# then block
+{
+}
+# elsif list
+elsif(){
+    # ...
+}
+# else block
+else{
+    # ...
+}
+</code></pre>
+<p>所以创建<code>if</code>语句的实现思路为先申请开辟一段内存存放<code>Statement</code>结构体，然后填充<code>u</code>成员<code>if_s</code>的相关字段:</p>
+<pre><code class="language-c">Statement * crb_create_if_statement(Expression *condition, Block *then_block, Elsif *elsif_list, Block *else_block)
+{
+    Statement *st;
+    st = alloc_statement(IF_STATEMENT);
+
+    st-&gt;u.if_s.condition = condition;
+    st-&gt;u.if_s.then_block = then_block;
+    st-&gt;u.if_s.elsif_list = elsif_list;
+    st-&gt;u.if_s.else_block = else_block;
+
+    return st;
+}
+</code></pre>
+<h3>循环语句创建：</h3>
+<p><code>crowbar</code>语言支持<code>while</code>语句，其语法类似于：</p>
+<pre><code class="language-ruby">while(condition)
+{
+    # block 
+}
+</code></pre>
+<p>创建<code>while</code>语句的实现为先申请开辟一段内存存放<code>Statement</code>结构体，然后填充<code>u</code>成员<code>while_s</code>的相关字段：</p>
+<pre><code class="language-c">Statement * crb_create_while_statement(Expression *condition, Block *block)
+{
+    Statement *st;
+    st = alloc_statement(WHILE_STATEMENT);
+
+    st-&gt;u.while_s.condition = condition;
+    st-&gt;u.while_s.block = block;
+
+    return st;
+}
+</code></pre>
+<p>创建<code>for</code>循环语句与之类似：</p>
+<pre><code>Statement * crb_create_for_statement(Expression *init, Expression *cond, Expression *post, Block *block)
+{
+    Statement *st;
+    st = alloc_statement(FOR_STATEMENT);
+
+    st-&gt;u.for_s.init = init;
+    st-&gt;u.for_s.condition = cond;
+    st-&gt;u.for_s.post = post;
+    st-&gt;u.for_s.block = block;
+
+    return st;
+}
+</code></pre>
+<p>与循环相关的还有<code>break</code>和<code>continue</code>语句。由于不涉及其他信息，其实现非常简单，并不填充<code>Statement</code>的<code>u</code>字段：</p>
+<pre><code class="language-c">Statement *crb_create_break_statement(void)
+{
+    return alloc_statement(BREAK_STATEMENT);
+}
+
+Statement *crb_create_continue_statement(void)
+{
+    return alloc_statement(CONTINUE_STATEMENT);
+}
+</code></pre>
+<h3><code>return</code>语句</h3>
+<p>创建<code>return</code>语句：</p>
+<pre><code class="language-c">Statement * crb_create_return_statement(Expression *expression)
+{
+    Statement *st;
+    st = alloc_statement(RETURN_STATEMENT);
+
+    st-&gt;u.return_s.return_value = expression;
+
+    return st;
+}
+</code></pre>
+<h2>其他语句</h2>
+<p>这类结构较为简单。</p>
+<h3>表达式语句的创建</h3>
+<pre><code class="language-c">Statement * crb_create_expression_statement(Expression *expression)
+{
+    Statement *st;
+    st = alloc_statement(EXPRESSION_STATEMENT);
+
+    st-&gt;u.expression_s = expression;
+
+    return st;
+}
+</code></pre>
+<h3>全局语句的创建</h3>
+<pre><code class="language-c">Statement * crb_create_global_statement(IdentifierList *identifier_list)
+{
+    Statement *st;
+
+    st = alloc_statement(GLOBAL_STATEMENT);
+    st-&gt;u.global_s.identifier_list = identifier_list;
+
+    return st;
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page14.html">
+          Previous
+        </a>
+        16 of 32
+        <a href="/posts/page16.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

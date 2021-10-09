@@ -1,0 +1,226 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/记一次大小尾引发的血案.html">
+                    记一次大小尾引发的血案
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-11-18
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>事情要从单位前些年建设的远程监控平台说起。此平台后端由山东某公司(暂称G公司)编写，负责远程监控我厂的油井。
+由于油井数量众多、分批建设，现场硬件由不同厂家提供、建设，驱动不兼容。另一方面，原后端程序写得太渣：</p>
+<ol>
+<li>所有操作都是同步阻塞操作，同时没有任务队列。收到什么数据，就尝试直接写入数据库。如果现场七百口井同时发送数据，算上每个井的压力、温度、电参、载荷等参数，画面太美无法想象。</li>
+<li>浏览器端查询操作：数据库检索不分页，每次想查询屁大点的数据，都要把数据库翻个底朝天。</li>
+<li>代码实在太渣，各种丢失历史数据、各种警情漏报。</li>
+</ol>
+<p>鉴于平台实在太烂，单位从胜利油田引进了生产指挥系统<code>PCS</code>。</p>
+<h2>协议</h2>
+<p>为了利旧现场仪表和RTU，要统一各家驱动协议。胜软开发工程师以<code>Modbus</code>协议为原型，在三维力控相关驱动和原有硬件通信协议的基础上，提出来一套新的标准规范。通信协议传输数据的主要格式为：</p>
+<pre><code>HEAD(4)  长度(2)  地址(2)  功能码(1)  伴随码(2)  仪表数据  ED(2)  CRC-16(2)
+</code></pre>
+<p>其中：</p>
+<ul>
+<li><code>长度</code>：从<code>地址</code>起,<code>ED</code>之前结束(不包括<code>ED</code>)。</li>
+<li><code>功能码</code>、<code>伴随码</code>：代表后面传送的<code>数据</code>是哪种类型的数据，比如压力数据、电参数据</li>
+<li><code>CRC-16</code>：校验值</li>
+</ul>
+<p>协议要求传送的数据低字节在前、高字节在后。
+我对此有比较大的疑问，为什么要让数据低字节在前？然后我联系了胜软工程师、三维力控工程师，他们给出的回复是：直接从内存里做了<code>memcpy()</code>操作，并未进行手工进行网络序转换。
+后来我召集各硬件厂家来我厂开会，就此协议征求意见。截至到胜软对协议定稿，包括G公司在内的各厂家均未提出任何异议。</p>
+<h2>插曲</h2>
+<p>协议定稿后，然后就进入了<code>RTU</code>驱动开发测试环节。由于新的标准协议跟其中某家公司（暂称为J公司）的既有协议比较像，他们很快完成了通信协议的开发。
+但是在挑了一个口井进行实际测试的时候发现，后端死活无法接收到数据。胜软工程师和J公司现场人员花了两个工作日，也未能定位原因。
+在我的要求下，他们使用<code>wireshark</code>进行抓包然后交由我分析。
+仪表数据通过<code>UDP</code>协议发送。对其中一段数据的主要内容整理、分析、和解释后如下（已略去如设备识别等与此处不相干内容）：</p>
+<pre><code>[48H][45H][41H][44H]  # HEAD
+[2DH][00H]            # length 45
+[01H][00H]            # addr 0001
+[03H][00H][00H]       # func
+[ABH][02H][DBH][02H]  # p1 683 731 。683表示压力6.83MPa；731表示电池 7.31V
+[00H][00H][00H][00H]  # p2 
+[39H][00H][DEH][02H]  # p3 57  734
+[00H][00H][00H][00H]  # p4 
+[00H][00H][00H][00H]  # p5
+[00H][00H][00H][00H]  # t1
+[F6H][00H][D9H][02H]  # t2 246 729
+[00H][00H][00H][00H]  # t3
+[00H][00H][00H][00H]  # t4
+[00H][00H][00H][00H]  # t5 
+[45H][44H]            # ED
+[E4H][B5H]            # CRC
+</code></pre>
+<p>其中，<code>#</code>后面表示我的注释信息。
+对报文<code>HEAD</code>~<code>ED</code>中间部分进行高低字节换位，然后分别转换至整数，即可得到上面的解释信息。
+我把上面这段报文解释发至胜软工程师，让他校对下后台配置的信息是否有误，他立刻发现报文中<code>地址位</code>不对，然后联系J公司工程师，进而发现J公司<code>RTU</code>程序程序有个bug，每隔一段时间<code>设备地址</code>总是重置为<code>0x0001</code>。
+大约一个来月，J公司率先完成了他们所供应的全部仪表到新<code>PCS</code>平台的接入工作。</p>
+<h2>报告：你家电话线不通</h2>
+<p>在我从北京出差回来后，已经超过了原订的时间节点，这时候发现G公司奇葩到连一个测试井位都未完成。于是对他们进行了催促，他们表示正在全力研发，并配合胜软工程师进行测试。虽然心里有些许不高兴，但还是答应再宽限了几天。
+忽然在前天下午，G公司负责人Z打电话给我怒气冲冲的告状说这协议有问题！他们时间全部白费了！然而我之前已经听说有两个厂家都独立按照此协议完成了接入工作，所以我表示可以让他们工程师写了一份问题说明给我，我必须检查是否有真有错误。</p>
+<p>由于有了之前的经验，我快速分析了下报文。为了方便阅读，对他们报文的其中一段整理如下：</p>
+<pre><code>[48H][45H][41H][44H]             # HEAD
+[41H][00H]                       # 长度
+[35H][0EH]                       # 地址
+[02H][00H][00H]                  # 功能码：电参，      
+[00H][00H][00H][00H][00H][00H]   # ABC 三相电压         
+[00H][00H][00H][00H][00H][00H]   # ABC 三相电流        
+[00H][00H][00H][00H][00H][00H]   # 有功、无功、视在功率 
+[00H][00H][88H][13H]             # 功率因数 频率       
+[00H][00H]                       # 平均电流            
+[00H][00H][00H][00H]             # 电压、电流不平衡度   
+[00H][00H][00H][00H]             # 正向有功总电能        
+[00H][00H][00H][00H]             # 设置流量，4个字节          
+[00H][00H][00H][00H]             # 瞬时流量，4个字节       
+[00H][00H][00H][00H]             # 累计流量，4个字节                
+[00H][00H]                       # 功图电池电量       
+[00H][00H]                       # 开停井             
+[00H][00H][00H][00H][00H][00H]   # ABC三相上行峰值电流 
+[00H][00H][00H][00H][00H][00H]   # ABC三相下行峰值电流 
+[45H][44H]                       # ED
+[7EH][26H]                       # CRC
+</code></pre>
+<p>他们表示<code>CRC</code>值为 0x267E，然后按照高低位转换，应该是 0x7E26 。但是后端认为应该是 0x267E 。G公司认为自己占理，要求后端改程序。</p>
+<h2>狗血临头</h2>
+<p>作为甲方，后端胜软、各个硬件厂商都是我的服务/供应商，我当然不会偏向于任何一方，所以我跟向我报告协议有问题的G公司的工程师谈了下我的理解：协议中<code>HEAD</code>~<code>ED</code>中间的部分是从内存里直接<code>memcpy()</code>拷贝的，所以是采用低字节在前、高字节在后，并没有转换到网络序；然而<code>CRC</code>部分是根据前面这段信息进行冗余校验，协议原文中描述“低字节在前,长度从地址起,ED之前结束,不包括ED。报头报尾均为大写。”并不是指<code>CRC</code>部分。
+然而G公司的工程师态度很强硬，跟我从这个问题扯到了其他问题：</p>
+<ol>
+<li>由于之前他们通过<code>UDP</code>协议传输不同，现在改用了<code>TCP</code>，我偶然间提到应用层是网络传输的最高层，他表示随便那本书上都写了不是最高层。</li>
+<li>我表示应用层也要考虑网络序问题，因为<code>OSI</code>模型要求对等转换。他则任务应用层不用考虑。</li>
+</ol>
+<p>于是我在挂了电话后贴了<code>OSI</code>模型的<code>wiki</code>链接，他又说“现在不是讨论网络架构的层，我们讨论的是应用层和你说的完全是两码事”。然而大家正在争论的这个协议不就是应用层协议吗？
+为了说明应用层也要考虑对等转换，我写了一个<code>CPP</code>客户端+<code>Node.js</code>服务端解释程序发给他。</p>
+<p><code>cpp</code> 部分负责对一个整数值 0x7e26，在不做网络序转换的前提下直接进行网络传送，核心代码为：</p>
+<pre><code class="language-cpp">int a_int = 32294; // 0x7e26
+char *ch = (char*)(&amp;a_int);
+// 0x7e = ~ 
+// 0x26 = &amp;
+// 因为内存中是低字节在前，所以输出序列为: &amp;~
+printf(ch); 
+
+char *sendbuf = ch;
+// 发送sendbuf的程序代码略过
+</code></pre>
+<p>而服务端的<code>Node.js</code>为：</p>
+<pre><code class="language-JavaScript">const server = net.createServer(function (c) {
+    c.on('end', () =&gt; {
+        console.log('client disconnected');
+    });
+    c.on('data',(data)=&gt;{
+        const buffer=Buffer.from(data);
+        console.log(`接收到数据为`,buffer);
+
+        // 不转换
+        const hexString=buffer.toString('hex');
+        const wrongInt=parseInt(hexString,16);
+        console.log(`由于客户端直接传来了低字节在前的数据，如果无对等转换，就会解析到错误的整数${wrongInt}`);
+
+        // 逆序高低字节转换
+        const array=[];
+        for(let i=buffer.length-1;i&gt;-1;i--){
+            array.push(buffer[i]);
+        }
+        const raw=Buffer.from(array);
+        const rawInt=parseInt(raw.toString('hex'),16);
+        console.log(`事实上，原来的数实际是${rawInt}`);
+    })
+});
+</code></pre>
+<p>以此证明，对等转换也需要考虑字节序问题。然而他认为他们是按照协议来的，协议有问题就改协议，谁程序有问题就改程序。
+竟然还说“我不知道你用的啥系统，啥年代了，现在的网络用socket就可以解决了，真不知道你要把网络层都拿出来做什么，难道你要把每层都用你的代码实现”。</p>
+<p>我向来是不喜欢用甲方身份压迫别人做事情的，于是表示：法律足够明确，谁都认为自己合法，是不是可以按照自己想法来对其他事情不管不顾？打官司谁来裁定哪一方合法？
+他仿佛早把我这个中间调停者当成了敌人，问我理解的就是协议的本意了吗？继续强调他们是按照协议来做的，谁有错就让谁改。
+到此刻，我也不想跟这个人沟通下去了。</p>
+<ol>
+<li>我立刻联系了协议标准编写人，确认协议本意确实和我理解一致；然后把确认结果发给他。</li>
+<li>同时让协议标准工程师拟一份补充协议，详细对此问题说明。</li>
+<li>决定让G公司改程序。</li>
+</ol>
+<p>事后，我跟胜软工程师了解到:</p>
+<ol>
+<li>协议标准说明书里有报文和对应<code>CRC-16</code>值示例。显然，他们写程序没做单元测试。</li>
+<li>在此之前，他们犯过诸多愚蠢的错误，诸如报头不对、<code>TCP</code>发送却告知后端是采用<code>UDP</code>协议。</li>
+</ol>
+<p>我瞬间感觉到，我跟G公司那个工程师讨论问题，纯属浪费生命。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

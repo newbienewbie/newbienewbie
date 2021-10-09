@@ -1,0 +1,206 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/WASM/基本原理/WASM基本原理2——文本格式.html">
+                    WebAssembly基本原理2——文本格式
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-01-18
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>WASM</code>的文本格式通常用<code>S-expression</code>来表示。其中，每个节点位于一对括号之中，其中的第一个标签指示节点类型，其后是属性列表或者子节点列表。例如：</p>
+<pre><code class="language-wasm">(module (memory 1) (func)) 
+</code></pre>
+<p>该表达式的意思是：有一个模块，它有两个子节点，分别为<code>memory</code>和<code>func</code>，其中<code>memory</code>节点有属性为1。</p>
+<h2>数据类型</h2>
+<p><code>WASM</code>当前支持的数据类型还很少，只有四个可用类型：</p>
+<ul>
+<li><code>i32</code>：32位整数</li>
+<li><code>i64</code>：64位整数</li>
+<li><code>f32</code>：32位浮点数</li>
+<li><code>f64</code>：64位浮点数</li>
+</ul>
+<h2>函数</h2>
+<p>在<code>WASM</code>模块内部，基本上所有的代码都是用函数来组织的。<!--more--></p>
+<h3>函数定义</h3>
+<p>函数语法形式为：</p>
+<pre><code class="language-wasm">( func &lt;signature&gt; 
+    &lt;locals&gt; 
+    &lt;body&gt; 
+)
+</code></pre>
+<p>例如：</p>
+<pre><code class="language-wasm">(func (param i32) (param f32) 
+    (local f64)
+    get_local 0
+    get_local 1
+    get_local 2
+)
+</code></pre>
+<p>这里使用数字索引来引用变量。为了方便，我们可以使用变量名来代替：</p>
+<pre><code class="language-wasm">(func (param $p1 i32) (param $p2 f32) 
+    (local $loc f64) 
+    get_local $p1
+    get_local $p2
+    get_local $loc
+    ...
+)
+</code></pre>
+<p>同样，像局部变量一样，函数默认也是通过索引来区分的，为了方便，我们可以为函数起个名字：</p>
+<pre><code class="language-wasm">(func $add (param $p1 i32) (param $p2 i32) (result i32)
+    get_local $p1
+    get_local $p2
+    i32.add
+)
+</code></pre>
+<h3>函数导出</h3>
+<p>如果想要这个函数可以在其他模块中调用，则需要导出这个函数:</p>
+<pre><code class="language-wasm">(module
+    (func $add (param $p1 i32) (param $p2 i32) (result i32)
+        get_local $p1
+        get_local $p2
+        i32.add
+    )
+    (export &quot;add&quot; (func $add))
+)
+</code></pre>
+<p>为了方便，还可以将其写为一行：</p>
+<pre><code class="language-wasm">(module
+    (func (export &quot;add&quot;) (param $p1 i32) (param $p2 i32) (result i32)
+        get_local $p1
+        get_local $p2
+        i32.add
+    )
+)
+</code></pre>
+<h3>函数调用</h3>
+<h3>同一模块下的函数调用</h3>
+<p>如果想在同一模块中调用这个函数，则只需使用<code>call</code>指令：</p>
+<pre><code class="language-wasm">(module
+    (func $answer (result i32)       ;; 这个函数没有参数
+        i32.const 42                 ;; 宇宙的终极答案
+    )
+    (func $some (result i32)
+        call $answer                 ;; 调用同一个模块中的函数
+    )
+)
+</code></pre>
+<h3>调用 JavaScript 中的函数</h3>
+<p><code>WASM</code>是被设计用来补充<code>JavaScript</code>的，所以注定不会有像<code>JavaScript</code>那么丰富的接口(至少在短期内是这样)。为了完成更多功能，在<code>WASM</code>中向<code>JavaScript</code>借力(也就是调用<code>JavaScript</code>函数)是必不可少的。
+为此，首先要从<code>JavaScript</code>中导入相应函数，例如，我们有一个<code>JavaScript</code>对象：</p>
+<pre><code class="language-javascript">var obj = {
+    console: {
+        log: function(arg) { console.log(arg); }
+    }
+};
+</code></pre>
+<p>假如我们想在<code>WASM</code>中使用这里的<code>obj.console.log</code>函数，则需要在<code>WASM</code>相应模块中先声明要导入的这个函数，然后即可调用之：</p>
+<pre><code class="language-wasm">(module
+    (import &quot;console&quot; &quot;log&quot; (func $log (param i32)))   ;; 申明要导入的函数
+    (func (export &quot;myLog&quot;)                             
+        i32.const 42
+        call $log                                      ;; 调用外部导入的函数
+    )
+)
+</code></pre>
+<h3>在<code>JavaScript</code>中调用<code>WASM</code>中的函数</h3>
+<p>目前<code>WASM</code>仍需要借助于<code>JavaScript</code>才能执行。所以，我们需要一段<code>JavaScript</code>来调用：</p>
+<pre><code class="language-javascript">
+// 要导入给WASM用的对象
+var importObj = {
+    console: {
+        log: function(arg) { console.log(arg); }
+    }
+};
+
+// buf 是WASM程序的字节码
+WebAssembly.instantiate(buf, importObj)
+    .then(result=&gt;{
+        // 获取实例
+        const instance=result.instance;
+        instance.exports.myLog();
+    })
+</code></pre>
+<p>注意，这里并没有向<code>WASM</code>暴露的函数传递参数，这是有意为之，因为这需要在<code>JavaScript</code>和<code>WASM</code>之间共享数据，这部分知识点将在后续笔记中涵盖。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

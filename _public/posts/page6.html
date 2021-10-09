@@ -1,0 +1,497 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读2.html">
+                    BotBuilder 源码通读2 —— 中间件的实现
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-01-30
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>BotBuilder</code>的中间件非常简单，从实现上说，这里的中间件全部都是基于接口的中间件，并不存在基于约定的中间件。</p>
+<h2>中间件接口</h2>
+<p><code>BotBuilder</code>中间件接口本身非常简单，只有一个方法<code>OnTurnAsync(context,next,cancelToken)</code>用于处理收到的<code>Activity</code>。</p>
+<pre><code class="language-csharp">public interface IMiddleware
+{
+    Task OnTurnAsync(ITurnContext context, NextDelegate next, CancellationToken cancellationToken = default(CancellationToken));
+}
+</code></pre>
+<p>而所谓<code>NextDelegate</code>，也非常简单：</p>
+<pre><code class="language-csharp"> public delegate Task NextDelegate(CancellationToken cancellationToken);
+</code></pre>
+<p>含义是调用下一个中间件的<code>OnTurnAsync(ctx,next,ct)</code>方法。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读1.html">
+                    BotBuilder 源码通读1 —— A Big Picture
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-01-17
+                </p>
+              </div>
+              <div class="content article-body">
+                <pre><code>+---------------+     +-----------+                                  +---------------+
+|               |     |           |                                  |               |
+|  ASP.NET Core +-----&gt;           |                            +-----&gt;  QnA Services |                   
+|               &lt;-----+           |                            |     |               |
++---------------+     |           |                            |     +-------------- +
+                      |           |                            |     +---------------+
+                      |           +-------------+ +--------+   |     |               |
++---------------+     |           |             | |        |   +-----&gt; Luis Services |
+|               |     |           |             --&gt;        |   |     |               |
+|  ASP.NET Web  +-----&gt; BotAdapter| Middlewares | |  IBot  +---&gt;     +---------------+
+|               &lt;-----+           |             &lt;--        |                         
++---------------+     |           |             | |        |   |     +---------------+
+                      |           +-------------+ +--------+   |     |               |
++---------------+     |           |                            |     |   ... Other   |
+| Console App   |     |           |                            +-----&gt;   Connected   |
+|     ...       +-----&gt;           |                                  |    Services   |
+|  other apps   |     |           |                                  |               |
++---------------+     +-----------+                                  +---------------+
+</code></pre>
+<!-- more -->
+<h2><code>IBot</code></h2>
+<p><code>IBot</code>代表了对聊天机器人抽象：</p>
+<pre><code class="language-csharp">public interface IBot
+{
+    Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken));
+}
+</code></pre>
+<p>该接口只有唯一的一个方法<code>OnTurnAsync(context,ct)</code>，旨在处理收到的<code>Activity</code>。注意:</p>
+<ol>
+<li><code>IBot</code>并不关心<code>Activity</code>是怎么来的，也不关心具体如何发出<code>Activity</code>，他只负责处理<code>TurnContext</code>。</li>
+<li><code>IBot</code>并不关心<code>TurnContext</code>是如何构建的，这是外层<code>BotAdapter</code>的事情</li>
+<li><code>IBot</code>的<code>OnTurnAsync(context,ct)</code>方法并不接收<code>next</code>参数，这是因为该接口方法是作为中间件集的最内层（回调函数）调用——这在后文中会解释。</li>
+</ol>
+<h2><code>BotAdapter</code></h2>
+<p><code>BotAdapter</code>代表聊天机器人和各种<code>Endpoint Service</code>之间的适配器。每当收到活动，适配器就会提取必要信息(诸如身份信息之类)，创建相应的聊天上下文<code>ITurnContext</code>；然后调用<code>RunPipelineAsync(context, callback,ct)</code>触发中间件依次调用，完成之后会回调<code>IBot</code>的<code>OnTurnAsync(context)</code>；最后，拿到结果，发送给channel。</p>
+<p><code>BotAdapter</code>是一个抽象类，提供了三组<code>API</code>：</p>
+<ul>
+<li>中间件注册: 利用<code>Use()</code>方法向内部的<code>MiddlewareSet</code>属性注册中间件</li>
+<li>会话流（中间件调用）:<code>ContinueConversationAsync()</code>。从本质上说，会话流其实就是中间件调用的过程</li>
+<li>活动相关的抽象方法：发送<code>Activity</code>、更新<code>Update</code>、删除<code>Activity</code>，均为抽象方法，留待具体的子类实现</li>
+</ul>
+<p><strong>中间件注册</strong></p>
+<pre><code class="language-csharp">public abstract class BotAdapter
+{
+    protected MiddlewareSet MiddlewareSet { get; } = new MiddlewareSet();
+    
+    // ...
+    
+    // 注册中间件
+    public BotAdapter Use(IMiddleware middleware)
+    {
+        MiddlewareSet.Use(middleware);
+        return this;
+    }
+    
+    // ...
+}
+
+</code></pre>
+<p><strong>会话流（中间件调用）</strong></p>
+<pre><code class="language-csharp">public abstract class BotAdapter
+{
+    // ...
+       
+    public virtual Task ContinueConversationAsync(string botId, ConversationReference reference, Func&lt;ITurnContext, Task&gt; callback, CancellationToken cancellationToken)
+    {
+        using (var context = new TurnContext(this, reference.GetContinuationActivity()))
+        {
+            return RunPipelineAsync(context, callback, cancellationToken);
+        }
+    }
+
+    protected async Task RunPipelineAsync(ITurnContext context, BotCallbackHandler callback,  CancellationToken cancellationToken)
+    {
+        BotAssert.ContextNotNull(context);
+        if (context.Activity != null){
+            try {
+                // 传入callback作为中间件集的最内层
+                await MiddlewareSet.ReceiveActivityWithStatusAsync(context, callback, cancellationToken).ConfigureAwait(false);
+            } catch (Exception e) {
+                // ... 错误处理
+            }
+        }else {
+            if (callback != null){
+                await callback(context).ConfigureAwait(false);
+            }
+        }
+    }
+}
+</code></pre>
+<p>注意：<code>RunPipelineAsync()</code>接收一个<code>BotCallbackHandler</code>委托类型作为回调参数。其实该委托类型就是<code>Func&lt;ITurnContext,CancellationToken,Task&gt;</code>：</p>
+<pre><code class="language-csharp">public delegate Task BotCallbackHandler(ITurnContext turnContext, CancellationToken cancellationToken);
+</code></pre>
+<p><strong>当<code>BotAdapter</code>自身中间件全部调用完成后会触发该回调</strong>。事实上，在与<code>ASP.NET Core</code>集成时，<code>IBot::OnTurnAsync()</code> 方法就是作为回调函数传入<code>RunPipelineAsync()</code>的。换言之，<strong><code>IBot</code>的<code>OnTurnAsync()</code>是作为中间件集的最内层参与调用的</strong>。</p>
+<p>此外，<code>BotAdapter</code>还规定了几个抽象方法用于如何处理活动：</p>
+<pre><code class="language-csharp">public abstract class BotAdapter
+{
+    // 异步地发出活动
+    public abstract Task&lt;ResourceResponse[]&gt; SendActivitiesAsync(ITurnContext context, Activity[] activities, CancellationToken cancellationToken);
+
+    // 异步地更新活动
+    public abstract Task&lt;ResourceResponse&gt; UpdateActivityAsync(ITurnContext context, Activity activity, CancellationToken cancellationToken);
+
+    // 异步地删除活动
+    public abstract Task DeleteActivityAsync(ITurnContext context, ConversationReference reference, CancellationToken cancellationToken);
+}
+</code></pre>
+<p>这些抽象方法留待继承自<code>BotAdapter</code>的子类去实现。借助<code>BotAdapter</code>，<code>Bot</code>可以独立于具体的服务：比如可以构筑于<code>Website</code>之上，借助于<code>HTTP</code>传输活动；甚至可以构建于一个控制台适配器之上，例如可能有类似如下的代码：</p>
+<pre><code class="language-csharp">// 创建一个控制台适配器
+var adapter = new ConsoleAdapter()    // 自定义的ConsoleAdapter类
+    // 为适配器添加中间件
+    .Use(/*...*/);
+
+// 创建一个聊天机器人
+var echoBot = new EchoBot();
+
+// 连接适配器和机器人 
+adapter.ProcessActivity(async (context) =&gt; await echoBot.OnTurn(context))
+    .Wait();
+</code></pre>
+<p>这里的<code>ProcessActivity()</code>方法是<code>ConsoleAdapter</code>的自定义方法，只是负责构建<code>OnTurnContext</code>，该方法会调用具体的<code>Bot</code>处理相关逻辑。</p>
+<h3><code>BotFrameworkAdapter</code></h3>
+<p>上文说到，<code>IBot</code>并不关心如何接收<code>Activity</code>，也不关心具体如何传输<code>Activity</code>，这些工作是外层的<code>BotAdapter</code>完成的。具体的适配器还需要根据收到的<code>Activity</code>创建<code>TurnContext</code>。然后触发中间件调用<code>RunPipelineAsync(context, callback, cancellationToken)</code>。比如<code>BotFrameworkAdapter</code>作为<code>BotAdapter</code>的子类，提供了一个名为<code>ProcessActivityAsync</code>的方法:</p>
+<pre><code class="language-csharp">public async Task&lt;InvokeResponse&gt; ProcessActivityAsync(ClaimsIdentity identity, Activity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
+{
+    using (var context = new TurnContext(this, activity))
+    {
+        // ...
+        await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
+        // ...
+    }
+    
+    return null;
+}
+</code></pre>
+<p>可以看到，该<code>ProcessActivity(id,activity,cb,ct)</code>方法会根据<code>Activity</code>创建<code>TurnConext</code>，并转而调用<code>RunPipelineAsync(ctx,cb,ct)</code>方法，从而触发中间件调用及<code>IBot</code>的<code>OnTurnAsync()</code>的执行。</p>
+<h3>与 ASP.NET Core 集成</h3>
+<p>其实，从上文分析过程中，我们已经发现了与其他应用集成的基本思路：</p>
+<ul>
+<li>找到<code>BotAdapter</code>实现</li>
+<li>找到<code>IBot</code>实现</li>
+<li>构建<code>Activity</code>，</li>
+<li>构建<code>TurnContext</code></li>
+<li>调用<code>RunPipelineAsync(ctx,cb,ct)</code>，从而触发<code>BotAdapter</code>的各中间件执行及<code>IBot::OnTurnAsync()</code>回调</li>
+</ul>
+<p>第一步和第二步可以借助于依赖注入实现，所以在<code>ASP.NET Core</code>中使用时，要先要注册<code>IBot</code>服务；然后再注册<code>ASP.NET Core</code>框架的中间件触发<code>RunPipeline(ctx,cb,ct)</code>的执行：</p>
+<pre><code class="language-csharp">public void ConfigureServices(IServiceCollection services)
+{
+     services.AddBot&lt;YourBot&gt;(options =&gt;{
+         // ...
+     });
+}
+
+public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+{
+    app.UseDefaultFiles()
+        .UseStaticFiles()
+        .UseBotFramework();
+}
+</code></pre>
+<p><strong><code>ASP.NET Core</code>服务注册</strong></p>
+<p>通常在与<code>ASP.NET Core</code>集成时，用户需要添加两个服务：</p>
+<ol>
+<li><code>IBot</code>服务：瞬态的</li>
+<li><code>IAdapterIntegration</code>服务: 通过<code>TryAddBotFrameworkAdapterIntegration()</code>注册一个<code>IAdapterIntegration</code>单例工厂<code>BotFrameworkAdapterSingletonFactory</code>。该工厂只是简单的创建一个<code>BotFrameworkAdapter</code>对象，并<code>Options</code>中配置的中间件都注册到其中间件集中。</li>
+</ol>
+<pre><code class="language-csharp">public static IServiceCollection AddBot&lt;TBot&gt;(this IServiceCollection services, Func&lt;IServiceProvider, TBot&gt; botFactory, Action&lt;BotFrameworkOptions&gt; configureAction = null)
+    where TBot : class, IBot
+{
+    if (services == null) {/* throw  */}
+    if (botFactory == null) {/* throw  */}
+
+    if (configureAction != null) {
+        services.Configure(configureAction);
+    }
+
+    return services
+        .TryAddBotFrameworkAdapterIntegration()
+        .AddTransient&lt;IBot&gt;(botFactory);
+}
+
+private static BotFrameworkAdapter BotFrameworkAdapterSingletonFactory(IServiceProvider serviceProvider)
+{
+    var options = serviceProvider.GetRequiredService&lt;IOptions&lt;BotFrameworkOptions&gt;&gt;().Value;
+    var logger = serviceProvider.GetRequiredService&lt;ILogger&lt;IAdapterIntegration&gt;&gt;();
+
+    var botFrameworkAdapter = new BotFrameworkAdapter(
+        options.CredentialProvider,
+        options.ChannelProvider,
+        options.ConnectorClientRetryPolicy,
+        options.HttpClient,
+        null,
+        logger)
+    {
+        OnTurnError = options.OnTurnError,
+    };
+
+    foreach (var middleware in options.Middleware)
+    {
+        botFrameworkAdapter.Use(middleware);
+    }
+
+    return botFrameworkAdapter;
+}
+</code></pre>
+<p><strong><code>ASP.NET Core</code>中间件调用</strong></p>
+<p><code>app.UseBotFramework()</code>的核心是针对特定<code>path</code>的请求进行处理：</p>
+<pre><code class="language-csharp">public static IApplicationBuilder UseBotFramework(this IApplicationBuilder applicationBuilder)
+{
+    // ...
+    
+    applicationBuilder.Map(
+        paths.BasePath + paths.MessagesPath,
+        botAppBuilder =&gt; botAppBuilder.Run(new BotMessageHandler().HandleAsync)
+    );
+}
+</code></pre>
+<p>而<code>BotMessageHandler</code>只是简单地根据当前<code>HttpContext.Request</code>构建<code>Activity</code>；并通过依赖注入，索取<code>BotAdapter</code>服务及<code>IBot</code>服务；再把<code>IBot::OnTurnAsync(context,ct)</code>方法作<code>BotAdapter</code>的中间件的回调执行。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/腾讯云发送邮件的若干问题.html">
+                    腾讯云发送邮件的若干问题
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-12-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>有个一个诡异的问题，连续好些天，都未能解决：网站需要发送邮件，然而本地服务器可以正常发送，一旦部署到远程服务器上就无法工作，就报错说发送失败，什么关键信息也没留下；而远程服务器上相应的出站端口都是开放的，我一度以为是我哪地方的环境配置出了问题，或者是什么边缘情况没考虑到。调试了很久，今天才得以解决，特此记录。</p>
+<ol>
+<li>头些年我用的是网易邮箱的<code>SMTP</code>功能，现在遇到这种情况，第一直觉以为是被其他邮件服务器当作垃圾邮件拦截了：以前使用<code>GMail</code>时被拦截过，不过那时网易邮箱可以正常发送。难道是是网易审核严了，不想提供这种吃力不讨好的免费服务了？</li>
+<li>于是我打算换用域名邮箱试试，搜了一圈，选定了QQ邮箱提供免费的域名邮箱。经过简单设置，本地代码工作正常，然而部署到远程服务器上又他娘跪了。报错信息是一如既往的纱布。</li>
+<li>搜了一下，网上说腾讯的QQ邮箱限制比较多，可能会过滤IP、会限制邮件次数，建议使用腾讯的企业邮箱。似乎有点道理，之前用<code>SendGrid</code>发邮件，确实是有些IP无法发送。难道是我选的国外服务器的IP地址被加入黑名单了？</li>
+<li>我又去申请了一个企业邮箱，重新设置域名<code>DNS</code>的<code>MX</code>记录。等解析正常后，简单修改了网站的本地配置，然而一运行便报错。后来网上检索才发现，<code> System.Net.Mail</code>不支持 implicit ssl ，而且这又是 by design 行为。我又按网上说法使用普通<code>25</code>端口，终于本地代码可以工作了。 然后部署到远程服务器，继续跪了。</li>
+<li>正当我反复比对、调试一筹莫展的时候，我突然想到，是不是我思路有问题？有没有可能问题不在我，而在于在远程服务器的提供商？于是我以腾讯云为关键词搜索，果然发现了猫腻。我一直都以为是我哪里配置不对的问题，完全没想到居然是腾讯云这个家伙在背后做了手脚：</li>
+</ol>
+<!-- more -->
+<blockquote>
+<p>为了提升腾讯云 IP 地址发邮件的质量，默认限制云服务器 TCP 25 端口连接外部地址，如果您没有在云上部署邮件服务，该限制不会影响您的服务；如果您需要使用邮件服务，我们诚挚地向您推荐腾讯企业邮箱。如果您一定要使用云主机向外连接 TCP 25 端口，请确保 TCP 25 端口仅用来连接第三方 SMTP 服务器，从第三方 SMTP 服务器外发邮件。如发现您使用云主机直接 SMTP 发送邮件，腾讯云有权永久封禁 TCP 25 端口，并不再提供相关服务。</p>
+</blockquote>
+<p>真是无力吐槽了。这个默认封禁理由不管你信不信，反正我是无法信(服)的。</p>
+<p>最终解决办法：前往<a href="https://console.cloud.tencent.com/secctrl/smtp">25端口解封界面</a> , 申请解封即可。</p>
+<p>PS: 云这东西，掏点小钱就能租，很方便。然而，说句不客气的话，只用公有云，等同于把自己的命根子交出去让别人攥着。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/写在2018的年末.html">
+                    写在2018的年末
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>2018年过得尤其的快。时间便如同会飞的野鸟一般，倏忽一下就从这头穿越到了那头。</p>
+<h3>2017的FLAG</h3>
+<p>还记得在去年年末，我告诫自己要消除焦虑，日拱一卒，不期速成。之前订的目标之中，有些已经达成，有些却只是空立flag。</p>
+<p>总体说来，2018年真的是个不一样的年份。今年的每次休假都是忙忙碌碌中度过，见家长、订婚、迁户口、换工作、筹备婚礼，凡此等等，一直忙碌到十月下旬。而之后的年末两个多月，几乎每个周末都不曾闲着：陪老婆产检、学车。今年下半年博客已经完全停更了。</p>
+<p>还是总结下去年的个人目标完成情况吧：</p>
+<ol>
+<li>学习<code>Rust</code>编程语言，读完一些相关书：自我感觉熟悉了语法、理解了核心概念；写了一个半个爬虫项目——之所以是半个，原因是找不到一个良好的<code>ORM</code>库。此外我之前并无函数式编程经验，<code>Rust</code>用起来总感觉处处受制。保持关注，希望2020年后再深入学习。</li>
+<li><code>WASM</code>：已学习基本的入门材料，并研究了如何将<code>Rust</code>编译到<code>WebAssembly</code>及互相调用。如今各个语言都在尝试编译到<code>WebAssembly</code>，连<code>ASP.NET Core</code> 都有个<code>Blazor</code>项目可以向写<code>WebAssembly</code>项目了，但是目前并不成熟，一个<code>HelloWorld</code>项目编译完(<code>Release</code>)居然都有2.8MB以上，其中1.7M是运行时。<code>AoT</code>还在等<code>Mono</code>。相比之下，<code>Rust</code>这门无需GC的语言的优点便凸显了出来：编译完大小可控。</li>
+<li>通读<code>Bootstrap</code>的源码：年初读是读了用<code>SCSS</code>写的<code>v4</code>源码，下半年却又忘了。</li>
+<li>控制体重在68kg以下：夏天时候最瘦的时候已到62kg，如今又快涨回67kg了。总体来说，目标达成还需要继续努力。</li>
+<li>刷数据结构与算法：几乎未践行。疯狂打脸。</li>
+<li>取证：年初宏愿，每年都拿一个证。脸好疼。结婚证算不？</li>
+</ol>
+<!-- more -->
+<h3>2018拾遗</h3>
+<ol start="0">
+<li>扔掉了铁饭碗，从国企跳了出来。不做信息自动化管理了，如今全职做着技术，再不用每天训斥别人了，上班也舒心多了。</li>
+<li>上半年学了一点点的机器学习，可惜早年的数学都丢光了。进度非常缓慢。</li>
+<li>读了一部分<code>ASP.NET Core</code>的源码实现，尤其是关于中间件和认证的部分，我都有仔细研读。为了彻底搞明白中间件，还自己做了个简易的中间件系统。</li>
+<li>用<code>ASP.NET Core</code>重构博客网站的时候，发现中文静态目录总是有问题。经过两个晚上的调试，终于发现是<code>ASP.NET Core</code>自身的<code>Bug</code>。于是给微软的<code>ASP.NET Core</code>框架下的<code>StaticFiles</code>项目贡献了修复代码，目前已经这个补丁随着<code>ASP.NET Core 2.2</code>的发布分发到全球了。这算是今年我干的最能吹牛逼的事了。</li>
+</ol>
+<h2>2019年的个人提升目标</h2>
+<h3>编程语言</h3>
+<p>有人说应当每年学习一门新语言。于我个人而言，我觉得有必要学一点函数式编程。不过函数式语言几乎没有什么流行度。在<code>Tiobe index</code>上，函数式语言中排名最靠前的居然是<code>Scala</code>——在接近30名的位置。而且<code>Scala</code>其实并不是一门纯函数式编程语言，它是混合多范式的。换言之，大众对函数式的接受程度并不太高。我并不指望拿函数式语言做出什么实战项目，只想当为开拓眼界的一个途径。由于今年我换的工作和<code>.NET</code>平台相关，我就从<code>F#</code>入手吧。今年学完<code>F#</code>，后年再回头看<code>Rust</code>不知道会不会亲切许多，毕竟都跟<code>Ocaml</code>有血缘关系。</p>
+<ul>
+<li>初步掌握<code>F#</code></li>
+<li>适当关注<code>Rust</code></li>
+</ul>
+<h3>类库、标准和源码阅读计划</h3>
+<p>这年头不读源码，都不好意思跟人打招呼。</p>
+<ol start="0">
+<li>通读<code>ASP.NET Core</code>大部分子项目的源码</li>
+<li>通读<code>BotBuilder</code>源码实现</li>
+<li>通读<code>EF Core</code>源码</li>
+<li>掌握<code>XAML</code>语法，学习<code>XAML Standard</code>，并在<code>Windows</code>商店中发布第一个应用。</li>
+<li>理解<code>MQTT</code>协议</li>
+</ol>
+<h3>温故知新</h3>
+<ol start="0">
+<li>重温一遍 GoF 的《设计模式》</li>
+<li>重温一遍 Andrew S. Tanenbaum 《现代操作系统》</li>
+<li>重温一遍 Ian Sommerville 《软件工程》</li>
+<li>开始刷 <code>LeetCode</code> （每周至少一次练习）</li>
+</ol>
+<h3>其他</h3>
+<ol>
+<li>重构个人网站</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Alchemy/machine-learning/机器学习 -  性能优化算法/梯度下降法.html">
+                    机器学习 梯度下降法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-06-12
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在<a href="/blog/2018/04/10/Boulevard/Alchemy/machine-learning/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%20-%20%E4%B8%96%E7%95%8C%E8%A7%82/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%20%E4%B8%96%E7%95%8C%E8%A7%82%203/">上一篇中机器学习的笔记中</a>，我们讨论了朴素的梯度下降法的思想，本篇给出一个通用的理论。</p>
+<p>假设有一个性能函数<code>$F$</code>(可以类比做之前博文中提到的成本函数)，该性能函数接受多个维度的自变量<code>$x^{1},x^{2},x^{3}, ... $</code>，不妨记为<code>$\bold x$</code>，故该函数可以表示为<code>$F(\bold x)$</code>。</p>
+<p>为了令性能函数<code>$F$</code>取得最低值，可以利用计算机反复迭代：</p>
+<pre><code class="language-math">%% KaTex
+\bold x_{k+1} = \bold x_{k} + \Delta \bold x
+</code></pre>
+<p>其中，<code>$\Delta \bold x = \alpha \bold p$</code>，这里的<code>$\bold p$</code>代表某个方向向量——指向某个搜索方向的向量。要令<code>$F(\bold x)$</code>取得极小值，就要令每次迭代计算后的<code>$F(\bold x_{k+1})$</code>比<code>$F(\bold x_{k})$</code>小。<!-- more --></p>
+<p>将上述迭代式代入<code>$F(\bold x)$</code>函数得到<code>$F(\bold x_{k+1}) = F(\bold x_{k} + \Delta x_{k})$</code>，根据多元函数形式的泰勒公式，对其右侧进行一阶展开，即有:</p>
+<pre><code class="language-math">%% KaTex
+F(\bold x_{k+1}) \approx F(\bold x_{k}) + \underbrace{\nabla F(\bold x)^{T} \vert _{\bold x = \bold x_{k}}}_{\text{记作} \bold g^{T}_{k}} \cdot \underbrace{\Delta \bold x_{k}}_{\text{=} \alpha_{k} \bold p_{k}}
+</code></pre>
+<p>故</p>
+<pre><code class="language-math">%% KaTex
+F(\bold x_{k+1}) = F(\bold x_{k}) + \alpha_{k} \bold g^{T}_{k} \bold p_{k} 
+</code></pre>
+<p>其中，<code>$\alpha_{k}$</code>表示朝当前搜素方向进行迭代的步进速率，<code>$\bold g^{T}_{k}$</code>表示当前的梯度向量，<code>$\bold p_{k}$</code>表示当前的搜素方向。</p>
+<p>根据上式，要让<code>$F(\bold x_{k+1})$</code>比<code>$F(\bold x_{k})$</code>更小，只需要令右式为负值即可。而当<code>$\bold p$</code>和梯度向量方向相反时，二者的点乘取得最小值(绝对值最大，符号为负)。故在每一步迭代时，取<code>$\bold p_{k} = - \bold g_{k}$</code>即意味着沿着最快下降方向进行搜素。所以，迭代式可以写成：</p>
+<pre><code class="language-math">%% KaTex
+\bold x_{k+1} = \bold x_{k} - \alpha_{k} \bold g_{k} 
+</code></pre>
+<p>也即每次沿着梯度的反方向进行迭代搜素。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page5.html">
+          Previous
+        </a>
+        7 of 32
+        <a href="/posts/page7.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

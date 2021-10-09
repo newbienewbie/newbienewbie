@@ -1,0 +1,485 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/build-in/一种MVVM单向数据流的设计2——也许不需要React.js.html">
+                    一种MVVM单向数据流的设计2:—也许不需要React.js
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-23
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在上一篇 <a href="http://www.itminus.com/blog/2018/02/20/WindWhisper/ECMAScript/build-in/%E4%B8%80%E7%A7%8DMVVM%E5%8D%95%E5%90%91%E6%95%B0%E6%8D%AE%E6%B5%81%E7%9A%84%E8%AE%BE%E8%AE%A1/">《一种MVVM单向数据流组件的设计》</a> 中，我实现了一种单向数据流模式：每当数据发生变化，就可以自动渲染出新的视图。大致上，这是一种仿<code>React.js</code>的简单玩具。现在的问题是，和<code>React.js</code>一样，它并不利于<code>SEO</code>。我个人十分喜欢<code>React.js</code>，也在单位的项目中中引入了这货，而且就跟着了魔一样，这一年来，只要有的选，必然是先引入<code>React.js</code>。但是有时候，我也隐隐觉得不对劲，难道离开了<code>React.js</code>我就写不成代码了？如果问题没那么复杂，为什么还要强迫自己背上这么重的壳？我开始审视自己，之所以需要<code>React.js</code>，是从内心觉得有以下几个优点：</p>
+<ol>
+<li>单项数据流完成数据到视图的映射</li>
+<li>无侵入式，没有强制使用其他一揽子方案。甚至不需要<code>Redux</code>。</li>
+<li><code>JSX</code>语法：得益于<code>XML</code>强大描述能力和<code>JavaScript</code>语言，这让定义界面变得十分便利</li>
+<li>组件式编程：可以嵌套、组合，天然符合人类思维；各组件可以独立开发。</li>
+<li>有了良好的生态，使用经过社区检验的组件非常方便，比如阿里出的<code>antd</code>库。</li>
+</ol>
+<p>然而，如果界面没那么复杂，我们真的需要<code>React.js</code>吗？对于第1点，我们是需要的，相对于每次直接操作<code>DOM</code>，这是思想性的转变；至于剩余的几点，对于简单的页面组件，似乎吸引力并不大。</p>
+<h2>一个Tab组件例子</h2>
+<p>我决定裸写一个<code>Tab</code>组件试试，并不引入<code>React.js</code>，但是要用单向数据流的思想，尽量遵从<code>KISS</code>原则(<code>Keep It Simple and Stupid</code>)。既然要考虑<code>SEO</code>，那么就应该减少前端组件的动态生成。所以，先按照传统的思路，提供<code>HTML</code>片段，再引入一段<code>JavaScript</code>代码来根据状态自动改变视图(而非向前一篇文章那样自动渲染视图)。<!--more--></p>
+<p>首先，跟上篇文章一样，我们利用<code>Object.defineProperty()</code>来定义<code>state</code>属性，以实现当赋值时自动更新：</p>
+<pre><code class="language-javascript">class SimpleComponent{
+    constructor(props,state){
+        let _state=null;
+        Object.defineProperty(this,'state',{
+            get:function(){return _state;},
+            set:function(state){
+                this.update(state);
+                _state=state;
+            }
+        });
+    }
+    update(state){ /* to be implemented by subclass */ }
+}
+</code></pre>
+<p>这里，<code>#update(state)</code>方法留待子类实现如何根据状态更新视图。对于一个<code>Tab</code>组件，<code>HTML</code>部分为：</p>
+<pre><code class="language-html">&lt;div id=&quot;c&quot;&gt;
+    &lt;div class=&quot;tab&quot;&gt;
+        &lt;ul&gt;
+            &lt;li&gt;第一&lt;/li&gt;
+            &lt;li&gt;第二&lt;/li&gt;
+            &lt;li&gt;第三&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;content&quot;&gt;
+        &lt;div&gt;
+            &lt;ul&gt;
+                &lt;li&gt;111 &lt;/li&gt;
+                &lt;li&gt;111 &lt;/li&gt;
+                &lt;li&gt;111 &lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+        &lt;div&gt;
+            &lt;ul&gt;
+                &lt;li&gt;222&lt;/li&gt;
+                &lt;li&gt;222&lt;/li&gt;
+                &lt;li&gt;222&lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+        &lt;div&gt;
+            &lt;ul&gt;
+                &lt;li&gt;333&lt;/li&gt;
+                &lt;li&gt;333&lt;/li&gt;
+                &lt;li&gt;333&lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<p>给出一个样式:</p>
+<pre><code class="language-scss">#c{
+    width: 400px;
+    margin: 0 auto;
+    .tab{
+        border:1px solid gray;
+        ul{
+            display: flex;
+            flex-direction: row;
+            list-style-type: none;
+            margin:0;
+            padding-left:0;
+            li{
+                padding-right:2em;
+                background-color: black;
+                color: white;
+                border: 2px solid gray;
+                &amp;:hover{
+                    cursor: pointer;
+                }
+            }
+            li.current{
+                background-color: gray;
+                border: 2px solid red;
+                border-bottom: none;
+            }
+        }
+    }
+    .content{
+        border:1px solid gray;
+    }
+}
+</code></pre>
+<p>现在，让我们思考下如何设计这个<code>Tab</code>的逻辑部分。一个<code>Tab</code>组件，只有一个状态变量：即当前激活了哪个标签页？显然，可以用一个<code>current</code>来存储激活标签页的索引。故其状态<code>state</code>的形状类似于：</p>
+<pre><code class="language-javascript">{
+    current:0,
+}
+</code></pre>
+<p>每个标签都有一个<code>onclick</code>事件，当点击时，即改变<code>state</code>，从而触发自动更新(<code>#update()</code>)。</p>
+<pre><code class="language-javascript">tab.onclick=(e)=&gt;{
+    this.state={ current:idx, };
+};
+</code></pre>
+<p>而所谓<code>#update</code>，其实就是根据<code>state.current</code>修改<code>DOM</code>：</p>
+<pre><code class="language-javascript">class MyComponent extends SimpleComponent{
+    constructor(props,state){
+        super(props,state);
+        this.container=document.querySelector(&quot;#c&quot;);
+        this.liArray=this.container.querySelectorAll(&quot;.tab ul li&quot;);
+        this.contents=this.container.querySelectorAll(&quot;.content &gt;div&quot;);
+
+        this.liArray.forEach((i,idx)=&gt;{
+            i.onclick=(e)=&gt;{
+                this.state={
+                    current:idx,
+                };
+            };
+        })
+        this.state=state;
+    }
+    update(state){
+        console.log(`update`,state, this.state );
+        this.liArray.forEach((i,idx)=&gt;{
+            if(state.current==idx){
+                i.className=&quot;current&quot;;
+                this.contents[idx].style.display=&quot;block&quot;;
+            }else{
+                i.className=&quot;&quot;;
+                this.contents[idx].style.display=&quot;none&quot;;
+            }
+        })
+    }
+}
+</code></pre>
+<p>最后，实例化之：</p>
+<pre><code>const m=new MyComponent({},{current:0});
+u.update();
+</code></pre>
+<p>效果:</p>
+<script async src="//jsfiddle.net/itminus/22mnvfpc/embed/"></script>
+<p>虽然还有操作<code>DOM</code>的代码，但是这不影响什么，<code>DOM</code>操作并不是妖魔：从整体来看，<code>DOM</code>操作只局限于特定方法内部，外部组件、或者组件自身只要对组件的<code>state</code>赋值，就会自动触发组件的视图更新。至于<code>DOM</code>操作本身，和传统情况下使用<code>jQuery</code>完全类似，最大的区别在于这里只使用了原生API，并引入了单向流思想，然后把<code>DOM</code>操作局限在了特定方法内部，提倡用状态数据的改变来自动修改视图，仅此而已。</p>
+<h2>一个年历组件的例子</h2>
+<p>这里再写一个年历组件作为例子。</p>
+<pre><code class="language-html">&lt;div id=&quot;container&quot;&gt;
+    &lt;div class=&quot;calendar&quot;&gt;
+        &lt;ul&gt;
+            &lt;li&gt;1月&lt;/li&gt;
+            &lt;li&gt;2月&lt;/li&gt;
+            &lt;li&gt;3月&lt;/li&gt;
+            &lt;li&gt;4月&lt;/li&gt;
+            &lt;li&gt;5月&lt;/li&gt;
+            &lt;li&gt;6月&lt;/li&gt;
+            &lt;li&gt;7月&lt;/li&gt;
+            &lt;li&gt;8月&lt;/li&gt;
+            &lt;li&gt;9月&lt;/li&gt;
+            &lt;li&gt;10月&lt;/li&gt;
+            &lt;li&gt;11月&lt;/li&gt;
+            &lt;li&gt;12月&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;message&quot;&gt;
+        &lt;h2&gt;&lt;/h2&gt;
+        &lt;p&gt;&lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<p>基本样式：</p>
+<pre><code class="language-scss">#container{
+    width: 300px;
+    margin: 0 auto;
+    background:rgb(255, 249, 249);
+    padding:1em;
+
+    *{
+        box-sizing: border-box;
+    }
+
+    .calendar{
+        ul{
+            color: rebeccapurple;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap ;
+            list-style-type: none;
+            padding-left:0 ;
+            li{
+                cursor: pointer;
+                border:1px solid gainsboro;
+                flex: 0 0 33.333%;
+                height: 4em;
+                line-height: 4em;
+                text-align: center;
+                &amp;:hover{
+                    background: gray;
+                    color:orange;
+                }
+            }
+        }
+
+    }
+    .message{
+
+    }
+}
+</code></pre>
+<p>相关<code>JavaScript</code>代码为:</p>
+<pre><code class="language-javascript">class MyCalendar extends SimpleComponent{
+    constructor(props,state){
+        super(props,state);
+        this.container=document.querySelector(&quot;#container&quot;);
+        this.liArray=this.container.querySelectorAll(&quot;.calendar li&quot;);
+        this.content=this.container.querySelector(&quot;.message&quot;);
+        this._init();
+        this.state=state;
+    }
+
+    _init(){
+        this.liArray.forEach((i,idx)=&gt;{
+            i.onmouseover=(e)=&gt;{
+                this.state={
+                    current:idx,
+                    message:this._getMessage(idx),
+                };
+            };
+        })
+    }
+
+    _getMessage(idx){
+        let msg='';
+        switch (idx) {
+            case 0:
+                msg='元旦佳节：一年之计在于春';
+                break;
+            case 1:
+                msg='春节：过年七天乐';
+                break;
+            case 2:
+                msg='三八妇女节、植树节：关心地球，关心女士';
+                break;
+            case 3:
+                msg='愚人节：清明谷雨采茶忙';
+                break;
+            case 4:
+                msg='劳动节：劳动创造财富';
+                break;
+            case 5:
+                msg='儿童节：关心下一代';
+                break;
+            case 6:
+                msg='自hi节';
+                break;
+            case 7:
+                msg='七夕节：花式虐狗';
+                break;
+            case 8:
+                msg='中秋节：继续花式虐狗';
+                break;
+            case 9:
+                msg='国庆节：全民花式虐狗';
+                break;
+            case 10:
+                msg='双十一：资本家的狂欢';
+                break;
+            case 11:
+                msg='圣诞节、双十二：资本家继续狂欢';
+                break;
+            default:
+                break;
+        }
+        return msg;
+    }
+
+    update(state){
+        this.liArray.forEach((i,idx)=&gt;{
+            if(state.current==idx){
+                i.className=&quot;current&quot;;
+            }else{
+                i.className=&quot;&quot;;
+            }
+        })
+        this.content.querySelector('h2').innerHTML=`${state.current+1}月`;
+        this.content.querySelector('p').innerHTML=this._getMessage(state.current);
+    }
+}
+</code></pre>
+<p>在线示例：</p>
+<script async src="//jsfiddle.net/itminus/1c83vpkb/7/embed/"></script>
+<h2>一个日历组件的例子</h2>
+<p>现在再实现一个稍微复杂一点点的日历组件，日期横向排列，从左往右代表星期天、星期一、星期二、...、星期六，然后折行往复。可以根据上部时间输入框定位日期，一旦输入的日期变化，下部的的日期重新渲染。<code>HTML</code>标记为：</p>
+<pre><code class="language-html">&lt;div id=&quot;container&quot;&gt;
+    &lt;div class=&quot;calendar-header&quot;&gt;
+        &lt;input type=&quot;date&quot;/&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;calendar-body&quot;&gt;
+        &lt;table&gt;
+            &lt;thead&gt;
+                &lt;th&gt;日&lt;/th&gt;
+                &lt;th&gt;一&lt;/th&gt;
+                &lt;th&gt;二&lt;/th&gt;
+                &lt;th&gt;三&lt;/th&gt;
+                &lt;th&gt;四&lt;/th&gt;
+                &lt;th&gt;五&lt;/th&gt;
+                &lt;th&gt;六&lt;/th&gt;
+            &lt;/thead&gt;
+            &lt;tbody&gt;
+            &lt;/tbody&gt;
+        &lt;/table&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<p>为了获取日期所在月份的第一天和最后一天信息，先编写如下的辅助函数：</p>
+<pre><code class="language-javascript">function daysRangeOfMonth(d){
+    const year= d.getFullYear();
+    const month=d.getMonth();
+    const date=d.getDate();
+    const day=d.getDay();
+
+    const lastDateOfCurrentMonth=new Date(year,month,date);
+    const l_month=lastDateOfCurrentMonth.getMonth();
+    lastDateOfCurrentMonth.setMonth(l_month+1);
+    lastDateOfCurrentMonth.setDate(0);
+
+    const firstDayOfCurrentMonth=new Date(year,month,1);
+
+    return {
+        firstDayOfCurrentMonth,
+        lastDateOfCurrentMonth,
+    };
+}
+</code></pre>
+<p>然后实现一个日历类：</p>
+<pre><code class="language-javascript">class MyCalendar extends SimpleComponent{
+    constructor(props,state={current:new Date()}){
+        super(props,state);
+        this.container=document.querySelector(&quot;#container&quot;);
+        this.calendarHeader=this.container.querySelector('.calendar-header');
+        this.calendarInput=this.calendarHeader.querySelector('input');
+        this.calendarBody=this.container.querySelector('.calendar-body');
+        this.calendarMain=this.container.querySelector('.calendar-body table tbody');
+        this._init();
+        this.state=state;
+    }
+
+    _init(){
+        this.calendarInput.onchange=v=&gt;{
+            console.log(v.target.value);
+            this.state={
+                current:new Date(v.target.value)
+            };
+        };
+        this.calendarMain.onclick=(e)=&gt;{
+            const date=e.target.innerText;
+            const c_year=this.state.current.getFullYear();
+            const c_month=this.state.current.getMonth();
+            alert(`${c_year}-${c_month+1}-${date}`);
+        };
+    }
+
+    update(state){
+        if(!state){state=this.state;}
+        const d=state.current;
+        const year= d.getFullYear();
+        const month=d.getMonth();
+        const date=d.getDate();
+        const day=d.getDay();
+        console.log(month,date,day);
+
+        const dr=daysRangeOfMonth(d);
+        const f_day=dr.firstDayOfCurrentMonth.getDay(); // 星期几
+        const l_day=dr.lastDateOfCurrentMonth.getDay(); // 星期几
+        const l_date=dr.lastDateOfCurrentMonth.getDate();// 每个月的第几天
+        let s=[];
+        // 填充首部的空白期
+        for(let i=0;i&lt;f_day;i++){ s.push(`&lt;td&gt;&lt;/td&gt;`); }
+        // 填充中部日期
+        for(let i=1;i&lt;=l_date;i++){ s.push(`&lt;td&gt;${i}&lt;/td&gt;`); }
+        // 填充尾部的空白期
+        for(let i=l_day+1;i&lt;7;i++){ s.push(`&lt;td&gt;&lt;/td&gt;`); }
+        let x='';
+        for(let i=0,j=0;i&lt;s.length;i++,j++){
+            if(j%7==0){
+                if(i==0 ) {x+=&quot;&lt;tr&gt;&quot;}
+                else if(i==s.length-1){ x+='&lt;/tr&gt;'; }
+                else { x+='&lt;/tr&gt;&lt;tr&gt;'; };
+            }
+            x+=s[i];
+        }
+        this.calendarMain.innerHTML=x;
+    }
+}
+</code></pre>
+<p>最后，在线示例：</p>
+<script async src="//jsfiddle.net/itminus/0qf9Lwj6/3/embed/"></script>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

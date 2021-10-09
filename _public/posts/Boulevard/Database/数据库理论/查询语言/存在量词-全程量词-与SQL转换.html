@@ -1,0 +1,128 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Database/数据库理论/查询语言/存在量词-全程量词-与SQL转换.html">
+                    数据库笔记 存在量词、全称量词与SQL转换
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>存在量词</h2>
+<p>在集合关系中，我们经常使用存在量词(<code>$\exists$</code>)和全称量词(<code>$\forall$</code>)来表达意图。但是<code>SQL</code>中仅仅提供了存在量词关键字支持。本笔记记录如何把存在量词和全称量词转换为<code>SQL</code>表述。</p>
+<h3>SQL 的 exists</h3>
+<p><code>SQL</code>提供了一个存在量词<code>exists</code>，其基本语法为:</p>
+<pre><code class="language-sql">where exists R
+</code></pre>
+<p>表示当且仅当关系<code>$R$</code>非空时（即<code>R</code>至少有一个元组时），结果为<code>true</code>。<code>exists</code>关键字可以等价转换为集合关系的存在量词<code>$\exists$</code>。还可以配合<code>not</code>关键字取反：</p>
+<!--more-->
+<pre><code class="language-sql">where not exists R
+</code></pre>
+<p>意思是，<code>$R$</code>关系中无元组时，结果为<code>true</code>。</p>
+<h2>全称量词与否定之否定</h2>
+<p><code>SQL</code>并没有提供全称量词之类的关键词或者语法。为了表达这样的全称量词意图，我们需要使用否定之否定：“若对于任意一个<code>$x$</code>，都有公式<code>$P$</code>为真”，等价于“必然不存在<code>$x$</code>使得<code>$P$</code>不成立”。用形式语言(关系演算)可以表达为：</p>
+<pre><code class="language-math">%% KaTex
+(\forall x) (P) \iff \lnot((\exists x) (\lnot P)) 
+</code></pre>
+<p>这个等价关系的一个重要意义是把 <em>全称量词</em> 转化为了 <em>存在量词</em> 。我们可以借助于这个性质实现在<code>SQL</code>中表述全称量词。</p>
+<p>举个典型例子，假设有学生关系<code>$S=(SNo,SName,Dept)$</code>，课程关系<code>$C=(CNo,CName,Credit)$</code>，及二者的选课匹配关系<code>$SC=(SNo,CNo,Grade)$</code>。如何求每一个学生都选了的课程集合？</p>
+<p>也就是说，要找到这样一个课程子集<code>$C(c)$</code>，其中的元组课程<code>$c$</code>满足：对于学生集合里的每一个学生，都可以找到至少一条或者多条的选课记录。为了清晰，我们改用形式语言描述：</p>
+<ol>
+<li>“对于任意学生集合里的每一个学生，都...” =&gt; <code>$\color{green}\forall s \in S$</code></li>
+<li>“至少可以找到一条或者多条选课记录” =&gt;<code>$\color{orange}(\exists sc \in SC) (sc[SNo]=s[SNo] \land sc[CNo]=c[CNo]) $</code></li>
+</ol>
+<p>为了表达这样的全称意图，我们借助否定之否定，显然有:</p>
+<pre><code class="language-math">%% KaTex
+\color{#c9c}( \forall s \in S)   \color{orange}\Big( (\exists sc \in SC )(sc[SNo]=s[SNo] \land sc[CNo]=c[CNo] ) \Big)
+\iff
+\color{white}\lnot \Big( \color{#c9c} ( \exists s \in S ) \color{white}( \lnot \color{orange} \Big( (\exists sc \in SC) (sc[SNo]=s[SNo] \land sc[CNo]=c[CNo])  \Big) \color{white} ) \Big)
+</code></pre>
+<p>根据上式，很容易写出对应的<code>SQL</code>表述:</p>
+<pre><code class="language-sql">select CNo from C
+where not exists 
+    (select * from S 
+        where not exists ( select * from SC where SNo=S.SNo and CNo=C.CNo )
+    )
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

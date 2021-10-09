@@ -1,0 +1,227 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Compiler/自制编程语言/crowbar源码阅读笔记(3).html">
+                    crowbar源码阅读笔记(3):表达式构建
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这是《自制编程语言》一书中的脚本语言<code>crowbar</code>的源码阅读笔记(3):表达式构建</p>
+<h2>表达式的分类与表示</h2>
+<p>表达式分为布尔表达式、整型表达式、标识符表达式、赋值表达式、函数调用表达式等：</p>
+<pre><code class="language-c">typedef enum {
+    BOOLEAN_EXPRESSION = 1,
+    INT_EXPRESSION,
+    DOUBLE_EXPRESSION,
+    STRING_EXPRESSION,
+    IDENTIFIER_EXPRESSION,
+    ASSIGN_EXPRESSION,
+    ADD_EXPRESSION,
+    SUB_EXPRESSION,
+    MUL_EXPRESSION,
+    DIV_EXPRESSION,
+    MOD_EXPRESSION,
+    EQ_EXPRESSION,
+    NE_EXPRESSION,
+    GT_EXPRESSION,
+    GE_EXPRESSION,
+    LT_EXPRESSION,
+    LE_EXPRESSION,
+    LOGICAL_AND_EXPRESSION,
+    LOGICAL_OR_EXPRESSION,
+    MINUS_EXPRESSION,
+    FUNCTION_CALL_EXPRESSION,
+    NULL_EXPRESSION,
+    EXPRESSION_TYPE_COUNT_PLUS_1
+} ExpressionType;
+</code></pre>
+<!-- more -->
+<p>为了表示表达式，将其类型统一定义为：</p>
+<pre><code class="language-c">struct Expression_tag {
+    ExpressionType type;
+    int line_number;
+    union {
+        CRB_Boolean             boolean_value;
+        int                     int_value;
+        double                  double_value;
+        char                    *string_value;
+        char                    *identifier;
+        AssignExpression        assign_expression;
+        BinaryExpression        binary_expression;
+        Expression              *minus_expression;
+        FunctionCallExpression  function_call_expression;
+    } u;
+};
+</code></pre>
+<p>对于具体类型的表达式，则再具体定义，如：</p>
+<pre><code class="language-c">typedef struct { 
+    Expression *left; 
+    Expression *right; 
+} BinaryExpression;
+
+typedef struct {
+    char *identifier; 
+    ArgumentList *argument;
+} FunctionCallExpression;
+</code></pre>
+<h2>表达式的构建</h2>
+<p>表达式的创建过程都是先申请一块内存，然后再填充具体的字段，最后返回所创建表达式的指针。</p>
+<p>比如创建一个赋值表达式：</p>
+<pre><code class="language-c">Expression * crb_create_assign_expression(char *variable, Expression *operand)
+{
+    Expression *exp;
+    exp = crb_alloc_expression(ASSIGN_EXPRESSION);
+
+    /* 变量 */
+    exp-&gt;u.assign_expression.variable = variable;
+    /* 操作数 */
+    exp-&gt;u.assign_expression.operand = operand;
+    return exp;
+}
+</code></pre>
+<p>这里，<code>crb_alloc_expression()</code>函数是一个辅助函数，负责根据<code>Expression</code>这个结构体开辟一块内存空间，然后设置好表达式类型、行号信息，而具体的联合字段<code>u</code>则留待后续填充：</p>
+<pre><code class="language-c">Expression * crb_alloc_expression(ExpressionType type)
+{
+    Expression  *exp;
+    exp = crb_malloc(sizeof(Expression));
+    exp-&gt;type = type;
+    exp-&gt;line_number = crb_get_current_interpreter()-&gt;current_line_number;
+    return exp;
+}
+</code></pre>
+<p>再比如，创建一个<code>BINARY_EXPRESSION</code>:</p>
+<pre><code class="language-c">Expression * crb_create_binary_expression(ExpressionType operator, Expression *left, Expression *right)
+{
+    /* 如果左右表达式都是整型或者浮点型表达式这种极其简单情况，则直接进行求值——可用于常量折叠 */
+    if ((left-&gt;type == INT_EXPRESSION || left-&gt;type == DOUBLE_EXPRESSION)
+        &amp;&amp; (right-&gt;type == INT_EXPRESSION || right-&gt;type == DOUBLE_EXPRESSION)) 
+    {
+        CRB_Value v;
+        v = crb_eval_binary_expression(crb_get_current_interpreter(), NULL, operator, left, right);
+        /* 覆写左表达式 */
+        *left = convert_value_to_expression(&amp;v);
+        return left;
+    }
+    /* 一般情况下，需要先开辟内存，然后再填充`u`的左表达式字段和右表达式字段  */
+    else {
+        Expression *exp;
+        exp = crb_alloc_expression(operator);
+        exp-&gt;u.binary_expression.left = left;
+        exp-&gt;u.binary_expression.right = right;
+        return exp;
+    }
+}
+</code></pre>
+<p>与之类似的还有<code>MINUS_EXPRESSION</code>:</p>
+<pre><code class="language-c">Expression * crb_create_minus_expression(Expression *operand)
+{
+    /* 可直接求值的情况 */
+    if (operand-&gt;type == INT_EXPRESSION || operand-&gt;type == DOUBLE_EXPRESSION)
+    {
+        CRB_Value v;
+        v = crb_eval_minus_expression(crb_get_current_interpreter(), NULL, operand);
+        *operand = convert_value_to_expression(&amp;v);
+        return operand;
+    } 
+    /* 一般情况下，需要先开辟内存，然后再填充`u.`的`minus_expression`字段  */
+    else {
+        Expression *exp;
+        exp = crb_alloc_expression(MINUS_EXPRESSION);
+        exp-&gt;u.minus_expression = operand;
+        return exp;
+    }
+}
+</code></pre>
+<p>其他诸如<code>IDENTIFIER_EXPRESSION</code>、<code>FUNCTION_CALL_EXPRESSION</code>、<code>BOOLEAN_EXPRESSION</code>等表达式的创建函数，其实现也是先申请内存，然后填充相应字段，不再赘述。</p>
+<p>唯一比较特殊的是<code>NULL_EXPRESSION</code>，开辟内存后，并不填充<code>u</code>字段：</p>
+<pre><code class="language-c">Expression * crb_create_null_expression(void)
+{
+    Expression  *exp;
+    exp = crb_alloc_expression(NULL_EXPRESSION);
+    return exp;
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,347 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/architecture/architecture3-template.html">
+                    WordPress 前台基础架构分析之三：模板
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>加载模板</h2>
+<p>WP的模板加载是通过wp-includes/template-load.php文件来完成的：</p>
+<pre><code class="language-PHP">&lt;?
+//wp-includes/template-loader.php
+//...
+
+if ( defined('WP_USE_THEMES') &amp;&amp; WP_USE_THEMES ) :
+	$template = false;
+	if     ( is_404()            &amp;&amp; $template = get_404_template()            ) :
+	elseif ( is_search()         &amp;&amp; $template = get_search_template()         ) :
+	elseif ( is_front_page()     &amp;&amp; $template = get_front_page_template()     ) :
+	elseif ( is_home()           &amp;&amp; $template = get_home_template()           ) :
+	elseif ( is_post_type_archive() &amp;&amp; $template = get_post_type_archive_template() ) :
+	elseif ( is_tax()            &amp;&amp; $template = get_taxonomy_template()       ) :
+	elseif ( is_attachment()     &amp;&amp; $template = get_attachment_template()     ) :
+		remove_filter('the_content', 'prepend_attachment');
+	elseif ( is_single()         &amp;&amp; $template = get_single_template()         ) :
+	elseif ( is_page()           &amp;&amp; $template = get_page_template()           ) :
+	elseif ( is_category()       &amp;&amp; $template = get_category_template()       ) :
+	elseif ( is_tag()            &amp;&amp; $template = get_tag_template()            ) :
+	elseif ( is_author()         &amp;&amp; $template = get_author_template()         ) :
+	elseif ( is_date()           &amp;&amp; $template = get_date_template()           ) :
+	elseif ( is_archive()        &amp;&amp; $template = get_archive_template()        ) :
+	elseif ( is_comments_popup() &amp;&amp; $template = get_comments_popup_template() ) :
+	elseif ( is_paged()          &amp;&amp; $template = get_paged_template()          ) :
+	else :
+		$template = get_index_template();
+	endif;
+	/**
+	 * Filter the path of the current template before including it.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $template The path of the template to include.
+	 */
+	if ( $template = apply_filters( 'template_include', $template ) )
+		include( $template );
+	return;
+endif;
+
+</code></pre>
+<p>显然，WordPress是根据请求标志<code>is_xxx()</code>(由<code>WP_Query</code>全局类对象设置)来判定要加载哪个模板的。</p>
+<p>这里出现的<code>get_xxx_template()</code>函数都在<code>wp-includes/template.php</code>中定义,内部是通过调用<code>get_query_template()</code>实现的。例如,
+获取<code>index.php</code>:</p>
+<pre><code class="language-PHP">function get_index_template() {
+	return get_query_template('index');
+}
+</code></pre>
+<p>和获取<code>404.php</code></p>
+<pre><code class="language-PHP">function get_404_template() {
+	return get_query_template('404');
+}
+</code></pre>
+<p><code>get_query_template()</code>非常简单,核心功能就是</p>
+<ol>
+<li>利用<code>locate_template()</code>找出优先级别最高的模板的位置：</li>
+<li>部署钩子</li>
+</ol>
+<p>当模板等级中最优先的模板被找到后，WordPress会对其进行加载并生成响应。</p>
+<p>一个来自于WordPress官方的例子：</p>
+<p>如果你的博客位于<code>http://example.com/blog/</code> ，有一个访问者点击了这样一个分类页<code> http://example.com/blog/category/your-cat/</code>， WordPress会在当前模板主题目录中以这样的过程搜寻模板:</p>
+<ol>
+<li>先试图搜寻文件名匹配category’s slug的模板文件. 例如当category slug是“unicorns”的时候，那么WordPress会搜寻名为<code>category-unicorns.php</code>的文件</li>
+<li>如果<code>category-unicorns.php</code>找不见，并且category id是4, WordPress会继续搜寻名为<code>category-4.php</code>的文件</li>
+<li>如果<code>category-4.php</code>仍然找不见, WordPress则会搜寻通用的category template<code>category.php</code></li>
+<li>如果<code>category.php</code>也不存在, WordPress会搜寻通用的archive template, <code>archive.php</code></li>
+<li>如果<code>archive.php</code>仍然找不到, WordPress则会退回去搜寻主题主页<code>index.php</code></li>
+</ol>
+<h3>模板类型</h3>
+<p>WordPress常见的模板类型及代表性的模板包括：</p>
+<ul>
+<li>Archive Page                   #archive.php
+<ul>
+<li>Author Archive             #author.php</li>
+<li>Category Archive           #category.php</li>
+<li>Tag Archive                #tag.php</li>
+<li>Custom Taxonomy Archive    #taxonomy.php</li>
+<li>Date Archive               #date.php</li>
+<li>Custom Post Type Archive   #archive-$posttype.php</li>
+</ul>
+</li>
+<li>Singular Page                  #singular.php
+<ul>
+<li>Single Post                #single.php
+<ul>
+<li>Attachment Page        #attachment.php</li>
+<li>Blog Post              #single-post.php</li>
+<li>Custom Post            #single-{$posttype}.php</li>
+</ul>
+</li>
+<li>Static Page                #page.php</li>
+</ul>
+</li>
+<li>Site Front Page                #front-page.php</li>
+<li>Blog Posts Index Page          #home.php</li>
+<li>Comments Popup Page            #comments-popup.php</li>
+<li>Error 404 Page                 #404.php</li>
+<li>Search Result Page             #search.php</li>
+</ul>
+<p>特别的，对于某种Post Type(包括post类型)，其归档页模板的寻找路线是：</p>
+<ol>
+<li>archive-{$posttype}.php</li>
+<li>archive.php</li>
+<li>index.php</li>
+</ol>
+<p>其单页面模板的寻找路线是：</p>
+<ol>
+<li>single-{$posttype}.php</li>
+<li>single.php</li>
+<li>singular.php</li>
+<li>index.php</li>
+</ol>
+<p>在WordPress中，任意一个最终没有找到对应的模板文件的请求都会被<code>index.php</code>模板处理。</p>
+<h3>Template Hierarchy与钩子</h3>
+<h4>模板重定向</h4>
+<p>在文件<code>wp-includes/template-loader.php</code>的开头，WordPress布置了一个重定向action钩子：</p>
+<pre><code class="language-PHP">// wp-includes/template-loader.php
+
+if ( defined('WP_USE_THEMES') &amp;&amp; WP_USE_THEMES ) 
+    do_action( 'template_redirect' );
+//...
+
+// 查找要加载哪个模板
+// ...
+
+</code></pre>
+<p>这个钩子给了我们彻底抛弃使用WordPress默认模板等级的权利，只需要添加钩子使用自己的模板选择逻辑，然后exit就行。</p>
+<h4>模板等级中的钩子</h4>
+<p>WordPress模板系统能让你对默认的Template Hierarchy进行filter,这意味着我们能在等级中的某一个点进行插入和改变一些东西。</p>
+<p>相关的filter钩子布置于函数<code>get_query_template()</code>中，filter钩子名的形式为<code>{$type}_template</code>:</p>
+<pre><code class="language-PHP">/**
+ * Retrieve path to a template
+ *
+ * @param string $type Filename without extension.
+ * @param array $templates An optional list of template candidates
+ * @return string Full path to template file.
+ */
+function get_query_template( $type, $templates = array() ) {
+	$type = preg_replace( '|[^a-z0-9-]+|', '', $type );
+
+	if ( empty( $templates ) )
+		$templates = array(&quot;{$type}.php&quot;);
+
+	$template = locate_template( $templates );
+	/**
+	 * Filter the path of the queried template by type.
+	 *
+	 * The dynamic portion of the hook name, `$type`, refers to the filename
+	 * -- minus the extension -- of the file to load. This hook also applies
+	 * to various types of files loaded as part of the Template Hierarchy.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string $template Path to the template. See {@see locate_template()}.
+	 */
+	return apply_filters( &quot;{$type}_template&quot;, $template );
+}
+</code></pre>
+<p>WordPress在按照默认的模板等级查找到相关模板后，又触发了与该模板类型相关的钩子事件，这就给了我们一个改变默认模板优先级的机会。</p>
+<p>完整的filter清单如下：</p>
+<ul>
+<li><code>index_template</code></li>
+<li><code>404_template</code></li>
+<li><code>archive_template</code></li>
+<li><code>author_template</code></li>
+<li><code>category_template</code></li>
+<li><code>tag_template</code></li>
+<li><code>taxonomy_template</code></li>
+<li><code>date_template</code></li>
+<li><code>home_template</code></li>
+<li><code>front_page_template</code></li>
+<li><code>page_template</code></li>
+<li><code>paged_template</code></li>
+<li><code>search_template</code></li>
+<li><code>single_template</code></li>
+<li><code>text_template</code>,<code>plain_template</code>,<code>text_plain_template</code>,</li>
+<li><code>attach_template</code></li>
+<li><code>comments_template</code></li>
+</ul>
+<p>当需要对默认的Template Hierarchy进行修改的时候，就可以使用这些过滤器。
+比如，想对默认的评论模板进行替换，就可以将自己的模板函数查找器添加filter钩子<code>comments_template</code>。
+又比如，相对默认的某种PostType类型的单页模板进行修改，就可以将自己的模板函数查找器添加倒filter钩子<code>single_template</code>。</p>
+<p>来自WordPress官方例子如下：</p>
+<p>对于默认的Author Hierarchy：</p>
+<ol>
+<li><code>author-{nicename}.php</code></li>
+<li><code>author-{id}.php</code></li>
+<li><code>author.php</code></li>
+</ol>
+<p>为了在<code>author.php</code>之前增加一个被优先使用的模板<code>author-{role}.php</code></p>
+<pre><code class="language-PHP">function author_role_template( $templates='' ) {
+ 
+    $author = get_queried_object();
+    $role=$author-&gt;roles[0];
+ 
+    if(!is_array($templates) &amp;&amp; !empty($templates)) {
+        $templates=locate_template(array(&quot;author-$role.php&quot;,$templates),false);
+    }elseif(empty($templates)) {
+        $templates=locate_template(&quot;author-$role.php&quot;,false);
+    }else {
+        $new_template=locate_template(array(&quot;author-$role.php&quot;));
+        if(!empty($new_template)) array_unshift($templates,$new_template);
+    }
+    return $templates;
+}
+ 
+add_filter( 'author_template', 'author_role_template' );
+</code></pre>
+<h4>模板加载前的filter钩子</h4>
+<p>最后，在模板找到之后和加载之前的时刻，WordPress还布置了一个名为<code>template_include</code>的钩子：</p>
+<pre><code class="language-PHP">// wp-includes/template-loader.php
+
+if ( $template = apply_filters( 'template_include', $template ) )
+    include( $template );
+return;
+</code></pre>
+<p>此filter钩子可以帮助我们加载最终合适的模板。对于Custom Post Type的各类模板加载非常有用。</p>
+<p>例如，著名插件Woocommerce中，为了保证插件对所有模板适用，把相关的自定义模板都放到了自己插件的子目录下，同时添加钩子函数引入自己的模板加载器：</p>
+<pre><code class="language-PHP">
+class WC_Template_Loader {
+
+    //...
+
+    public static function init() {
+        add_filter( 'template_include', array( __CLASS__, 'template_loader' ) );
+        add_filter( 'comments_template', array( __CLASS__, 'comments_template_loader' ) );
+    }
+
+
+	public static function template_loader( $template ) {
+        //...
+		return $template;
+	}
+
+
+
+	public static function comments_template_loader( $template ) {
+        //...
+		return $template;
+	}
+
+    //...
+
+}
+
+</code></pre>
+<p>这是一种十分健壮的做法。</p>
+<h2>总结</h2>
+<p>WordPress的前台博客功能其实思路非常简单，即</p>
+<ol>
+<li>加载必要文件</li>
+<li>执行查询并设置全局变量</li>
+<li>加载相关模板</li>
+</ol>
+<p>加载相关模板特别需要理解的是$post-type的归档页和单页的模板加载优先级。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

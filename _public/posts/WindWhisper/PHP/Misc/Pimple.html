@@ -1,0 +1,201 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Misc/Pimple.html">
+                    Pimple
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-09-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Why Pimple</h2>
+<p>最近在倒腾WordPress，在github选择了一个四百多关注的微信框架项目，结果发现bug不断，好不容易通读源码后改好了BUG又发现扩展性太差，
+而且各类之间代码耦合严重，于是打算动手写一个自己的微框架(重复造轮子)，想实现这样的目标：</p>
+<ol>
+<li>独立于任何框架、整站程序</li>
+<li>不要依赖于外部PHP扩展，可以运行在低端空间之上。</li>
+<li>良好的组织性</li>
+<li>良好的可扩展性</li>
+</ol>
+<p>不可避免的遇到了依赖注入问题，起初想直接用Symfony/DependencyInjection组件，但是写着写着就发现这个组件太啰嗦了。
+于是决定学习以下著名的Pimpler容器。</p>
+<p>不得不说这玩意儿实在是小巧精致！</p>
+<h2>Pimple用法</h2>
+<p>下面翻译自官方文档：</p>
+<p>创建一个容器：</p>
+<pre><code class="language-PHP">use Pimple\Container;
+
+$container = new Container();
+</code></pre>
+<p>和众多其他的DI容器一样，Pimple主要管理两类数据：<code>服务</code>和<code>参数</code>。</p>
+<h3>定义Services</h3>
+<p>服务是通过可以返回一个实例对象的匿名函数来定义的：</p>
+<pre><code class="language-PHP">// define some services
+$container['session_storage'] = function ($c) {
+    return new SessionStorage('SESSION_ID');
+};
+
+$container['session'] = function ($c) {
+    return new Session($c['session_storage']);
+};
+</code></pre>
+<p>注意此匿名函数可以访问当前容器对象实例,允许对其他<code>服务</code>或者<code>参赛</code>进行引用。
+对象只有当你需要获取它们的时候才被创建，定义的顺序是无关紧要的。</p>
+<p>使用已定义的服务同样非常简单：</p>
+<pre><code class="language-PHP">// get the session object
+$session = $container['session'];
+
+// the above call is roughly equivalent to the following code:
+// $storage = new SessionStorage('SESSION_ID');
+// $session = new Session($storage);
+</code></pre>
+<h3>定义工厂服务</h3>
+<p>默认情况下，你每一次获取<code>服务</code>,Pimple返回它的同一个实例。如果你想要它每次返回不同的实例,用<code>factory()</code>方法包装你的匿名函数即可：</p>
+<pre><code class="language-PHP">$container['session'] = $container-&gt;factory(function ($c) {
+    return new Session($c['session_storage']);
+});
+</code></pre>
+<p>这样，每一次调用 <code>$container['session']</code>都会返回一个新的session实例。</p>
+<h3>定义参数</h3>
+<p>定义一个<code>参数</code>，可以轻松从外部配置我们的容器，还可以存储全局变量。</p>
+<pre><code class="language-PHP">// define some parameters
+$container['cookie_name'] = 'SESSION_ID';
+$container['session_storage_class'] = 'SessionStorage';
+</code></pre>
+<p>如果你像下面这样改变<code>session_storage</code>服务的定义 :</p>
+<pre><code class="language-PHP">$container['session_storage'] = function ($c) {
+    return new $c['session_storage_class']($c['cookie_name']);
+};
+</code></pre>
+<p>就可以通过覆写<code>session_storage</code>的参数(而不是重新定义服务)轻松改变cookie name。</p>
+<h3>Protecting Parameters</h3>
+<p>由于Pimple把匿名函数视作服务定义，你需要用<code>protect()</code>包装你的匿名函数以把他们存储为<code>parameters</code>:：</p>
+<pre><code class="language-PHP">$container['random_func'] = $container-&gt;protect(function () {
+    return rand();
+});
+</code></pre>
+<h3>修改Services</h3>
+<p>有一些情况下，你也许想在一个服务定义完成之后再进行修改。这可以用<code>extend</code>实现。</p>
+<pre><code>$container['session_storage'] = function ($c) {
+    return new $c['session_storage_class']($c['cookie_name']);
+};
+
+$container-&gt;extend('session_storage', function ($storage, $c) {
+    $storage-&gt;...();
+
+    return $storage;
+});
+</code></pre>
+<p>The first argument is the name of the service to extend, the second a function that gets access to the object instance and the container.</p>
+<h3>Extending a Container¶</h3>
+<p>If you use the same libraries over and over, you might want to reuse some services from one project to the next one;
+package your services into a provider by implementing Pimple\ServiceProviderInterface:</p>
+<pre><code class="language-PHP">use Pimple\Container;
+
+class FooProvider implements Pimple\ServiceProviderInterface
+{
+    public function register(Container $pimple)
+    {
+        // register some services and parameters
+        // on $pimple
+    }
+}
+</code></pre>
+<p>Then, register the provider on a Container:</p>
+<pre><code class="language-PHP">$pimple-&gt;register(new FooProvider());
+</code></pre>
+<h3>获取服务创建函数</h3>
+<p>When you access an object, Pimple automatically calls the anonymous function that you defined,
+which creates the service object for you.
+If you want to get raw access to this function, you can use the raw() method:</p>
+<pre><code class="language-PHP">
+$container['session'] = function ($c) {
+    return new Session($c['session_storage']);
+};
+
+$sessionFunction = $container-&gt;raw('session');
+</code></pre>
+<h2>Pimple的核心原理</h2>
+<p>其实就是类数组操作而已。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

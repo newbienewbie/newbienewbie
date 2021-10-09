@@ -1,0 +1,145 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/写在2017的年末.html">
+                    写在2017的年末
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-12-21
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>又到一年年末，我决定写点什么。毕业第七年了，工作岗位换了许多，今年最大的收获是心态沉稳了很多。除了工作之外，今年主要做的两件事如下：</p>
+<h2>信息自动化实验室</h2>
+<p>这些年的工作让我真正明白了陆游的这首诗的含义：</p>
+<blockquote>
+<p>古人学问无遗力，
+少壮工夫老始成。
+纸上得来终觉浅，
+绝知此事要躬行。</p>
+</blockquote>
+<p>知行合一很重要，所以年初曾设想创建单位第一个信息自动化实验室。在获得领导赞成之后，目前进度如下：</p>
+<ol>
+<li>腾出机房附近的一个办公室作为场地。</li>
+<li>把一台淘汰下来的大华视频服务器利用起来，重做<code>CentOS</code>系统，并架设了<code>GitLab</code>服务器。已经把单位网站的三个相关项目、HSE正激励系统、和投票系统的相关代码全部托管到其上。</li>
+<li>收集了数个相关升级改造项目淘汰下设备，目前已有核心层交换机1台、接入层交换机数台、PLC各类模块、DTU、RTU和一些工控设备。后期要从每年运维项目中收集光纤、网线、视频摄像头、喊话系统等。</li>
+<li>在5月份用<code>Node.js</code>编写了一个简单爬虫，从国外某个用<code>WordPress</code>搭建的免费电子书网站上日夜不停地抓取<code>IT</code>领域的电子书，并部署到单位的一台闲置服务器上。目前已经下载了 105G 的pdf文件。</li>
+<li>前期用<code>Node.js</code>搭建了一个内部专用的电子书网站，邀请制，结果服务器硬盘挂了。听闻一位财务上的朋友历年来购买过众多数学领域的pdf电子书，待后期与我抓取到计算机领域的电子书合并整理、重新部署。</li>
+</ol>
+<p>初步的架子已经有了。可惜时间太少，今年终未完成正式投用。</p>
+<h2>软考中级</h2>
+<p>在以前，我是无心顾及证书这类东西的，总觉得离实用场景偏远。知乎上的主流观点认为，这个认证于科班出身的程序员没什么实质用处，因为相关知识基本几乎都是本科所学；其次和甲骨文OCA、OCP之类的相比，各方面知识点偏学院派，不贴近生产实际。然而这种认证由于考纲范围涉及非常广泛，我这个半道出家的人要在备考过程中要把科班出生的基础课程从头都过一遍，所以它便有了不一样的意义。于是在今年9月初，我改变了想法，决定报考工信部组织的软件设计师水平考试(软考中级)，用了2个多月的下班时间自行学习。这几日软考中级的软件设计师成绩出来了，我查了下：上午64分，下午67分。虽说最终的合格分数线尚未公布，但是按照往年45分及格(满分75分*60%=45分)的惯例，我过线应是毫无悬念了。 <!-- more --></p>
+<p>虽说只花了2个多月备考，但是其中好多知识点都是之前就较为熟悉的了，并未多花时间：</p>
+<ol>
+<li>面向对象、设计模式上，因为前些年自学Java的时候花过不少力气在这上面，所以几乎没有再花时间在这些方面。最后一题在C++/Java中选择了Java，大约花了不到一分钟就作答完毕了。</li>
+<li>在数据库理论方面，由于很久以前读过清华大学出版的《数据库系统概论》，加上三大数据库都有在单位工作中实际操作过，所以备考时只是稍带复习了下关系代数、关系演算方面的知识，也并未多花什么时间。</li>
+<li>计算机基础、网络基础、多媒体知识：由于平时工作多有接触，应付软考中级绰绰有余。</li>
+<li>专业英语：阅读的底子还算不错，这些年一直不惧英文原版的技术资料。</li>
+<li>标准化和法律法规：这部分知识点在软考中级分值似乎也就2分。早些年做物资采购的经验还是有点用的，什么国际标准、美标、国标、地方标准、行标、企标等各类标准，都可以在当年接触过的产品里找到对应的例子。就是法律法规有点古怪，比如考试中有一道选择题问哪个市的名字能作为商标。</li>
+</ol>
+<p>以下是备考时发现的短板之处——均是缺乏实践、缺乏练习的部分，虽说目前应付软考是没问题的，但是作为自我修养，我还是要引以为耻：</p>
+<ol>
+<li>在操作系统方面，用的是 Andrew S. Tanenbaum 教授的《现代操作系统》做备考材料。总结起来，我在操作系统方面是走马观花，缺乏实际，得空要做个简易的操作系统玩具。</li>
+<li>在编译原理方面，备考用的学习材料是吕映芝老师、张素琴老师的《编译原理》(清华大学出版设)，只读完前4章；后面的知识点还是感觉较为晦涩，同样只是了解个名词和大意，幸而软设几乎只考查了原理，没有让大家写个解析器之类。目前唯一的实践是前器照着《自制编程语言》通读了由作者自制的脚本语言<code>crowbar</code>的实现源码。以后一定要做个我自己的编程语言。</li>
+<li>在数据结构和算法上，约一个月的晚上时间都花在这上面，但是在算法上仍总是感觉没有成就感，心里也没什么底气——我似乎对C语言这种没有<code>GC</code>的语言有种恐惧感：每次动态<code>malloc</code>内存，我都会在心里紧张地想会不会有哪个地方忘掉了<code>free</code>。以后有得选的话，还是用<code>Java</code>来练习算法吧。</li>
+<li><code>DFD</code>、<code>UML</code>等建模技术：<code>DFD</code>以前我只在设计单位的物资系统的时候用过一次。现在发现真是低估了它，在理解需求上<code>DFD</code>是很好用的建模技术。按照目前许多人的观点看来，<code>UML</code>这块算是和生产脱节的学院派知识点，我平时只用过类图、序列图、和活动图，不得不花了许多时间在这上面熟悉其他建模技术。不管是否有实际用处，权当开阔眼界。</li>
+<li>最后，在软件工程方面，由于这些年工作接触了众多的信息系统和其他非软件方面项目，所以大部分知识点都很熟悉。然而仍然缺乏对各类软件开发模型、软件过程模型的实践，比如软件成熟度模型之类的知识点简直是今天记住隔天就忘了。</li>
+</ol>
+<h2>2018年的几个个人计划</h2>
+<p>按住心中的心浮气躁，消除焦虑，日拱一卒，不期速成。</p>
+<p>必须要完成的：</p>
+<ol>
+<li>强化数据结构与算法的相关练习，至少刷一遍《数据结构与问题求解》和《算法导论》。为日后<code>LeetCode</code>刷算法题做准备。</li>
+<li>温习各类知识，加强各方面的自我修养，2018年底之前(暂定下半年)通过系统架构设计师水平考试来检验自己的掌握情况。</li>
+<li>学习一门系统级编程语言，为日后写一个操作系统玩具做准备：暂定<code>Rust</code>，因为通过编译就几乎意味着内存安全。至少读完《Rust Essentials》。</li>
+<li>通读<code>Bootstrap v4</code>的<code>sass</code>源码。加大<code>CSS</code>方面的练习，尤其是响应式的设计。</li>
+<li>深入学习<code>WASM</code>技术。无它，<code>Mozillia</code>已经规划用<code>Rust</code>抢占<code>WASM</code>先机，很显然这块<code>Rust</code>的竞争对手只有<code>C/C++</code>。</li>
+<li>控制体重在68kg以下。</li>
+</ol>
+<p>可选：</p>
+<ol>
+<li>捡起概率论、线性代数和微积分</li>
+<li>学习《Practical Data Analysis》</li>
+<li>学习交换机相关知识</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

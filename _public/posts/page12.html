@@ -1,0 +1,881 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/所有权系统/所有权系统1——世界观.html">
+                    Rust所有权系统1——世界观
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-12-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>为了管理内存，大多数语言采用的是垃圾回收机制（<code>GC</code>），比如<code>Java</code>、<code>Go</code>、<code>ECMAScript</code>；系统级编程语言则不会引入<code>GC</code>，因为<code>GC</code>在清理内存时会停下整个世界。诸如<code>C</code>、<code>C++</code>之类的语言，所采取的做法是把内存管理的任务丢给程序员，本质上用人来保证内存的分配和回收。<code>Rust</code>作为系统级编程语言，其采取的策略非常独特—— <em>所有权规则系统</em> 。
+所有权(<code>Ownership</code>)规则：</p>
+<ol>
+<li><code>Rust</code>中每个值都有一个相应的变量，称之为<code>owner</code>。</li>
+<li>一个值在一个时刻只能有一个<code>owner</code>。</li>
+<li>一旦到了作用域(<code>scope</code>)之外，与<code>owner</code>相应的值就会被丢弃(<code>drop</code>)。</li>
+</ol>
+<p><code>Rust</code>中的作用域(<code>scope</code>)规则和<code>C++</code>语言保持一致，都指的是程序中某个象的有效范围。所有权规则检查是一种编译期特性(<code>compile time</code>)，也就是说这是一种零成本抽象(<code>no run-time costs</code>)，我们完全无需担心这种特性会造成运行时负担。
+一个块级作用域的例子如下：</p>
+<pre><code class="language-rust">{
+    let a_int = 100;   // 从这里开始，a_int 变得有效
+    // ...
+}                      // 这里遇到块结束符，作用域结束，生命周期结束。a_int 不再有效。
+</code></pre>
+<p>在一个栈上管理内存相对容易，反映不出<code>Rust</code>这个特性的精妙之处；然而，当我们需要管理在堆上的内存，就会觉得非常方便了：<!-- more --></p>
+<pre><code class="language-rust">{
+    let x = Box::new(100i32);  // 在堆上分配内存，存储32位整数100
+    // ...
+}                              // `Rust`在编译时会帮我手工释放这个堆上内存 
+</code></pre>
+<p>一旦<code>Rust</code>编译器发现变量的生命周期结束，就会在编译时插入一段代码来释放相关的内存。再不需要像写<code>C</code>时那样<code>malloc()</code>，更不需要心惊胆战是不是哪里忘记<code>free()</code>或者疑神疑鬼是不是重复<code>free()</code>了，生活美好得就更在<code>Java</code>里一样。最关键的，这些是在不引入<code>GC</code>的前提下做到的，按说<code>C++</code>的<code>Resource Acquisition Is Initialization</code> (<code>RAII</code>)机制也能做到，不过作为宇宙第一庞杂的语言，我实在没信心写出内存安全的代码，比起代码规范，我更愿意相信编译器。</p>
+<h2><code>Move</code></h2>
+<p>天下从来没有免费的午餐，使用<code>Rust</code>所有权的代价要先引入一套完整的体系。学习曲线在刚入门的时候就陡峭必然会吓跑很多初学者，所以注定会是一门小众语言。</p>
+<p>回过头来看所有权系统的规则，内存可以视作资源，而变量就是相关内存资源的所有者，赋值过程可以视作把资源绑定到相关变量。一切都很美好，但是如果我们有两个变量都需要引用同一段内存怎么办？考虑一个堆上字符串：</p>
+<pre><code class="language-rust">{
+    let s1 = String::from(&quot;hello,world&quot;);
+    // ... 
+    // 现在我们让 s2 也指向s1 所指的`hello,world`堆上字符串
+    let s2 = s1;        
+    // ...
+}   // 这里会发生什么？如何释放堆上内存？
+</code></pre>
+<p>我们在堆上分配了一段内存，然后有两个变量指向同一段内存(这里是浅拷贝，<code>Rust</code>永远不会去自动创建深拷贝)。按照之前的思路，当<code>s1</code>作用域结束，<code>Rust</code>编译器释放掉了<code>s1</code>所绑定的堆上字符串<code>hello,world</code>；接着<code>Rust</code>会试图再去释放<code>s2</code>所指的内存——重复释放已经释放掉的内存，从而导致一个大问题。</p>
+<p>所以，规则2做了规定：</p>
+<blockquote>
+<p>一个值在一个时刻只能有一个<code>owner</code></p>
+</blockquote>
+<p>这就使得<code>let s2=s1;</code>这句绑定执行浅拷贝的同时，编译器认为<code>s1</code>这个变量已经不再有效，所以当<code>s1</code>的作用域结束，也就不再去释放堆上内存了。</p>
+<p>这也就是要有规则2“一个值在一个时刻只能有一个<code>owner</code>”的原因。规则2意味着要想在二次绑定之后再去使用之前的变量是不可行的，因为在编译器看来，之前的变量与内存之间的绑定关系已经移动(<code>Move</code>)到新的变量和内存之间了。来看一段是错误代码：</p>
+<pre><code class="language-rust">fn main() {
+    {
+        let s1 = String::from(&quot;hello,world&quot;);
+        // ... 
+        // 现在我们让 s2 也指向s1 所指的`hello,world`堆上字符串
+        let s2 = s1;        
+        // ...
+        println!(&quot;{}&quot;,s1); // 这里会报错，s1和原内存之间的绑定关系已经移动到s2上了
+    } 
+}
+</code></pre>
+<p>报错的内容类似于：</p>
+<pre><code>error[E0382]: use of moved value: `s1`
+ --&gt; src\main.rs:8:23
+  |
+6 |         let s2 = s1;
+  |             -- value moved here
+7 |         // ...
+8 |         println!(&quot;{}&quot;,s1); // 这里会报错，s1和原内存之间的绑定关系已经移动到s2上了
+  |                       ^^ value used here after move
+  |
+  = note: move occurs because `s1` has type `std::string::String`, which does not implement the `Copy` trait
+</code></pre>
+<p>并不只有赋值操作才是绑定，函数调用的参数传递和返回值也蕴含着绑定操作。尤其在返回值的使用上，<code>Rust</code>的这一设计极其精巧：</p>
+<pre><code class="language-rust">fn foo() -&gt; String {
+    let s1 = String::from(&quot;hello,world&quot;);    // 在堆上创建了一个字符串 
+    s1                                       // 返回变量，会导致这个变量失效，从而不会回收堆上的相关内存。
+}
+fn main() {
+    let s=foo();                             // 变量 s 拿到了堆上字符串内存的所有权
+    println!(&quot;{}&quot;,s);
+}                                            // s 作用域结束，堆上内存回收
+</code></pre>
+<p><code>foo()</code>函数的返回值所关联的堆上内存，以完美的方式，<code>Move</code>给了<code>main()</code>函数中的变量<code>s</code>(也就是让<code>s</code>成了相关内存的<code>owner</code>)；最后随着<code>s</code>的生命周期终止，相关内存被释放。</p>
+<h2><code>Copy</code> trait</h2>
+<p>引入了规定2，也就要求赋值的同时也绑定变量和资源之间的关系。如果二次绑定之后就不能继续使用原来的变量，又会带来一个不便之处，试想一个整型类型：</p>
+<pre><code class="language-rust">{
+    let int_1=5;           
+    let int_2=int_1;           // 执行绑定代码
+    println!(&quot;{}&quot;,int_1);      // 现在要使用 int_1 怎么办？
+}
+</code></pre>
+<p>在这里，执行<code>let int_2=int_1;</code>这句绑定代码同样会对<code>int_1</code>的相关内存做一个浅拷贝，但是对于整型变量而言，这个操作和深拷贝没有任何区别。所以这两个变量各自绑定的是不同的内存资源，随着作用域结束，也可以各自独立释放内存互不影响。</p>
+<p>从以上分析可知，如果做一个深拷贝，就可以让新变量绑定到原内存的副本上，从而不影响原变量继续使用。如果<code>Rust</code>在任何情况下都去套用二次赋值后原变量不该继续使用的约定，那就太蠢了。所以<code>Rust</code>提供了一个<code>Copy trait</code>可以用于任何类型上，如果一个类型有<code>Copy trait</code>，<code>Rust</code>编译器会认为这种类型的多次赋值操作并不会影响之前老变量的内存。也就是说在赋值之后就继续使用原来的老变量是安全的，我们放心写这种代码。</p>
+<p>由于<code>Rust</code>中所有的整型、浮点型、布尔型都是<code>Copy</code>，内部只包含有<code>Copy</code>的类型的元组也是<code>Copy</code>的。所以上述代码是正确的。</p>
+<h2>引用和借用</h2>
+<p><code>Copy trait</code>只能解决部分类型变量问题，面对很多情况都无能为力。试想一个函数调用的场景：</p>
+<pre><code class="language-rust">fn foo(s1:String,s2:String){
+    println!(&quot;{}--{}&quot;,s1,s2);
+}
+
+fn main() {
+    let s1=String::from(&quot;hello&quot;);
+    let s2=String::from(&quot;world&quot;);
+    foo(s1,s2);                   // 我们把s1、s2所值的字符串分别重新绑定到 foo(s1,s2) 函数的内部形参上
+    println!(&quot;{}--{}&quot;,s1,s2);     // 现在函数调用结束了，我们还想用s1、s2，这就尴尬了
+}
+</code></pre>
+<p>如何让函数调用之后实际参数仍然可用？一个变通办法当然是深拷贝再绑定:</p>
+<pre><code class="language-rust">fn main() {
+    let s1=String::from(&quot;hello&quot;);
+    let s2=String::from(&quot;world&quot;);
+    foo(s1.clone(),s2.clone());   // 传递克隆后的副本
+    println!(&quot;{}--{}&quot;,s1,s2);     // 现在函数调用结束了，我们还可以用s1、s2
+}
+</code></pre>
+<p>但是深拷贝意味着更多的性能消耗。与其克隆整个String对象，不如只传递地址：</p>
+<pre><code class="language-rust">fn foo(p1:&amp;String,p2:&amp;String){    // 接收 &amp;String，而非 String
+    println!(&quot;{}--{}&quot;,*p1,*p2);   // 注意这里用 * 取值 
+}
+
+fn main() {
+    let s1=String::from(&quot;hello&quot;); // 在堆上创建字符串，栈上有个s1索引字符串
+    let s2=String::from(&quot;world&quot;); 
+    foo(&amp;s1,&amp;s2);                 // 把 &amp;s1 和 &amp;s2 传递给foo(p1,p2)的形参
+    println!(&quot;{}--{}&quot;,s1,s2);     // 现在函数调用结束了，我们可以继续用s1、s2
+}
+</code></pre>
+<p>在这里，我们把<code>s1</code>和<code>s2</code>的地址传递给了<code>foo(p1,p2)</code>，函数形参<code>p1</code>、<code>p2</code>接管的是对<code>s1</code>和<code>s2</code>的地址的拷贝。所以当<code>p1</code>和<code>p2</code>生命周期结束，<code>s1</code>和<code>s2</code>完全不受影响。这和<code>C/C++</code>中传递指针的做法如出一辙。
+<code>Rust</code>里管这种<code>&amp;</code>的方式叫<code>reference</code>，显然，以这种方法来引用一个对象，绑定的是对变量地址的拷贝，并不会获取变量所绑定内存的<code>ownership</code>。</p>
+<p>注意到<code>foo()</code>函数中解引用<code>*p1</code>了吗？<code>Rust</code>允许你这样操作:</p>
+<pre><code class="language-rust">fn foo(p1:&amp;String,p2:&amp;String){    // 接收 &amp;String，而非 String
+    println!(&quot;{}--{}&quot;,p1,p2);     // 注意这里可以省略用 * 取值 
+}
+</code></pre>
+<p>注意的是，我们这里就像操作真实的<code>String</code>那样打印了<code>&amp;String</code>所指向的字符串。如果从整体效果上看，就仿佛我们把相关变量借给函数然后用完又还了一样。对于这种把<code>reference</code>作为函数参数的方式，<code>Rust</code>称之为借用(<code>borrowing</code>)。</p>
+<h3>引用的规则</h3>
+<p>引用有如下规定：</p>
+<ol>
+<li>在任何时间，可以有一个可变引用，也可以有任意数量的不可变引用，但是不能同时拥有这两种情况。</li>
+<li>引用在其存活时间内必须总是有效的。</li>
+</ol>
+<p>规则1是为了避免 <em>数据竞争</em> (<code>data race</code>)，规则2是为了避免 <em>悬空引用</em> (<code>Dangling Reference</code>)</p>
+<h4>多个引用与数据竞争问题</h4>
+<p>有时候我们想创建多个引用，但是如果同时存在一个可变引用和一个普通引用(只读)：</p>
+<pre><code class="language-rust">fn main() {
+    let mut s = String::from(&quot;hello,world&quot;);
+    let r_1 = &amp;s;
+    let r_2 = &amp;mut s;
+}
+</code></pre>
+<p><code>Rust</code>会拒绝编译通过：</p>
+<pre><code>error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+ --&gt; src\main.rs:4:20
+  |
+3 |     let r_1 = &amp;s;
+  |                - immutable borrow occurs here
+4 |     let r_2 = &amp;mut s;
+  |                    ^ mutable borrow occurs here
+5 | }
+  | - immutable borrow ends here
+</code></pre>
+<p>这是因为<code>Rust</code>认为，同时拥有多个可变引会在并发时存在数据竞争问题，会导致一些未定义的行为，而且此类问题难以诊断、追踪、修复，所以干脆禁止这么做。类似的情况还有多个可变引用问题：</p>
+<pre><code class="language-rust">fn main() {
+    let mut s = String::from(&quot;hello,world&quot;);
+    let r_1 = &amp;mut s;
+    let r_2 = &amp;mut s;
+}
+</code></pre>
+<p>报错信息类似于:</p>
+<pre><code>error[E0499]: cannot borrow `s` as mutable more than once at a time
+ --&gt; src\main.rs:4:20
+  |
+3 |     let r_1 = &amp;mut s;
+  |                    - first mutable borrow occurs here
+4 |     let r_2 = &amp;mut s;
+  |                    ^ second mutable borrow occurs here
+5 | }
+  | - first borrow ends here
+</code></pre>
+<p>一个办法是让第一个可变引用提前结束，也就是给它指定更小的作用域:</p>
+<pre><code class="language-rust">let mut s = String::from(&quot;hello,world&quot;);
+{
+    let r_1 = &amp;mut s;
+}
+let r_2 = &amp;mut s;
+</code></pre>
+<h4>悬空引用问题</h4>
+<p>在<code>C/C++</code>之类的语言中，很容易写出悬空引用的指针。这种指针或许指向了已经被释放的内存，甚至是已经被再分配的内存。<code>Rust</code>编译器的一个目标就是彻底杜绝这种行为。比如说，在<code>C/C++</code>可以写出这种代码：</p>
+<pre><code class="language-c">int[] foo(){
+    int[] x={1,2,3};     // 在栈上创建了一段数组
+    return x;            // 返回数组指针
+}
+</code></pre>
+<p>这种情况下，一旦函数结束，数组所在内存被回收，程序就莫名奇妙了。一段类似的<code>Rust</code>代码如下:</p>
+<pre><code class="language-rust">fn foo() -&gt; &amp;String {
+    let s = String::from(&quot;hello,world&quot;);  // 在堆上创建字符串，同时栈上有个s变量指向它
+    &amp;s                                    // 现在返回对s的引用——然而s会被释放
+}
+</code></pre>
+<p><code>Rust</code>会拒绝编译：</p>
+<pre><code>error[E0106]: missing lifetime specifier
+ --&gt; src\main.rs:1:13
+  |
+1 | fn foo() -&gt; &amp;String {
+  |             ^ expected lifetime parameter
+  |
+  = help: this function's return type contains a borrowed value, but there is no value for it to be borrowed from
+  = help: consider giving it a 'static lifetime
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/所有权系统/所有权系统2——生命周期.html">
+                    Rust所有权系统2——生命周期
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-12-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>上文说到，<code>Rust</code>会拒绝编译认为有悬空引用的代码。从本质上说，悬空引用是对引用的生命周期(<code>lifetime</code>)管理不当引发的。所谓引用的<code>lifetime</code>，也就是引用的有效作用域，引用的<code>lifetime</code>必须要落在被引用的对象的作用域之内。</p>
+<p>为了在编译期就发现悬空引用问题，就需要编译器具备能够对引用的<code>lifetime</code>进行检查能力，<code>Rust</code>编译器中负责此类工作的部分称作借用检查器（<code>borrow checker</code>）。和类型一样，大多数情况下<code>lifetime</code>是可以隐式推导的，我们并不需要手工干预，比如<code>Rust</code>可以自动推导出以下代码存在悬空引用问题：</p>
+<pre><code class="language-rust">{
+    let r;
+    {
+        let i=5;
+        r=&amp;i;
+    }                 // i 的作用域已经结束，r成了悬空引用
+    println!(&quot;{}&quot;,r); // 妄图使用r这个引用是错的
+}
+</code></pre>
+<p>然而有时候编译器并不能推导出来相关引用的<code>lifetime</code>，这时候需要显式地以注解的形式告诉编译器。不过需要说明的是，<code>lifetime</code>的注解并不会真的影响引用能活多久，其作用只是给编译器添加一种标注提示而已。<code>lifetime</code>的注解语法看起来稍稍有点古怪：</p>
+<!-- more -->
+<pre><code>&amp;'&lt;lifetime_name&gt; &lt;ref_type&gt;
+</code></pre>
+<p>其中，按惯例，<code>&lt;lifetime_name&gt;</code> 部分的命名通常由简短的小写字母组成，例如：</p>
+<pre><code class="language-rust">&amp;'a i32;
+&amp;'a mut i32;
+</code></pre>
+<p>除了自定义的<code>lifetime</code>之外，<code>Rust</code>还有一个很特别的静态生存期：<code>'static</code>，也就是整个程序的持续期间。比如，在<code>Rust</code>中，所有的字符串字面量都有<code>'static</code>的<code>lifetime</code>，完整的注解类似于：</p>
+<pre><code class="language-rust">let s:&amp;'static str =&quot;hello,world&quot;;
+</code></pre>
+<h2>函数签名中的<code>lifetime</code>注解</h2>
+<p>如同泛型类型参数一样，函数的泛型<code>lifetime</code>参数也需要放在尖括号<code>&lt;&gt;</code>之间。函数返回的引用，其生命周期参数需要和参数之一的生命周期相匹配。如果函数所返回的引用未引自任一参数，那么唯一的可能就是返回值引用了在函数中创建的值，这意味着一旦函数作用域结束，该值所在内存就会被回收，从而导致悬空引用。本质上，<code>lifetime</code>语法是在描述函数参数和返回值的生命周期的关联，一旦它们建立了关联关系，<code>Rust</code>编译器就有了足够的信息来允许内存安全的操作、禁止那些会产生悬空指针或者违法内存安全的事。注意的是，函数的<code>lifetime</code>注解是对函数签名而言的，与函数体并没有关系。</p>
+<p>当函数返回一个引用，很可能是一件要当心的事儿。我们把函数参数的<code>lifetime</code>称之为<code>input lifetimes</code>，函数返回值的<code>lifetime</code>称之为<code>output lifetimes</code>。考虑我们有一个函数，随机返回两个参数之一：</p>
+<pre><code class="language-rust">fn foo&lt;'a&gt;(p1:&amp;'a str ,p2:&amp;'a str) -&gt; &amp;'a str {
+    // ...
+    p1 // 假装我们随机返回了参数之一
+}
+</code></pre>
+<p>没什么问题对不对？然而，这个函数签名实际上是在要求：调用函数的时候，务必保证接收函数返回值的变量的<code>lifetime</code>不能落在任一函数参数的<code>lifetime</code>之外：</p>
+<pre><code class="language-rust">fn main() {
+    let s1=String::from(&quot;hello,world&quot;);
+    let result;    // 注意这里用于接收函数返回值的变量生命周期
+    {
+        let s2=String::from(&quot;shit happens&quot;);
+        result=foo(s1.as_str(),s2.as_str());
+    };
+}
+</code></pre>
+<p>这里<code>Rust</code>会拒绝编译，因为<code>Rust</code>编译器发现第二个参数会被先于<code>result</code>回收，从而可能导致悬空引用问题：</p>
+<pre><code>error[E0597]: `s2` does not live long enough
+  --&gt; src\main.rs:12:5
+   |
+11 |         result=foo(s1.as_str(),s2.as_str());
+   |                                -- borrow occurs here
+12 |     };
+   |     ^ `s2` dropped here while still borrowed
+13 | }
+   | - borrowed value needs to live until here
+</code></pre>
+<p>在一些情况下，<code>Rust</code>也能自动推断出函数中引用的<code>lifetime</code>，无需手工标注。考虑以下函数：</p>
+<pre><code class="language-rust">fn foo(p1: &amp; str)-&gt; &amp; str{
+    p1
+}
+</code></pre>
+<p>这种写法可以通过编译吗？其实是可以的。原因在于，如果没有显式地为引用型的函数参数注解<code>lifetime</code>，则<code>Rust</code>编译器会分别为每个引用型函数参数指定一个各不相同的<code>lifetime</code>。并且，由于<code>output lifetime</code>只可能来自于<code>input lifetimes</code>，恰好这里只有一个引用型的输入参数，所以这里的<code>output lifetime</code>可以自动推导出来，从而函数签名中的所有引用的<code>lifetime</code>都可以隐式推断。类似的，以下代码也是可以省略<code>lifetime</code>注解的：</p>
+<pre><code class="language-rust">fn foo(p1: &amp; str, p2:i32)-&gt; &amp; str{
+    p1
+}
+</code></pre>
+<h2><code>Struct</code>与<code>lifetime</code>注解</h2>
+<p>每一个引用都有其<code>lifetime</code>，除了用在函数签名，<code>struct</code>定义也是常需要手工注解的地方：</p>
+<pre><code class="language-rust">struct Foo&lt;'a&gt;{
+    f1: &amp;'a str,
+}
+
+impl&lt;'a&gt; Foo&lt;'a&gt;{
+    fn bar&lt;'b&gt;(&amp;self, s:&amp;'b str) -&gt; &amp;'b str{
+        s
+    }
+}
+
+fn main() {
+    let s1=String::from(&quot;hello,world&quot;);
+    let s2=String::from(&quot;hello,rust&quot;);
+    let foo=Foo{
+        f1:s1.as_str()
+    };
+    let s=foo.bar(s2.as_str());
+    println!(&quot;{}&quot;,s);
+}
+</code></pre>
+<p>得益于<code>Rust</code>编译器的自动推导，有时候我们也可以在方法签名中省略对引用的<code>lifetime</code>声明，例如：</p>
+<pre><code class="language-rust">struct Foo&lt;'a&gt;{
+    f1: &amp;'a str,
+}
+
+impl&lt;'a&gt; Foo&lt;'a&gt;{
+    fn bar(&amp;self, s:&amp;str) -&gt; &amp; str{
+        self.f1
+    }
+}
+</code></pre>
+<p>这里方法签名中，<code>&amp;self</code>的引用生命周期由编译器自动为我们指定；至于第二个参数<code>s</code>，编译器会为其指定一个单独的生命周期；由于未显式标注<code>output lifetime</code>注解，<code>Rust</code>编译器会自动把<code>self</code>的<code>lifetime</code>指定给它。这种规则使得书写方法签名更加简洁明了。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/写在2017的年末.html">
+                    写在2017的年末
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-12-21
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>又到一年年末，我决定写点什么。毕业第七年了，工作岗位换了许多，今年最大的收获是心态沉稳了很多。除了工作之外，今年主要做的两件事如下：</p>
+<h2>信息自动化实验室</h2>
+<p>这些年的工作让我真正明白了陆游的这首诗的含义：</p>
+<blockquote>
+<p>古人学问无遗力，
+少壮工夫老始成。
+纸上得来终觉浅，
+绝知此事要躬行。</p>
+</blockquote>
+<p>知行合一很重要，所以年初曾设想创建单位第一个信息自动化实验室。在获得领导赞成之后，目前进度如下：</p>
+<ol>
+<li>腾出机房附近的一个办公室作为场地。</li>
+<li>把一台淘汰下来的大华视频服务器利用起来，重做<code>CentOS</code>系统，并架设了<code>GitLab</code>服务器。已经把单位网站的三个相关项目、HSE正激励系统、和投票系统的相关代码全部托管到其上。</li>
+<li>收集了数个相关升级改造项目淘汰下设备，目前已有核心层交换机1台、接入层交换机数台、PLC各类模块、DTU、RTU和一些工控设备。后期要从每年运维项目中收集光纤、网线、视频摄像头、喊话系统等。</li>
+<li>在5月份用<code>Node.js</code>编写了一个简单爬虫，从国外某个用<code>WordPress</code>搭建的免费电子书网站上日夜不停地抓取<code>IT</code>领域的电子书，并部署到单位的一台闲置服务器上。目前已经下载了 105G 的pdf文件。</li>
+<li>前期用<code>Node.js</code>搭建了一个内部专用的电子书网站，邀请制，结果服务器硬盘挂了。听闻一位财务上的朋友历年来购买过众多数学领域的pdf电子书，待后期与我抓取到计算机领域的电子书合并整理、重新部署。</li>
+</ol>
+<p>初步的架子已经有了。可惜时间太少，今年终未完成正式投用。</p>
+<h2>软考中级</h2>
+<p>在以前，我是无心顾及证书这类东西的，总觉得离实用场景偏远。知乎上的主流观点认为，这个认证于科班出身的程序员没什么实质用处，因为相关知识基本几乎都是本科所学；其次和甲骨文OCA、OCP之类的相比，各方面知识点偏学院派，不贴近生产实际。然而这种认证由于考纲范围涉及非常广泛，我这个半道出家的人要在备考过程中要把科班出生的基础课程从头都过一遍，所以它便有了不一样的意义。于是在今年9月初，我改变了想法，决定报考工信部组织的软件设计师水平考试(软考中级)，用了2个多月的下班时间自行学习。这几日软考中级的软件设计师成绩出来了，我查了下：上午64分，下午67分。虽说最终的合格分数线尚未公布，但是按照往年45分及格(满分75分*60%=45分)的惯例，我过线应是毫无悬念了。 <!-- more --></p>
+<p>虽说只花了2个多月备考，但是其中好多知识点都是之前就较为熟悉的了，并未多花时间：</p>
+<ol>
+<li>面向对象、设计模式上，因为前些年自学Java的时候花过不少力气在这上面，所以几乎没有再花时间在这些方面。最后一题在C++/Java中选择了Java，大约花了不到一分钟就作答完毕了。</li>
+<li>在数据库理论方面，由于很久以前读过清华大学出版的《数据库系统概论》，加上三大数据库都有在单位工作中实际操作过，所以备考时只是稍带复习了下关系代数、关系演算方面的知识，也并未多花什么时间。</li>
+<li>计算机基础、网络基础、多媒体知识：由于平时工作多有接触，应付软考中级绰绰有余。</li>
+<li>专业英语：阅读的底子还算不错，这些年一直不惧英文原版的技术资料。</li>
+<li>标准化和法律法规：这部分知识点在软考中级分值似乎也就2分。早些年做物资采购的经验还是有点用的，什么国际标准、美标、国标、地方标准、行标、企标等各类标准，都可以在当年接触过的产品里找到对应的例子。就是法律法规有点古怪，比如考试中有一道选择题问哪个市的名字能作为商标。</li>
+</ol>
+<p>以下是备考时发现的短板之处——均是缺乏实践、缺乏练习的部分，虽说目前应付软考是没问题的，但是作为自我修养，我还是要引以为耻：</p>
+<ol>
+<li>在操作系统方面，用的是 Andrew S. Tanenbaum 教授的《现代操作系统》做备考材料。总结起来，我在操作系统方面是走马观花，缺乏实际，得空要做个简易的操作系统玩具。</li>
+<li>在编译原理方面，备考用的学习材料是吕映芝老师、张素琴老师的《编译原理》(清华大学出版设)，只读完前4章；后面的知识点还是感觉较为晦涩，同样只是了解个名词和大意，幸而软设几乎只考查了原理，没有让大家写个解析器之类。目前唯一的实践是前器照着《自制编程语言》通读了由作者自制的脚本语言<code>crowbar</code>的实现源码。以后一定要做个我自己的编程语言。</li>
+<li>在数据结构和算法上，约一个月的晚上时间都花在这上面，但是在算法上仍总是感觉没有成就感，心里也没什么底气——我似乎对C语言这种没有<code>GC</code>的语言有种恐惧感：每次动态<code>malloc</code>内存，我都会在心里紧张地想会不会有哪个地方忘掉了<code>free</code>。以后有得选的话，还是用<code>Java</code>来练习算法吧。</li>
+<li><code>DFD</code>、<code>UML</code>等建模技术：<code>DFD</code>以前我只在设计单位的物资系统的时候用过一次。现在发现真是低估了它，在理解需求上<code>DFD</code>是很好用的建模技术。按照目前许多人的观点看来，<code>UML</code>这块算是和生产脱节的学院派知识点，我平时只用过类图、序列图、和活动图，不得不花了许多时间在这上面熟悉其他建模技术。不管是否有实际用处，权当开阔眼界。</li>
+<li>最后，在软件工程方面，由于这些年工作接触了众多的信息系统和其他非软件方面项目，所以大部分知识点都很熟悉。然而仍然缺乏对各类软件开发模型、软件过程模型的实践，比如软件成熟度模型之类的知识点简直是今天记住隔天就忘了。</li>
+</ol>
+<h2>2018年的几个个人计划</h2>
+<p>按住心中的心浮气躁，消除焦虑，日拱一卒，不期速成。</p>
+<p>必须要完成的：</p>
+<ol>
+<li>强化数据结构与算法的相关练习，至少刷一遍《数据结构与问题求解》和《算法导论》。为日后<code>LeetCode</code>刷算法题做准备。</li>
+<li>温习各类知识，加强各方面的自我修养，2018年底之前(暂定下半年)通过系统架构设计师水平考试来检验自己的掌握情况。</li>
+<li>学习一门系统级编程语言，为日后写一个操作系统玩具做准备：暂定<code>Rust</code>，因为通过编译就几乎意味着内存安全。至少读完《Rust Essentials》。</li>
+<li>通读<code>Bootstrap v4</code>的<code>sass</code>源码。加大<code>CSS</code>方面的练习，尤其是响应式的设计。</li>
+<li>深入学习<code>WASM</code>技术。无它，<code>Mozillia</code>已经规划用<code>Rust</code>抢占<code>WASM</code>先机，很显然这块<code>Rust</code>的竞争对手只有<code>C/C++</code>。</li>
+<li>控制体重在68kg以下。</li>
+</ol>
+<p>可选：</p>
+<ol>
+<li>捡起概率论、线性代数和微积分</li>
+<li>学习《Practical Data Analysis》</li>
+<li>学习交换机相关知识</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/css/响应式网格系统的实现原理.html">
+                    响应式网格系统的实现原理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-12-03
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>响应式布局的基本原理</h2>
+<p>由于CSS的覆盖特性，我们可以先写一般性的通用样式，然后再编写特殊的样式对细节进行调整。为了编写一个响应式页面，可以有两种策略：</p>
+<ul>
+<li>对于一个 <code>desktop-first view</code>, 应该先设置大屏幕的样式，然后根据媒体查询，依次为更小的屏幕设置样式（即根据 <code>max-width</code> 从大到小的顺序依次设置样式）</li>
+<li>对于一个 <code>mobile-first view</code> , 应该先设置小屏幕样式，然后根据根据媒体查询，依次为更大的屏幕设置样式（即根据 <code>min-width</code> 从小大到大的顺序依次设置样式）</li>
+</ul>
+<p>设有一个<code>header</code>元素，现在采用 <code>mobile-first view</code> 策略。则其<code>CSS</code>规则可以写作: <!-- more --></p>
+<pre><code class="language-CSS">header {
+    width: 50%;
+}
+@media (min-width: 576px) {
+    header {
+        width: 75%;
+    }
+}
+@media (min-width: 768px) {
+    header {
+        width: 100%;
+    }
+}
+@media (min-width: 992px) {
+    header {
+        width: 100%;
+        color: gray;
+    }
+}
+</code></pre>
+<p>直接采用<code>CSS</code>弊端很多，比如这里的最低宽度定义是硬编码。为了简便起见，可以使用<code>SCSS</code>定义一个<code>@mixin</code></p>
+<pre><code class="language-SCSS">@mixin forLargerThan($media) {
+    @media (min-width: $media/16+em) { 
+        @content; 
+    }
+}
+</code></pre>
+<p>然后即可进行覆盖式的声明:</p>
+<pre><code class="language-SCSS">header {
+    width: 50%;
+    // ... 其他声明
+    @include forLargerThan(576) {
+        width: 70%;
+        // 其他声明
+    }
+    @include forLargerThan(768) {
+        width: 100%;
+        // 其他声明
+    }
+    @include forLargerThan(992) {
+        width: 100%;
+        // 其他声明
+    }
+}
+</code></pre>
+<p>类似地，我们还可以定义一个用于<code>desktop-first view</code>的<code>@mixin</code>:</p>
+<pre><code class="language-SCSS">@mixin forSmallerThan($media) {
+    @media (max-width: $media/16+em) { 
+        @content; 
+    }
+}
+</code></pre>
+<p>然后根据屏幕尺寸上限(<code>max-width</code>)从大到小的顺序，依次设置断点即可。</p>
+<h2>响应式网格系统的设计</h2>
+<p>网格式并不必然和响应式挂钩，在响应式设计出现之前，就有很多网格式方案出现。为了让网格布局系统支持响应式，我们可以利用上文定义的<code>forLargerThan($media)</code>的<code>@mixin </code>，为不同大小的屏幕预定义一些样式类。这里采用12栅格的网格系统。</p>
+<h3>基于 float 的网格布局</h3>
+<p>实现网格布局，兼容性最好的实现方式是在同行网格之间采用<code>float</code>布局。其实现思想非常简单：</p>
+<pre><code class="language-SCSS">.row{
+    &amp;:before,&amp;:after { content: ''; display: table; }
+    &amp;:after { clear: both; }
+}
+
+.grid {
+    &amp;_1, &amp;_2, &amp;_3, &amp;_4, &amp;_5, &amp;_6, &amp;_7, &amp;_8, &amp;_9, &amp;_10, &amp;_11, &amp;_12 {
+        float: left;
+        margin: 0 10px;
+    }
+}
+</code></pre>
+<p>当然，上述代码只是简单定义了浮动的样式实现网格并排排列。为了适配不同尺寸的屏幕，还需要采用媒体查询定义各网格在不同屏幕下的具体宽度：</p>
+<pre><code class="language-SCSS">// 先为 desktop 定义默认的样式:
+.grid-container {
+    width: 980px;
+    padding: 0 10px;
+    margin: auto;
+    @include forSmallerThan(980px) { width: 768px; }
+    @include forSmallerThan(768px) { width: 640px; }
+    @include forSmallerThan(640px) { width: 480px; }
+    @include forSmallerThan(480px) { width: 320px; padding: 0; }
+
+    .grid_12 { 
+        width: 940px; 
+        @include forSmallerThan(980px) { width: 728px; }
+        @include forSmallerThan(768px) { width: 600px; }
+        // .... 在更小尺寸的屏幕上的宽度省略
+    }
+
+    .grid_11 { 
+        // ... 不同屏幕下的宽度定义省略
+    }
+
+    // .... 其他网格
+
+    .grid_1 { 
+        width: 140px;
+        @include forSmallerThan(980px){
+            ...
+        }
+        // ...
+    }
+}
+</code></pre>
+<p>基于<code>float</code>布局最大的问题是对不同屏幕的宽度难以自动计算宽度。</p>
+<h3>基于<code>flexbox</code>的网格布局</h3>
+<p>为了克服<code>float</code>网格布局的缺点，可以采用<code>flexbox</code>布局作为基础实现网格系统。<code>Bootstrap v4</code> 便是采用了这一方案。</p>
+<h4>尺寸命名与响应式</h4>
+<p><code>Bootstrap</code>将一些屏幕尺寸称呼如下：</p>
+<table>
+<thead>
+<tr>
+<th>命名</th>
+<th>最小尺寸值</th>
+<th>缩写</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>extra small</td>
+<td>&lt;  576px</td>
+<td>xs</td>
+</tr>
+<tr>
+<td>small</td>
+<td>&gt;= 576px</td>
+<td>sm</td>
+</tr>
+<tr>
+<td>medium</td>
+<td>&gt;=768px</td>
+<td>md</td>
+</tr>
+<tr>
+<td>large</td>
+<td>&gt;=992px</td>
+<td>lg</td>
+</tr>
+<tr>
+<td>extra large</td>
+<td>&gt;=1200px</td>
+<td>xl</td>
+</tr>
+</tbody>
+</table>
+<p>具体的<code>breakpoints</code>定义为一个<code>map</code>，预定义的<code>$breakpoints</code>为:</p>
+<pre><code class="language-SCSS">$grid-breakpoints: (
+    xs: 0,
+    sm: 576px,
+    md: 768px,
+    lg: 992px,
+    xl: 1200px
+) !default;
+</code></pre>
+<p><code>Bootstrap</code>采用的是<code>mobile-first</code>策略。和<code>$forLargerThan</code>类似，<code>Bootstrap</code>定义了以下<code>@mixin</code>:</p>
+<pre><code class="language-SCSS">@mixin media-breakpoint-up($name, $breakpoints: $grid-breakpoints) {
+
+    // 获取与断点名相对应的最小宽度
+    $min: breakpoint-min($name, $breakpoints);
+
+    @if $min {
+        @media (min-width: $min) {
+            @content;
+        }
+    } @else {
+        @content;
+    }
+}
+</code></pre>
+<p>这个<code>@mixin</code>允许我们为不同尺寸的屏幕定义媒体查询。更方便的是，这个<code>@mixin</code>允许采用断点名来设置断点。</p>
+<h4>分栏定义</h4>
+<p>预定义的栅格栏数为12：</p>
+<pre><code class="language-SCSS">$grid-columns: 12 !default;
+</code></pre>
+<p>为了方便，定义的几个关键<code>@mixin</code>来创建容器、行、列：</p>
+<pre><code class="language-SCSS">@mixin make-container() {
+    width: 100%;
+    padding-right: ($grid-gutter-width / 2);
+    padding-left: ($grid-gutter-width / 2);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+@mixin make-row() {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: ($grid-gutter-width / -2);
+    margin-left: ($grid-gutter-width / -2);
+}
+
+@mixin make-col($size, $columns: $grid-columns) {
+    flex: 0 0 percentage($size / $columns);
+    // Add a `max-width` to ensure content within each column does not blow out
+    // the width of the column. Applies to IE10+ and Firefox. Chrome and Safari
+    // do not appear to require this.
+    max-width: percentage($size / $columns);
+}
+</code></pre>
+<h4>响应式栅格系统</h4>
+<p>要预定义样式，就是要指定每种栏在不同屏幕下的样式。显然，通过遍历<code>$grid-columns</code>和<code>$grid-breakpoints</code>即可完成:</p>
+<pre><code class="language-SCSS">@mixin make-grid-columns($columns: $grid-columns, $gutter: $grid-gutter-width, $breakpoints: $grid-breakpoints) {
+
+    // Common properties for all breakpoints
+    %grid-column {
+        position: relative;
+        width: 100%;
+        min-height: 1px; // Prevent columns from collapsing when empty
+        padding-right: ($gutter / 2);
+        padding-left: ($gutter / 2);
+    }
+
+    @each $breakpoint in map-keys($breakpoints) {
+
+        // Returns a blank string if smallest breakpoint, 
+        // otherwise returns the name with a dash infront
+        // eg : &quot;&quot; || &quot;-sm&quot;
+        $infix: breakpoint-infix($breakpoint, $breakpoints);
+
+        // Allow columns to stretch full width below their breakpoints
+        @for $i from 1 through $columns {
+            .col#{$infix}-#{$i} {
+                @extend %grid-column;
+            }
+        }
+
+        .col#{$infix}, .col#{$infix}-auto {
+            @extend %grid-column;
+        }
+
+        @include media-breakpoint-up($breakpoint, $breakpoints) {
+            // Provide basic `.col-{bp}` classes for equal-width flexbox columns
+            .col#{$infix} {
+                flex-basis: 0;
+                flex-grow: 1;
+                max-width: 100%;
+            }
+            .col#{$infix}-auto {
+                flex: 0 0 auto;
+                width: auto;
+                max-width: none; // Reset earlier grid tiers
+            }
+
+            @for $i from 1 through $columns {
+                .col#{$infix}-#{$i} {
+                    @include make-col($i, $columns);
+                }
+            }
+
+            .order#{$infix}-first {
+                order: -1;
+            }
+
+            @for $i from 1 through $columns {
+                .order#{$infix}-#{$i} {
+                    order: $i;
+                }
+            }
+
+            // `$columns - 1` because offsetting by the width of an entire row isn't possible
+            @for $i from 0 through ($columns - 1) {
+                @if not ($infix == &quot;&quot; and $i == 0) { // Avoid emitting useless .offset-0
+                    .offset#{$infix}-#{$i} {
+                        @include make-col-offset($i, $columns);
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+<p>最后，即可使用预设的样式类为不同尺寸的屏幕定义网格</p>
+<pre><code class="language-HTML">&lt;div class=&quot;container&quot;&gt;
+    &lt;div class=&quot;row&quot;&gt;
+        &lt;div class=&quot;col-sm&quot;&gt;
+            One of three columns
+        &lt;/div&gt;
+        &lt;div class=&quot;col-sm&quot;&gt;
+            One of three columns
+        &lt;/div&gt;
+        &lt;div class=&quot;col-sm&quot;&gt;
+            One of three columns
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<p>注意，这里采用的样式类是<code>col-sm</code>，而不是<code>col-sm-4</code>。由于采用<code>flexbox</code>实现，其宽度会自动设定。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/DataStructureAndAlgo/最短路径算法-Floyd算法.html">
+                    数据结构与算法笔记 最短路径算法——Floyd算法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-11-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>Floyd-Warshall</code> 算法也称 Floyd's 算法，是用于求解任意点对之间最短路径的算法。叫这个奇怪的名字是因为<code>Robert Floyd</code>和<code>Stephen Warshal</code>这两人在同一年(1962年)各自独立提出了这个算法。<code>Floyd-Warshall</code>算法是典型的动态规划算法。</p>
+<p>对于图<code>$G=(V,E)$</code>，各顶点之间弧<code>$&lt;i,j&gt;$</code>的权重表示为<code>$weight(i,j)$</code>，当两个顶点重合时(也就是<code>$i=j$</code>)，规定<code>$weight(i,j)=0$</code>；当两个顶点之间无弧连接时，规定<code>$weight(i,j)=\infty$</code>。对于稠密图，我们可以执行<code>$|V|$</code>次<code>Dijkstra</code>算法来获取任意点对的最短路径，但是对于稀疏图，采用结构更简单的<code>Floyd</code>算法更简单。</p>
+<h2>Floyd's algorithm</h2>
+<p>在<code>Dijkstra</code>算法中我们指定始点为<code>$v_0$</code>，并将<code>$D_{v_0,k}(j)$</code>定义为从<code>$v_0$</code>到<code>$k$</code>只用到<code>$\{1,2,...,j\}$</code>的子集作为中间顶点的最短路径的值。现在我们把始点和终点扩展到任意点对：<code>$D_{p,q}(j)$</code>表示从始点<code>$p$</code>到终点<code>$p$</code>，期间可能经过、或者不经过、但是最多只能经过集合<code>$\{1,2,...,j\}$</code>中顶点的最短路径的长度。<!-- more --></p>
+<ol>
+<li>显然，当不经过其他任何中间顶点，有<code>$D_{p,q}(0)=weight(p,q)$</code></li>
+<li>当<code>$k&gt;0$</code>，每次加入新的顶点<code>$k$</code>，最短路径必然只可能有以下几种情况：
+<ol>
+<li>最短路径还是不经过其他任何中间节点的弧<code>$&lt;p,q&gt;$</code>，故最短路径为<code>$D_{p,q}=weight(p,q)$</code>。这等同于初始情况。</li>
+<li>尽管加入了顶点<code>$k$</code>，但是最短路径<code>$p \rightarrow q$</code>并不穿过顶点<code>$k$</code>，所以最短路径值仍然为<code>$D_{p,q}(k-1)$</code>。</li>
+<li>加入了顶点<code>$k$</code>，有新的更短路径<code>$p \rightarrow q$</code>穿过了<code>$k$</code>。也就是最短路径由路径<code>$p \rightarrow k$</code>和<code>$k \rightarrow q$</code> 合成，在这两个分段路径中，由于<code>$k$</code>要么作为始点，要么作为终点，都不作为中间节点，故二者都只是最多只穿过了前<code>$(k-1)$</code>个顶点。即有<code>$D_{p,q}(k)= D_{p,k}(k-1)+D_{k,q}(k-1)$</code>。</li>
+</ol>
+</li>
+</ol>
+<p>综合以上情况，我们可以把<code>$D_{p,q}(k)$</code>的初值设置为<code>$D_{p,q}(0)=weight(p,q)$</code>，这样在每次迭代推算的过程中，必然就有<code>$D_{p,q}(k)=\displaystyle\min(D_{p,q}(k-1) \enspace,\enspace   D_{p,k}(k-1)+D_{k,q}(k-1) )$</code>。</p>
+<p>注意，递推关系表明：经过、或者不经过、但是最多只经过中间顶点集<code>$\{1,2,3,...,k\}$</code>(规模为<code>$k$</code>)的问题可以分解为规模为<code>$k-1$</code>的问题。根据这个关系，很容易设计出相应算法。
+首先引入一个集合<code>$S$</code>，表示中间顶点集。我们将按照序号从小到大的顺序，依次把顶点<code>$i\in V$</code>加入到集合<code>$S$</code>中，然后计算加入顶点<code>$i$</code>之后的各点对最短路径。经过<code>$k$</code>次加入后，集合<code>$S=\{1,2,3,...,k\}$</code>，最终当<code>$V-S=\emptyset$</code>时算法结束。为了不失一般性，我们分析图的任意两个顶点<code>$v_p$</code>和<code>$v_q$</code>，并用<code>$D[p,q]$</code>来表示从顶点<code>$p$</code>到顶点<code>$q$</code>最短路径长度。另外由于在上述过程只计算了最短路径长度，为了记录相应的路径，我们可以引入一个矩阵<code>$P[][]$</code>，其中元素<code>P[p][q]</code>表示始点<code>$p$</code>到终点<code>$p$</code>的最短路径一定经过顶点<code>$k$</code>，为了区分中间无节点的的情况，可以将其中每个元素初始化为<code>$-1$</code>。
+，为了计算<code>$D[p,q]$</code>，我们需要逐步递推。</p>
+<ol>
+<li>在初始状态下，如果二者有弧连接，则<code>$&lt;v_p,v_q&gt;$</code>可能是最短路径（相应的路径长可能为<code>$D[p,q]=weight(p,q)$</code>）。这里说“可能”，是因为两点之间直接相连的弧的权重不一定比分段连接的弧的权重之和要小。具体是不是，还需要在后续计算过程中加以甄别，如果后续计算过程发现了比之前计算的<code>$D[p,q]$</code>更小，则更新之。如果二者之间没有弧链接，我们暂时标记<code>$D[p,q]=\infty$</code>，留待后续处理。总而言之，我们在这一步令<code>$D[p,q]=weight(p,q)$</code>。</li>
+<li>根据递推关系，在每一步推算过程中，选择顶点<code>$k$</code>，准备加入到集合<code>$S$</code>，计算<code>$D[p,k]+D[k,q]$</code>，与之前的<code>$D[p,q]$</code>相比，取较小者作为新的最短路径；如果发现是<code>$D[p,k]+D[k,q]$</code>更小，同时更新<code>$P[p,q]=k$</code>表示此最短路径一定穿过中间节点<code>$k$</code>。</li>
+<li>经过不停迭代，直至集合<code>$S$</code>包含了<code>$V$</code>中所有的顶点（也就是<code>$V-S=\emptyset$</code>），算法结束。</li>
+</ol>
+<p>那么如何根据矩阵<code>$P$</code>知道任意两点最短路径<code>$p \rightarrow q$</code>中间节点细节呢？根据<code>$P[p][q]=k$</code>知道<code>$p \rightarrow q$</code>一定穿过<code>$k$</code>，所以问题分解为<code>$P[p][k]$</code>和<code>$P[k][q]$</code>两个子问题，如此递归层层分解，直至不含中间节点即可。</p>
+<h2>示例</h2>
+<p>例如，有图结构如下：</p>
+<pre><code>+---+                  2            +---+
+|   +-------------------------------&gt;   |
+| 0 |                               | 1 |
+|   +----------------+              |   |
++-^-+       8        |              +-+-+
+  |                  |                |
+  |                +-v-+              |
+  |                |   |       4      |
+  |     5          | 2 &lt;--------------+
+  +----------------+   |
+                   +---+
+</code></pre>
+<ol>
+<li>设置初值：<code>$S=\{\}$</code>，<code>$D=\begin{bmatrix} 0 &amp; 2 &amp; 8 \\ \infty &amp; 0 &amp; 4 \\ 5 &amp; \infty &amp; 0 \end{bmatrix}$</code></li>
+<li>加入<code>$k=0$</code>：<code>$S=\{0\}$</code>。<code>$D=\begin{bmatrix} 0 &amp; 2 &amp; 8 \\ \infty &amp; 0 &amp; 4 \\ 5 &amp; \xcancel{\infty}\,7 &amp; 0 \end{bmatrix}$</code></li>
+<li>加入<code>$k=1$</code>：<code>$S=\{0,1\}$</code>。<code>$D=\begin{bmatrix} 0 &amp; 2 &amp; \xcancel{8}\,6 \\ \infty &amp; 0 &amp; 4 \\ 5 &amp; 7 &amp; 0 \end{bmatrix}$</code></li>
+<li>加入<code>$k=2$</code>：<code>$S=\{0,1,2\}$</code>。<code>$D=\begin{bmatrix} 0 &amp; 2 &amp; 6 \\ \xcancel{\infty}\,9 &amp; 0 &amp; 4 \\ 5 &amp; 7 &amp; 0 \end{bmatrix}$</code></li>
+</ol>
+<h2>算法实现</h2>
+<p>说起来很啰嗦，但是代码实现非常简单，去掉初始化代码，剩下的推算过程核心只有几行：</p>
+<pre><code class="language-c">// 逐步加入顶点k到集合S中
+for(int k=0;k&lt;n;k++){
+    // 计算新的D[p][q]
+    for(int p=0;p&lt;n;p++){
+        for(int q=0;q&lt;n;q++&gt;){
+            // 一旦发现更短的路径，就更新到D[p][q]中
+            if(D[p][q] &gt; D[p][k]+D[k][q]){ 
+                D[p][q] = D[p][k]+D[k][q]; 
+                P[p][q]=k;
+            }
+        }
+    }
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page11.html">
+          Previous
+        </a>
+        13 of 32
+        <a href="/posts/page13.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

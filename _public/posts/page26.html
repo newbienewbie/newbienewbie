@@ -1,0 +1,1474 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/PHPCMS/PHPCMS分析5-消费类模块分析.html">
+                    PHPCMS分析5-消费类模块分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-16
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>数据库配置</h2>
+<p>账户的金额和积分值是存储在会员模型的member表中的：</p>
+<pre><code class="language-SQL">CREATE TABLE `member` (
+    `userid` MEDIUMINT(8) UNSIGNED NOT NULL AUTO_INCREMENT,
+       ...
+    `username` CHAR(20) NOT NULL DEFAULT '',
+    `password` CHAR(32) NOT NULL DEFAULT '',
+       ...
+    `amount` DECIMAL(8,2) UNSIGNED NOT NULL DEFAULT '0.00',
+    `point` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0',
+       ....
+    PRIMARY KEY (`userid`),
+    UNIQUE INDEX `username` (`username`),
+    INDEX `email` (`email`(20)),
+    INDEX `phpssouid` (`phpssouid`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=MyISAM
+AUTO_INCREMENT=4
+;
+</code></pre>
+<p>至于消费记录是在pay_spend中：</p>
+<pre><code class="language-SQL">CREATE TABLE `pay_spend` (
+    `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `creat_at` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+    `userid` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+    `username` VARCHAR(20) NOT NULL,
+    `type` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
+    `logo` VARCHAR(20) NOT NULL,
+    `value` INT(5) NOT NULL,
+    `op_userid` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+    `op_username` CHAR(20) NOT NULL,
+    `msg` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    INDEX `type` (`type`),
+    INDEX `creat_at` (`creat_at`),
+    INDEX `logo` (`logo`),
+    INDEX `userid` (`userid`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=MyISAM
+;
+</code></pre>
+<h2>消费类</h2>
+<p>PHPCMS提供了一个静态类，帮助操作数据库,只需要利用</p>
+<pre><code class="language-PHP">spend::amount()
+</code></pre>
+<p>和</p>
+<pre><code class="language-PHP">spend::point()
+</code></pre>
+<p>即可进行消费金钱和积分</p>
+<pre><code class="language-PHP">
+/**
+ *
+ * 直接使用pc_base::load_app_class('spend', 'pay', 0);
+ * 进行加载。
+ * 使用spend::amonut()进行金钱的消费
+ * spend::point()进行积分消费
+ * 当函数返回的结果为false是，可使用spend::get_msg()获取错误原因
+ *
+ */
+class spend {
+
+    //数据库连接
+    protected static $db;
+
+    //错误代码
+    public static $msg;
+
+    /**
+     * 数据库连接
+     */
+    protected  static function connect() {
+        self::$db = pc_base::load_model(&quot;pay_spend_model&quot;);
+    }
+
+    /**
+     * 按用户名、时间、标识查询是否有消费记录
+     * @param integer $userid      用户名
+     * @param integer $time        时间。  从指定时间到现在的时间范围内。
+     * @param string $logo   标识
+     */
+    public static function spend_time($userid, $time, $logo) {
+        if (empty(self::$db)) {
+            self::connect();
+        } 
+        return self::$db-&gt;get_one(
+        &quot;`userid` = '$userid' AND `creat_at` BETWEEN '$time' AND '&quot;.SYS_TIME.&quot;' AND `logo` = '$logo'&quot;
+        );
+    }
+
+    /**
+     * 添加金钱消费记录
+     * @param integer $value          消费金额
+     * @param string $msg             消费信息
+     * @param integer $userid         用户ID
+     * @param string $username        用户名
+     * @param integer $op_userid      操作人
+     * @param string $op_username     操作人用户名
+     * @param string $logo            特殊标识，如文章消费时，可以对文章进行标识，以满足在一段时间内，都可以再次的使用
+     */
+    public static function amount(
+        $value, 
+        $msg, 
+        $userid = '', 
+        $username = '',
+        $op_userid = '', 
+        $op_username = '', 
+        $logo = ''
+    ){
+         return self::_add(array(
+            'username'=&gt;$username, 
+            'userid'=&gt;$userid, 
+            'type'=&gt;1, 
+            'value'=&gt;$value, 
+            'op_userid'=&gt;$op_userid, 
+            'op_username'=&gt;$op_username, 
+            'msg'=&gt;$msg,
+            'logo'=&gt;$logo
+        ));
+    }
+
+    /**
+     * 添加积分消费记录
+     * @param integer $value          消费金额
+     * @param string $msg             消费信息
+     * @param integer $userid         用户ID
+     * @param string $username        用户名
+     * @param integer $op_userid      操作人
+     * @param string $op_username     操作人用户名
+     * @param string $logo            特殊标识，如文章消费时，可以对文章进行标识，以满足在一段时间内，都可以再次的使用
+     */
+    public static function point(
+        $value, 
+        $msg, 
+        $userid = '', 
+        $username = '', 
+        $op_userid = '', 
+        $op_username = '', 
+        $logo = ''
+    ) {
+         return self::_add(array(
+            'username'=&gt;$username,
+            'userid'=&gt;$userid, 
+            'type'=&gt;2, 
+            'value'=&gt;$value, 
+            'op_userid'=&gt;$op_userid, 
+            'op_username'=&gt;$op_username, 
+            'msg'=&gt;$msg,
+            'logo'=&gt;$logo
+        ));
+    }
+
+    /**
+     * 添加消费记录
+     * @param array $data 添加消费记录参数
+     */
+    private static function _add($data) {
+        $data['userid'] = isset($data['userid']) &amp;&amp; intval($data['userid']) ? intval($data['userid']) : 0;
+        $data['username'] = isset($data['username']) ? trim($data['username']) : '';
+        $data['op_userid'] = isset($data['op_userid']) &amp;&amp; intval($data['op_userid']) ? intval($data['op_userid']) : 0;
+        $data['op_username'] = isset($data['op_username']) ? trim($data['op_username']) : '';
+        $data['type'] = isset($data['type']) &amp;&amp; intval($data['type']) ? intval($data['type']) : 0;
+        $data['value'] = isset($data['value']) &amp;&amp; intval($data['value']) ? abs(intval($data['value'])) : 0;
+        $data['msg'] = isset($data['msg']) ? trim($data['msg']) : '';
+        $data['logo'] = isset($data['logo']) ? trim($data['logo']) : '';
+        $data['creat_at'] = SYS_TIME;
+
+
+        //检察消费类型
+        if (!in_array($data['type'], array(1,2))) {
+            return false;
+        }
+
+        //检察消费描述
+        if (empty($data['msg'])) {
+            self::$msg = 1;
+            return false;
+        }
+
+        //检察消费金额
+        if (empty($data['value'])) {
+            self::$msg = 2;
+            return false;
+        }
+         
+        //检察userid和username并偿试再次的获取
+        if (empty($data['userid']) || empty($data['username'])) {
+            if (defined('IN_ADMIN')) {
+                self::$msg = 3;
+                return false;
+            }elseif (
+                !$data['userid'] = param::get_cookie('_userid') || 
+                !$data['username'] = param::get_cookie('_username')
+            ){
+                self::$msg = 3;
+                return false;
+            }else {
+                self::$msg = 3;
+                return false;
+            }
+        }
+         
+        //检察op_userid和op_username并偿试再次的获取
+        if (defined('IN_ADMIN') &amp;&amp; (empty($data['op_userid']) || empty($data['op_username']))) {
+            $data['op_username'] = param::get_cookie('admin_username');
+            $data['op_userid'] = param::get_cookie('userid');
+        }
+         
+        //数据库连接
+        if (empty(self::$db)) {
+            self::connect();
+        }
+        $member_db = pc_base::load_model('member_model');
+         
+        //判断用户的金钱或积分是否足够。
+        if (!self::_check_user($data['userid'], $data['type'], $data['value'], $member_db)) {
+            self::$msg = 6;
+            return false;
+        }
+          
+        $sql = array();
+        if ($data['type'] == 1) {//金钱方式消费
+            $sql = array('amount'=&gt;&quot;-=&quot;.$data['value']);
+        } elseif ($data['type'] == 2) { //积分方式消费
+            $sql = array('point'=&gt;'-='.$data['value']);
+        } else {
+            self::$msg = 7;
+            return false;
+        }
+     
+        //进入数据库操作
+        if($member_db-&gt;update($sql, array(
+           'userid'=&gt;$data['userid'], 'username'=&gt;$data['username']
+           ))&amp;&amp;
+           self::$db-&gt;insert($data)
+        ){
+            self::$msg = 0;
+            return true;
+        }else{
+            self::$msg = 8;
+            return false;
+        }
+
+    }
+
+    /**
+     * 断用户的金钱、积分是否足够
+    * param integer $userid    用户ID
+    * param integer $type      判断（1：金钱，2：积分）
+    * param integer $value     数量
+    * param $db                数据库连接
+    */
+    private static function _check_user($userid, $type, $value, &amp;$db) {
+        if ($user = $db-&gt;get_one(array('userid'=&gt;$userid), '`amount`, `point`')) {
+            if ($type == 1) { //金钱消费
+                if ($user['amount'] &lt; $value) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } elseif ($type == 2) { //积分
+                if ($user['point'] &lt; $value) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                    return false;
+            }
+        }else {
+            return false;
+        }
+    }
+
+
+    /**
+     *
+     * 获取详细的报错信息
+     */
+    public static function get_msg() {
+        $msg = self::$msg;
+        $arr = array(
+            '1' =&gt; L('spend_msg_1', '', 'pay'),
+            '2' =&gt; L('spend_msg_2', '', 'pay'),
+            '3' =&gt; L('spend_msg_3', '', 'pay'),
+            '6' =&gt; L('spend_msg_6', '', 'pay'),
+            '7' =&gt; L('spend_msg_7', '', 'pay'),
+            '8' =&gt; L('spend_msg_8', '', 'pay'),
+        );
+        return isset($arr[$msg]) ? $arr[$msg] : false;
+    }
+
+}
+
+</code></pre>
+<h2>充值类</h2>
+<pre><code class="language-PHP">class receipts {
+
+/**
+  * 添加金钱入账记录
+  * 添加金钱入账记录操作放放
+  * @param integer $value 入账金额
+  * @param integer $userid 用户ID
+  * @param string $username 用户名
+  * @param integer $trand_sn 操作订单ID,默认为自动生成
+  * @param string $pay_type 入账类型 （可选值  offline 线下充值，recharge 在线充值，selfincome 自助获取）
+  * @param string $payment 入账方式  （如后台充值，支付宝，银行汇款/转账等此处为自定义）
+  * @param string $status 入账状态  （可选值  succ 默认，入账成功，error 入账失败）注当且仅当为‘succ’时更改member数据
+  * @param string  $op_username 管理员信息
+  */
+public static function amount(
+        $value,
+        $userid = '' , 
+        $username = '', 
+        $trade_sn = '', 
+        $pay_type = '', 
+        $payment = '', 
+        $op_username = '', 
+        $status = 'succ', 
+        $note = ''
+    ){
+    return self::_add(array(
+        'username'=&gt;$username, 
+        'userid'=&gt;$userid,
+        'money'=&gt;$value, 
+        'trade_sn'=&gt;$trade_sn, 
+        'pay_type'=&gt;$pay_type, 
+        'payment'=&gt;$payment, 
+        'status'=&gt;$status, 
+        'type'=&gt;1, 
+        'adminnote'=&gt;$op_username, 
+        'usernote'=&gt;$note
+    ));  
+} 
+
+/**
+  * 添加点数入账记录
+  * 添加点数入账记录操作放放
+  * @param integer $value 入账金额
+  * @param integer $userid 用户ID
+  * @param string $username 用户名
+  * @param integer $trade_sn 操作订单ID,默认为自动生成
+  * @param string $pay_type 入账类型 （可选值  offline 线下充值，recharge 在线充值，selfincome 自助获取）
+  * @param string $payment 入账方式  （如后台充值，支付宝，银行汇款/转账等此处为自定义）
+  * @param string $status 入账状态  （可选值  succ 默认，入账成功，failed 入账失败）
+  * @param string  $op_username 管理员信息
+  */
+ public static function point(
+    $value, 
+    $userid = '' , 
+    $username = '', 
+    $trade_sn = '', 
+    $pay_type = '', 
+    $payment = '', 
+    $op_username = '', 
+    $status = 'succ', 
+    $note = ''
+) {
+  return self::_add(array(
+    'username'=&gt;$username, 
+    'userid'=&gt;$userid,
+    'money'=&gt;$value, 
+    'trade_sn'=&gt;$trade_sn, 
+    'pay_type'=&gt;$pay_type, 
+    'payment'=&gt;$payment,
+    'status'=&gt;$status, 
+    'type'=&gt;2, 
+    'adminnote'=&gt;$op_username, 
+    'usernote'=&gt;$note
+));
+}
+
+
+/**
+  * 添加入账记录
+  * @param array $data 添加入账记录参数
+  */
+ private static function _add($data) {
+
+    $data['money'] = isset($data['money']) &amp;&amp; floatval($data['money']) ? floatval($data['money']) : 0;
+    $data['userid'] = isset($data['userid']) &amp;&amp; intval($data['userid']) ? intval($data['userid']) : 0;
+    $data['username'] = isset($data['username']) ? trim($data['username']) : '';
+    $data['trade_sn'] = (isset($data['trade_sn']) &amp;&amp; $data['trade_sn']) ? trim($data['trade_sn']) : create_sn();
+    $data['pay_type'] = isset($data['pay_type']) ? trim($data['pay_type']) : 'selfincome';
+    $data['payment'] = isset($data['payment']) ? trim($data['payment']) : '';
+    $data['adminnote'] = isset($data['op_username']) ? trim($data['op_username']) : '';
+    $data['usernote'] = isset($data['usernote']) ? trim($data['usernote']) : '';
+    $data['status'] = isset($data['status']) ? trim($data['status']) : 'succ';
+    $data['type'] = isset($data['type']) &amp;&amp; intval($data['type']) ? intval($data['type']) : 0;
+    $data['addtime'] = SYS_TIME;
+    $data['ip'] = ip();
+     
+
+    //检察消费类型
+    if (!in_array($data['type'], array(1,2))) {
+        return false;
+    }
+     
+      //检查入账类型
+    if (!in_array($data['pay_type'], array('offline','recharge','selfincome'))) {
+        return false;
+    }
+
+    //检查入账状态
+    if (!in_array($data['status'], array('succ','error','failed'))) {
+        return false;
+    }
+       
+    //检查消费描述
+    if (empty($data['payment'])) {
+        return false;
+    }
+     
+    //检查消费金额
+    if (empty($data['money'])) {
+        return false;
+    }
+     
+
+    //检查userid和username并偿试再次的获取
+    if (empty($data['userid']) || empty($data['username'])) {
+        if (defined('IN_ADMIN')) {
+            return false;
+        } elseif (!$data['userid'] = param::get_cookie('_userid') || 
+            !$data['username'] = param::get_cookie('_username')
+        ) {
+            return false;
+        } else {
+            return false;
+        }
+    }
+     
+    //检查op_userid和op_username并偿试再次的获取
+    if (defined('IN_ADMIN') &amp;&amp; empty($data['adminnote'])) {
+        $data['adminnote'] = param::get_cookie('admin_username');
+    }
+
+     //数据库连接 
+    if (empty(self::$db)) {
+        self::connect();
+    }
+    $member_db = pc_base::load_model('member_model');
+       
+    //根据type类型选择是追加金钱还是积分
+    $sql = array();
+    if ($data['type'] == 1) {//金钱方式充值
+        $sql = array('amount'=&gt;&quot;+=&quot;.$data['money']);
+    } elseif ($data['type'] == 2) { //积分方式充值
+        $sql = array('point'=&gt;'+='.$data['money']);
+    } else {
+        return false;
+    } 
+       
+    //进入数据库操作
+    $insertid = self::$db-&gt;insert($data,true);
+    if($insertid &amp;&amp; $data['status'] == 'succ') {
+        return $member_db-&gt;update($sql, array(
+                'userid'=&gt;$data['userid'], 'username'=&gt;$data['username']
+            ))? 
+            true : false;
+    } else {
+        return false;
+    }
+}
+
+
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/PHPCMS/PHPCMS分析6-二次开发与安装包设计.html">
+                    PHPCMS分析6-后台二次开发与安装包设计
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-15
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>PHPCMS采用了MVC分层架构，对于一个模块前台功能，只需要访问：</p>
+<pre><code class="language-PHP">http://localhost/phpcms/index.php?m=mymodule&amp;c=my_controller&amp;a=init
+</code></pre>
+<p>既可以实现加载。但是，如《PHPCMS分析2-Amin原理分析》所述，PHPCMS的设计者认为，用户对后台的管理操作都应该通过PHPCMS提供的admin模块进行。所以，当我们为一个模块开发了后台控制器my_admin，并直接在浏览器中访问如下URL：</p>
+<pre><code class="language-PHP">http://localhost/phpcms/index.php?m=mymodule&amp;c=my_admin&amp;a=init
+</code></pre>
+<p>会因pc_hash校验失败而被拒绝访问。</p>
+<p>{% asset_img &quot;pc_hash_failed.png&quot; &quot;pc_has_failed&quot; %}</p>
+<p>其机理在于后台控制器继承自admin类，admin的__construct()会调用check_hash方法，当客户端传来的hash失败时就会提示这样的对话框了。</p>
+<p>考虑到admin界面的菜单是从menu中加载的、并在用户点击的时候执行的，所以二次开发时，除了需要像前台实现那样提供MVC分层代码，还需要在数据库中的</p>
+<ul>
+<li>菜单表(menu)里添加相关记录，配置出moduel、controller、action等信息；</li>
+<li>在管理角色权限表（admin_role_priv）配置相关角色对mca的访问权限。</li>
+</ul>
+<p>这样当用户点击后台管理菜单的时候，就会通过JavaScript改变iframe的src属性，从而触发对相关m、c、a的访问。整个过程大致分为三个过程:</p>
+<ul>
+<li>请求该menu关联url的响应</li>
+<li>请求当前current_pos</li>
+<li>还有一个跨域请求被屏蔽了……</li>
+</ul>
+<p>{% asset_img &quot;menu_clicked.png&quot; &quot;menu_clicked&quot; %}</p>
+<p>所以，开发一个模块的后台管理，大致过程为：</p>
+<ul>
+<li>新建模块为snptest，</li>
+<li>控制器snptest，</li>
+<li>init方法为输出 <code>this is admin from snptest</code></li>
+</ul>
+<p>再在menu表中插入一条新的菜单记录</p>
+<pre><code class="language-SQL">insert into menu 
+(id,name,parentid,m,c,a,data,listorder,display,project1,project2,project3,project4,project5)
+values
+(id,snptest_init,29,snptest,snptest,init,'',0,1,1,1,1,1,1)
+</code></pre>
+<p>在未配置权限表的情况下，利用root角色，刷新缓存后访问后台即可看到效果为：</p>
+<p>{% asset_img &quot;admin_dev_demo.png&quot; &quot;admin_dev_demo&quot; %}</p>
+<p>尽管header.tpl.php里的JavaScript脚本会自动为<a>的href属性和<form>元素的action属性添加pc_hash，但是，仍有时候我们需要手动获取pc_hash（比如需要利用Ajax加载数据）,这时候可以考虑两种策略：</p>
+<ol>
+<li>在服务端把pc_hash echo到iframe内</li>
+<li>直接在客户端利用JavaScript获取pc_hash后操作：</li>
+</ol>
+<pre><code class="language-JavaScript">var pc_hash=parent.window.pc_hash;
+</code></pre>
+<h1>PHPCMS二次开发安装包设计</h1>
+<p>开发好了新的模块，为了方便别人更好的使用，需要提供安装包。所谓安装包，其实只是一些列文件罗列，PHPCMS会自动复制这些文件到相关文件夹下。</p>
+<ul>
+<li>xx/
+<ul>
+<li>modules/
+<ul>
+<li>classes/    #模块类库，通过load_app_class($class,$module,$initialize)加载</li>
+<li>functions/    #模块函数库，通过load_app_func($func,$module)加载</li>
+<li>templates/   #后台模板库，通过
+<ul>
+<li>xx_yy.tpl.php</li>
+<li>xx_zz.tpl.php</li>
+</ul>
+</li>
+<li>index.php    #前台控制器</li>
+<li>xx_admin.php    #后台控制器</li>
+<li>install/  #安装包
+<ul>
+<li>languages/  #语言包，会被复制到系统的语言包中
+<ul>
+<li>zh-cn/</li>
+</ul>
+</li>
+<li>templates/    #前台模板，会被复制到系统的前台模板包中
+<ul>
+<li>index.html</li>
+<li>list.html</li>
+</ul>
+</li>
+<li>config.inc.php    #基本信息</li>
+<li>extention.inc.php    #指明了后台管理菜单</li>
+<li>model.php    #指明了该模块都使用了哪些model</li>
+<li>xx.sql    #创建数据表SQL</li>
+<li>module.sql     #向module表中新增加一行关于该模块的信息</li>
+</ul>
+</li>
+<li>uninstall/</li>
+</ul>
+</li>
+<li>module/
+<ul>
+<li>xx_model.class.php #模型层</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/PHPCMS/PHPCMS分析7-用Laravel的Database层代替PHPCMS的model层.html">
+                    PHPCMS分析7-用Laravel的Database层代替PHPCMS的model层
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Laravel框架的Database层安装</h2>
+<p>尽管PHPCMS号称现代CMS，但是它的模型层用起来总觉得少了些现代气息——我说的是和Laravel比起来。</p>
+<p>不过由于PHPCMS采用了典型的MVC分层架构，我们完全可以替换掉它本身的Model层；另一方面，Laravel框架的Database也是独立的组件（在github的仓库为Illuminate/Database）,我们完全可以采用composer安装后取代PHPCMS原来的Model层。</p>
+<p>目前只支持PHP&gt;=5.4</p>
+<h2>使用</h2>
+<p>首先在一个可以自动运行的位置——比如在libs/fucntions/extention.func.php中，引入以下代码。</p>
+<pre><code class="language-PHP">use Illuminate\Database\Capsule\Manager as Capsule;
+require(PC_PATH.&quot;Illuminate/Database/vendor/autoload.php&quot;);
+$dbconfig=pc_base::load_config('database','default');
+$capsule = new Capsule;
+$capsule-&gt;addConnection([
+    'driver'    =&gt; 'mysql',
+    'host'      =&gt; $dbconfig['hostname'],
+    'database'  =&gt; $dbconfig['database'],    //dbname
+    'charset'   =&gt; $dbconfig['charset'],
+    'username'  =&gt; $dbconfig['username'],          
+    'password'  =&gt; $dbconfig['password'],
+]);
+$capsule-&gt;setAsGlobal();
+</code></pre>
+<p>然后在模型层中即可以方便的使用了</p>
+<pre><code class="language-PHP">use Illuminate\Database\Capsule\Manager as Capsule;
+
+$po=Capsule::table('product_order')-&gt;
+    join('products',&quot;product_order.product_id&quot;,&quot;=&quot;,&quot;products.id&quot;)-&gt;
+    leftJoin('member',&quot;product_order.userid&quot;,&quot;=&quot;,&quot;member.userid&quot;)-&gt;
+    where(array('product_order.state'=&gt;$state))-&gt;
+    skip($offset)-&gt;take($perPage) -&gt;
+    select(&quot;member.username as user&quot;,
+        &quot;product_order.id as id&quot;,
+        &quot;products.name as product&quot;,
+        &quot;product_order.price as price&quot;,
+        &quot;product_order.state as state&quot;
+    )-&gt;
+    get();
+
+Capsule::table('product_order')-&gt;where(array('id'=&gt;$id))-&gt;increment('state',1);
+Capsule::table('product_order')-&gt;where(array('id'=&gt;$id))-&gt;decrement('state',1);
+
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/PHPCMS/PHPCMS分析2-admin原理分析.html">
+                    PHPCMS分析2-admin原理分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-13
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>PHPCMS的通用后台程序还是非常漂亮的，这篇笔记将对其实现原理进行分析。</p>
+<h2>后台管理页面布局结构与技术原理</h2>
+<h3>后台管理页面布局</h3>
+<p>PHPCMS后台管理页面总体上分为</p>
+<ul>
+<li>顶部(主要含顶部菜单)</li>
+<li>左部(主要含左部菜单）</li>
+<li>右侧上部（当前位置）</li>
+<li>右侧下部（内嵌iframe）</li>
+</ul>
+<p>四大区域，如下图所示 {% asset_img &quot;PHPCMS_admin_layout.png&quot; &quot;phpcms_admin_layout&quot; %}</p>
+<h3>后台管理页面原理综述</h3>
+<p>后台管理页面从HTML结构上分为四大块</p>
+<pre><code>* ul id=&quot;top_menu&quot;
+* div id='leftMain'(利用index::left_menu方法获取）
+* span id=current_pos    (利用admin::current_pos方法获取)
+* iframe id=rightMain   (利用javascript动态改变iframe的src属性)
+</code></pre>
+<p>即每当访问index.php?m=admin的时候，会载入一个通用的index管理外壳（含顶部菜单、左部菜单、当前位置及一个iframe框架）。当用户点击管理外壳的顶部菜单或者左侧菜单时候，都会改变iframe的src属性，从而载入具体的内容页面。</p>
+<p>对于后台管理功能，PHPCMS的设计者认为，用户的操作都应该通过index?m=admin提供的外壳进行,而不同像是前台页面那样通过地址栏里输入</p>
+<pre><code class="language-HTML">index.php?m=module&amp;c=contorller&amp;a=action&amp;...
+</code></pre>
+<p>即可访问，所以PHPCMS设计者人为设定，<code>对于后台管理页面的请求都要求校验pc_hash</code>。通过index.php?m=admin提供的管理界面中的menu菜单访问的，会因带有pc_hash通过校验；否则，则会被拒之门外(提示[hash]数据验证失败)。
+{% asset_img &quot;pc_hash_failed.png&quot; &quot;[hash]数据验证失败&quot; %}</p>
+<p>对于具体的内容页面，头部往往还有对应于左侧相关菜单的子菜单，这是利用admin::submenu()方法获取的
+为了代码重用，PHPCMS实现了一个admin管理类。</p>
+<h2>admin管理类源码分析</h2>
+<p>admin类提供的方法大致分为</p>
+<ul>
+<li>构造器方法</li>
+<li>校验方法check_admin()、check_priv()、check_ip()、check_hash()</li>
+<li>用于获取后台模板的位置的admin_tpl()</li>
+<li>用于获取管理菜单数组的admin_menu()</li>
+<li>用于获取当前位置的current_pos()</li>
+<li>用于获取内嵌iframe内容页面的子菜单HTML代码的submenu()</li>
+<li>其他功能方法，如日志方法etc.</li>
+</ul>
+<h3>构造器</h3>
+<p>主要是完成一系列诸如是否为管理员、是否有权限等检查操作,源码及分析如下：</p>
+<pre><code class="language-PHP">public function __construct() {
+
+    self::check_admin();    //检查用户是否已经登录
+    self::check_priv();    //检查该用户是否有该URL的权限（根据admin_role_priv_model表）
+    pc_base::load_app_func('global','admin');
+    if (!module_exists(ROUTE_M)) 
+        showmessage(L('module_not_exists'));
+    self::manage_log();
+    self::check_ip();    //检查是否为被禁止的IP
+    self::lock_screen(); 
+    self::check_hash();    //检查pc_hash是否为会话中的pc_hash
+    if(pc_base::load_config('system','admin_url') &amp;&amp; 
+        $_SERVER[&quot;HTTP_HOST&quot;]!= pc_base::load_config('system','admin_url')
+        )
+    {
+        Header(&quot;http/1.1 403 Forbidden&quot;);
+        exit('No permission resources.');
+    }
+}
+</code></pre>
+<h3>检查函数</h3>
+<p>检查函数主要包括check_admin、check_priv、check_hash、check_ip等，源码及分析见下</p>
+<pre><code class="language-PHP">
+
+//检查是否是管理员
+final public function check_admin() {
+
+
+    if(ROUTE_M =='admin' &amp;&amp; 
+        ROUTE_C =='index' &amp;&amp; 
+        in_array(ROUTE_A, array('login', 'public_card'))
+    ){
+        return true;
+    } else { 
+        //检查用户是登录为管理员
+        $userid = param::get_cookie('userid');
+        if(!isset($_SESSION['userid'])  ||
+            !isset($_SESSION['roleid']) || 
+            !$_SESSION['userid'] || 
+            !$_SESSION['roleid'] || 
+            $userid != $_SESSION['userid']
+        ) 
+            showmessage(L('admin_login'),'?m=admin&amp;c=index&amp;a=login');
+    }
+}
+
+
+//检查该角色是否有目前正在访问的m、c、a的操作权限
+final public function check_priv() {
+
+    if(ROUTE_M =='admin' &amp;&amp; ROUTE_C =='index' &amp;&amp; in_array(ROUTE_A, array('login', 'init', 'public_card')))
+        return true;
+
+    //如果是超级管理员，pass
+    if($_SESSION['roleid'] == 1) 
+        return true;
+
+    
+    $siteid = param::get_cookie('siteid');
+    $action = ROUTE_A;
+    $privdb = pc_base::load_model('admin_role_priv_model');
+
+    //如果是以public_开头的方法，pass
+    if(preg_match('/^public_/',ROUTE_A)) 
+        return true;
+
+    //如果是以ajax_开头的方法，则只截取后半部分作为查询条件
+    if(preg_match('/^ajax_([a-z]+)_/',ROUTE_A,$_match)) {
+        $action = $_match[1];
+    }
+
+    //尝试获取有无m  c a roleid siteid都复合的权限记录
+    $r =$privdb-&gt;get_one(array(
+        'm'=&gt;ROUTE_M,
+        'c'=&gt;ROUTE_C,
+        'a'=&gt;$action,
+        'roleid'=&gt;$_SESSION['roleid'],
+        'siteid'=&gt;$siteid
+    ));
+    if(!$r) 
+        showmessage('您没有权限操作该项','blank');
+}
+
+
+//检查hash值，验证用户数据安全性
+final private function check_hash() {
+
+    //如果是公有方法、管理首页、登陆界面等不需要hash认证的，予以放行
+    if(preg_match('/^public_/', ROUTE_A) || 
+        ROUTE_M =='admin' &amp;&amp; ROUTE_C =='index' || 
+        in_array(ROUTE_A, array('login'))
+    ){
+        return true;
+    }
+
+
+    //不管是GET还是POST来的pc_hash,如果能和服务端pc_hash对应的上，则pass
+    if(isset($_GET['pc_hash']) &amp;&amp; 
+        $_SESSION['pc_hash'] != '' &amp;&amp; 
+        ($_SESSION['pc_hash'] == $_GET['pc_hash'])
+    ){
+        return true;
+    } elseif(
+        isset($_POST['pc_hash']) &amp;&amp; 
+        $_SESSION['pc_hash'] != '' &amp;&amp; 
+        ($_SESSION['pc_hash'] == $_POST['pc_hash'])
+    ){
+         return true;
+    } else {
+         showmessage(L('hash_check_false'),HTTP_REFERER);
+    }
+}
+
+
+//ip黑名单校验
+final private function check_ip(){
+    $this-&gt;ipbanned = pc_base::load_model('ipbanned_model');
+    $this-&gt;ipbanned-&gt;check_ip();
+}
+
+
+</code></pre>
+<h3>管理模板的位置与管理菜单的数组</h3>
+<ul>
+<li>admin_tpl()    返回后台管理模板的位置</li>
+<li>admin_menu()   返回某个菜单的子菜单数组</li>
+</ul>
+<h4>admin_tpl()</h4>
+<p>这个函数非常简单，用于加载相关模块的后台管理页面模板，默认是当前模块</p>
+<pre><code class="language-PHP">/**
+ * 加载后台模板
+ * @param string $file 文件名
+ * @param string $m 模型名
+ */
+final public static function admin_tpl($file, $m = ''){
+    ...
+}
+</code></pre>
+<h4>admin_menu()</h4>
+<p>根据当前用户角色的权限，在数据库中按父ID查找出菜单子项的信息，作为数组返回。实现的过程主要是先获取相关父菜单的所有子菜单，然后再筛选出当前角色有权限的菜单。源码分析如下：</p>
+<pre><code class="language-PHP"> /**
+  * @param integer $parentid   父菜单ID  
+  * @param integer $with_self  是否包括他自己
+  */
+final public static function admin_menu($parentid, $with_self = 0) {
+    ...
+    //获取其全部的子菜单
+    $result =$menudb-&gt;select($where,'*',1000,'listorder ASC');
+    if($with_self) {
+        $result2[] = $menudb-&gt;get_one(array('id'=&gt;$parentid));
+        $result = array_merge($result2,$result);
+    }
+
+
+    //如果是超级管理员，全部返回
+    if($_SESSION['roleid'] == 1) 
+        return $result;
+
+    //找出有权限的部分（根据admin_role_priv_model表）
+    $array = array();
+    $privdb = pc_base::load_model('admin_role_priv_model');
+    $siteid = param::get_cookie('siteid');
+    foreach($result as $v) {
+        $action = $v['a'];
+
+        //对于公有方法，放行通过
+        if(preg_match('/^public_/',$action)) {
+            $array[] = $v;
+
+        } else {
+
+            //对于ajax开头的方法，只截取后半部分方法名
+            if(preg_match('/^ajax_([a-z]+)_/',$action,$_match)) 
+                $action = $_match[1];
+
+            //尝试获取当前角色$roleid是否有对应的m、c、a的操作权限记录
+            $r = $privdb-&gt;get_one(array(
+                'm'=&gt;$v['m'],'c'=&gt;$v['c'],'a'=&gt;$action,'roleid'=&gt;$_SESSION['roleid'],'siteid'=&gt;$siteid
+            ));
+            if($r)
+                $array[] = $v;
+        }
+    }
+    return $array;
+}
+</code></pre>
+<p>通过以上分析可以看出，PHPCMS的后台管理界面中，菜单是存储在menu数据表中的。当我们二次开发需要新增菜单时候，只需要在menu表中插入相应menu的id、name、parentid、m、c、a、data等信息即可。当然为了让除了超级管理员之外的角色可以访问该menu，还需要在admin_role_priv表中配置权限。</p>
+<h3>当前位置</h3>
+<p>利用递归，获取某一个menu的所有父菜单层级，作为HTML片段返回</p>
+<pre><code class="language-PHP">/**
+  * @param $id 菜单id
+  */
+final public static function current_pos($id) {
+    $menudb = pc_base::load_model('menu_model');
+    $r =$menudb-&gt;get_one(array('id'=&gt;$id),'id,name,parentid');
+    $str = '';
+    if($r['parentid']){
+        $str = self::current_pos($r['parentid']);
+    }
+    return $str.L($r['name']).' &gt; ';
+}
+</code></pre>
+<h3>子菜单</h3>
+<p>主要是用来生成相关菜单的所有子菜单导航（一般显示在iframe框架内容页的上部）</p>
+<pre><code class="language-PHP">/**
+ * 获取菜单 头部菜单导航
+ *
+ * @param $parentid 菜单id
+ */
+final public static function submenu($parentid = '', $big_menu = false) {
+
+    if(empty($parentid)){
+        $menudb = pc_base::load_model('menu_model');
+        $r = $menudb-&gt;get_one(array('m'=&gt;ROUTE_M,'c'=&gt;ROUTE_C,'a'=&gt;ROUTE_A));
+        $parentid = $_GET['menuid'] = $r['id'];
+    }
+    $array = self::admin_menu($parentid,1);
+    $numbers = count($array);
+    if($numbers==1 &amp;&amp; !$big_menu) 
+        return '';
+    $string = '';
+    $pc_hash = $_SESSION['pc_hash'];
+
+    foreach($array as $_value){
+        if (!isset($_GET['s'])) {
+            $classname = 
+                ROUTE_M == $_value['m'] &amp;&amp; 
+                ROUTE_C == $_value['c'] &amp;&amp;
+                ROUTE_A == $_value['a'] ? 
+                'class=&quot;on&quot;' : '';
+        } else {
+            $_s = !empty($_value['data']) ? 
+                str_replace('=', '', strstr($_value['data'], '=')) : '';
+            $classname = ROUTE_M == $_value['m'] &amp;&amp; 
+                ROUTE_C == $_value['c'] &amp;&amp; 
+                ROUTE_A == $_value['a'] &amp;&amp; 
+                $_GET['s'] == $_s ?'class=&quot;on&quot;' : '';
+        }
+
+        if($_value['parentid'] == 0 || $_value['m']=='') 
+            continue;
+
+        if($classname) {
+            $string .= &quot;&lt;a href='javascript:;' $classname&gt;&lt;em&gt;&quot;.  
+                L($_value['name']).
+                &quot;&lt;/em&gt;&lt;/a&gt;&lt;span&gt;|&lt;/span&gt;&quot;;
+        } else {
+            $string .= &quot;&lt;a href='?m=&quot;.$_value['m'].  
+                &quot;&amp;c=&quot;.$_value['c'].
+                &quot;&amp;a=&quot;.$_value['a'].
+                &quot;&amp;menuid=$parentid&amp;pc_hash=$pc_hash&quot;.
+                '&amp;'.$_value['data'].
+                &quot;' $classname&gt;&lt;em&gt;&quot;.
+                L($_value['name']).
+                &quot;&lt;/em&gt;&lt;/a&gt;&lt;span&gt;|&lt;/span&gt;&quot;;
+        }
+    }
+    $string = substr($string,0,-14);
+    return $string;
+}
+
+
+</code></pre>
+<h2>index.php控制器源码分析</h2>
+<p>控制器类index继承自admin类</p>
+<h3>左侧菜单实现原理</h3>
+<p>关于左侧菜单菜单生成，是在index控制器中，action名为public_menu_left()，核心代码为：</p>
+<pre><code class="language-PHP">include  $this-&gt;admin_tpl('left');
+</code></pre>
+<p>对应的left.tpl.php关键代码及其分析如下：</p>
+<pre><code class="language-PHP">foreach($datas as $_value){
+    //输出菜单标题
+    echo '&lt;h3 class=&quot;f14&quot;&gt;&lt;span class=&quot;switchs cu on&quot; title=&quot;'.
+        L('expand_or_contract').
+        '&quot;&gt;&lt;/span&gt;'.
+        L($_value['name']).
+        '&lt;/h3&gt;';
+    //输出子菜单列表
+    echo '&lt;ul&gt;';    
+    $sub_array = admin::admin_menu($_value['id']);
+    foreach($sub_array as $_key=&gt;$_m){
+        //附加data参数
+        $data = $_m['data'] ? '&amp;'.$_m['data'] : '';
+        if($menuid == 5) { //左侧菜单不显示选中状态
+            $classname = 'class=&quot;sub_menu&quot;';
+        } else {
+            $classname = 'class=&quot;sub_menu&quot;';
+        }
+        //输出每个子菜单，并给每个子菜单添加JavaScript伪链接，格式类似于：
+        //javascript:_MP(1002,'?m=content&amp;c=create_html&amp;a=category.$data');
+        //$data是附加参数
+        echo '&lt;li id=&quot;_MP'.$_m['id'].'&quot; '.$classname.'&gt;&lt;a href=&quot;javascript:_MP('.$_m['id'].',\'?m='.$_m['m'].'&amp;c='.$_m['c'].'&amp;a='.$_m['a'].$data.'\');&quot; hidefocus=&quot;true&quot; style=&quot;outline:none;&quot;&gt;'.L($_m['name']).'&lt;/a&gt;&lt;/li&gt;';
+    }
+    echo '&lt;/ul&gt;';
+}
+?&gt;
+
+&lt;!--使菜单标题点击时有动画切换效果--&gt;
+&lt;script type=&quot;text/javascript&quot;&gt;
+$(&quot;.switchs&quot;).each(function(i){
+    var ul = $(this).parent().next();
+    $(this).click(unction(){
+        if(ul.is(':visible')){
+            ul.hide();
+            $(this).removeClass('on');
+        }else{
+            ul.show();
+            $(this).addClass('on');
+        }
+    })
+});
+&lt;/script&gt;
+</code></pre>
+<p>这样，左部菜单就能自动生成了，至于这些菜单的动作执行，是通过JavaScript伪链接完成的，其核心函数为_MP(menuid,targetUrl)：</p>
+<pre><code class="language-JavaScript">function _MP(menuid,targetUrl) {
+
+    $(&quot;#menuid&quot;).val(menuid);
+    $(&quot;#paneladd&quot;).html('&lt;a class=&quot;panel-add&quot; href=&quot;javascript:add_panel();&quot;&gt;&lt;em&gt;添加&lt;/em&gt;&lt;/a&gt;');
+
+    //更新iframe的内容
+    $(&quot;#rightMain&quot;).attr('src', targetUrl+'&amp;menuid='+menuid+'&amp;pc_hash='+pc_hash);
+
+    //更新表示当前位置的字符串
+    $('.sub_menu').removeClass(&quot;on fb blue&quot;);
+    $('#_MP'+menuid).addClass(&quot;on fb blue&quot;);
+    $.get(
+        &quot;?m=admin&amp;c=index&amp;a=public_current_pos&amp;menuid=&quot;+menuid,
+        function(data){
+            $(&quot;#current_pos&quot;).html(data+'&lt;span id=&quot;current_pos_attr&quot;&gt;&lt;/span&gt;');
+        }
+    );
+    $(&quot;#current_pos&quot;).data('clicknum', 1);
+
+    //显示来自v9官方站点的帮助信息，默认会同源策略屏蔽掉
+     show_help(targetUrl);
+}
+</code></pre>
+<p>但是这只是更新了iframe的内容，左侧的菜单是怎么更新的呢：</p>
+<pre><code class="language-JavaScript">function _Site_M(project) {
+    var id = '';
+    $('#top_menu li').each(function (){
+        var S_class = $(this).attr('class');
+        if ($(this).attr('id')){
+            $(this).hide();
+        }
+        if (S_class=='on top_menu' || S_class=='top_menu on'){
+            id = $(this).attr('id');
+        }
+    });
+
+    $('#'+id).show();
+    id = id.substring(2, id.length);
+    if (!project){
+        project = 0; 
+    }
+    $.ajaxSettings.async = false; 
+    $.getJSON(
+        'index.php', 
+        {m:'admin', c:'index', a:'public_set_model', 'site_model':project, 'time':Math.random()}, 
+        function (data){
+            $.each(data, function(i, n){
+                $('#_M'+n).show();
+            })
+        }
+    )
+    //更新左侧菜单内容块
+    $(&quot;#leftMain&quot;).load(
+        &quot;?m=admin&amp;c=index&amp;a=public_menu_left&amp;menuid=&quot;+id
+        +'&amp;time='+Math.random()
+    );
+}
+</code></pre>
+<h2>iframe嵌入文件的header源码分析</h2>
+<p>一个嵌入的模板，大多会在顶部调用代码:</p>
+<pre><code class="language-PHPCMS">include $this-&gt;admin_tpl('header', 'admin');
+</code></pre>
+<p>而这个admin/templates/header.tpl.php模板文件，分为三大部分：</p>
+<ol>
+<li>加载各类css、javascript文件，</li>
+<li>一段用于为各个锚定和表单添加pc_hash的javascript代码：</li>
+<li>加载submenu的PHP脚本：</li>
+</ol>
+<p>为所有锚定和表单添加pc_hash源码及其分析为：</p>
+<pre><code class="language-PHP">&lt;script type=&quot;text/javascript&quot;&gt;
+
+window.focus();
+var pc_hash = '&lt;?php echo $_SESSION['pc_hash'];?&gt;';
+
+&lt;?php if(!isset($show_pc_hash)) { ?&gt;
+
+    window.onload = function(){
+
+        //为各&lt;a&gt;元素的href属性中添加pc_hash
+        var html_a = document.getElementsByTagName('a');
+        var num = html_a.length;
+        for(var i=0;i&lt;num;i++) {
+            var href = html_a[i].href;
+            if(href &amp;&amp; href.indexOf('javascript:') == -1) {
+            if(href.indexOf('?') != -1) {
+            html_a[i].href = href+'&amp;pc_hash='+pc_hash;
+            } else {
+            html_a[i].href = href+'?pc_hash='+pc_hash;
+            }
+            }
+        }
+
+        //为各form元素添加一个隐藏的pc_hash字段
+        var html_form = document.forms;
+        var num = html_form.length;
+        for(var i=0;i&lt;num;i++) {
+            var newNode = document.createElement(&quot;input&quot;);
+            newNode.name = 'pc_hash';
+            newNode.type = 'hidden';
+            newNode.value = pc_hash;
+            html_form[i].appendChild(newNode);
+        }
+    }
+&lt;?php } ?&gt;
+&lt;/script&gt;
+</code></pre>
+<p>加载当前菜单的子菜单导航HTML片段的源码及其分析为：</p>
+<pre><code class="language-PHP">&lt;?php if(!isset($show_header)) { ?&gt;
+    &lt;div class=&quot;subnav&quot;&gt;
+    &lt;div class=&quot;content-menu ib-a blue line-x&quot;&gt;
+    &lt;?php 
+        if(isset($big_menu)) { 
+            echo '&lt;a class=&quot;add fb&quot; href=&quot;'.$big_menu[0].'&quot;&gt;'.
+            '&lt;em&gt;'.$big_menu[1].'&lt;/em&gt;'.
+            '&lt;/a&gt;　';
+        } else {
+            $big_menu = '';
+        }
+    ?&gt; 
+    &lt;?php echo admin::submenu($_GET['menuid'],$big_menu); ?&gt; 
+    &lt;/div&gt;
+    &lt;/div&gt;
+&lt;?php } ?&gt;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Python/Python函数装饰器原理分析.html">
+                    Python函数装饰器原理分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>函数装饰其实类比为游戏里装备强化的概念。比如将一个具有附加火性伤害的宝石，镶嵌到了一个主武器上，那么武器就能在原有功能的基础之上附带有火伤效果。具体到Python函数装饰就是，一个装饰器函数dec，装饰到了一个函数foo上，就能让foo具有dec功效，可以形象得说成是dec装饰到了foo上。</p>
+<h2>基本原理</h2>
+<h3>从扩展功能说起</h3>
+<p>先抛开游戏程序的概念不谈，假如我们有一个函数foo()</p>
+<pre><code class="language-Python">def foo():
+     print(&quot;calling foo():\thave fun with Brz&quot;)
+</code></pre>
+<p>出于某种原因，有一天我希望在函数原有功能之上追加一点工作量——在函数执行之前和之后实现一些和 foo 函数完全可以分离的工作，我们当然不想直接改动已经写好的 foo ,所以自然而然想去定义一个新函数，在这个函数内部调用 foo 函数：</p>
+<pre><code class="language-Python">def foo_appended(func):
+     print(&quot;before calling:\tmiss Brz&quot;)
+     func()
+     print(&quot;after calling:\tsay good bye&quot;)
+
+foo_appended(foo)
+</code></pre>
+<p>输出为：</p>
+<pre><code>before calling:    miss Brz
+calling foo():    have fun with Brz
+after calling:    say good bye
+</code></pre>
+<p>这种做法，对于一些小程序当然没有问题，但是对于稍微大的项目或者涉及到接口的时候情况就明显不同了：假如用户（可以是其他程序员，也可以是自己）使用了 foo() ，就得把之前所有的 foo() 全部改成 foo_appended(foo) ; 随着要附加的事情（权限检查、其他检查、日志记录、触发某个接口等）越来越多，最后的函数名可能是 foo_f1_f2_f3_f4_f5_appended 这种，这很显然是个很蠢的做法。
+更关键的，这样一点都不 <a href="http://www.itminus.com/tags/AOP/">AOP</a> ！一个有追求的人绝不会容忍这种代码！</p>
+<h3>装饰器实现</h3>
+<p>理论基础是<code>Python一切皆对象，包括函数</code>。所以可以对函数进行普通对象一样的操作：接收作为参数、传递为返回值、赋值（引用新对象）。
+为了方便起见，我们不妨把原函数称之为&quot;目标函数&quot;,在不改动目标函数内部实现的情况下，想在目标函数原有工作前后追加工作量(甚至完全替换掉目标函数的工作)，这需要一个偷梁换柱的方法来实现：</p>
+<ul>
+<li>定义一个装饰器函数，此函数会接受函数对象作为输入参数，以确保能执行其功能</li>
+<li>在装饰器函数内定义一个和目标函数参数列表一致的包装函数，同时添加欲追加的工作量(甚至彻底替换掉目标函数)</li>
+<li>装饰器函数返回值设置为包装函数</li>
+<li>把目标函数对象传递给装饰器函数去执行，返回值(包装函数)赋值到目标函数名上。</li>
+<li>用户以目标函数之名调用包装函数。</li>
+</ul>
+<pre><code class="language-Python">def foo(): #目标函数
+     print(&quot;while calling :\thave fun with Brz&quot;)
+
+def foo_appended(func): #定义一个新函数（装饰函数），装饰函数接受一个函数对象作为参数
+     def wrap(): #包装函数
+         print(&quot;before calling :\tmiss Brz&quot;) 
+         func() #执行目标函数
+         print(&quot;after calling :\tsay good bye to Brz&quot;)
+     return wrap #返回包装函数
+
+foo = foo_appended(foo) # foo不再指向原始的目标函数，而是指向包装函数
+
+#用户调用其熟悉的foo()
+foo()
+</code></pre>
+<p>输出结果为：</p>
+<pre><code class="language-Python">before calling :    miss Brz
+while calling :    have fun with Brz
+after calling :    say good bye to Brz
+</code></pre>
+<p>这就是函数装饰的基本原理与实现。</p>
+<h3>核心思想</h3>
+<p>Python装饰器能扩展原函数，核心在于动态生成了一个包装函数，该包装函数负责扩展目标函数(甚至完全替换掉目标函数的所有工作)。最后把该包装函数当目标函数一样使用。</p>
+<p>对诸如<code>PHP</code>、<code>JavaScript</code>这类动态语言，甚至对于<code>C</code>/<code>C++</code>，由于函数指针的存在，可以很容易写出类似的装饰器。
+那么，对于<code>Java</code>,如何实现？装饰器模式、代理模式便是解决方案。思路是类似的，当然也是生成一个包装对象（代理），通过包装对象（代理）来扩展原始对象！</p>
+<h2>语法糖</h2>
+<p>为了把装饰函数和被装饰函数的脉络在代码形式上表现的更清晰、简介，我们可以使用函数装饰符<code>@</code>这个语法糖</p>
+<pre><code class="language-Python">def dec_foo(func):
+     def wrap(p):
+        #do something
+         pass #func and sth
+     return wrap
+
+@dec_foo
+def foo(p):
+    #do something
+     pass
+</code></pre>
+<p>阅读别人的代码，更多的是看到</p>
+<pre><code class="language-Python">@dec
+def foo(para):
+     pass 
+</code></pre>
+<p>的形式，从这个形式，我们可以得出结论，</p>
+<p><code>dec接收一个func参数，内部会一个参数列表和原foo函数的参数列表保持兼容的包装函数。原foo经过装饰后（重新赋值后），就有了装饰器函数的功能。</code></p>
+<p>总结来说，装饰器函数只做三件事：</p>
+<ol>
+<li>接收一个函数作为参数，</li>
+<li>然后嵌套一个包装函数（包装函数的参数列表与目标函数参数列表兼容），</li>
+<li>再返回嵌套函数对象。</li>
+</ol>
+<p>可以把第2步、第3步合并为一步，但是根本要旨是要返回一个函数对象（对目标函数进行包装，不妨称之为包装函数）。</p>
+<p>这个包装函数会做三件事</p>
+<ol>
+<li>接受参数：能兼容目标函数参数列表</li>
+<li>执行目标函数</li>
+<li>执行附加功能</li>
+</ol>
+<h2>装饰器的应用</h2>
+<p>装饰器的应用非常多，比如：</p>
+<ul>
+<li><code>Python</code>本身内置了和面向对象相关的装饰器：类属性<code>@property</code>、类静态方法<code>@staticmethod</code>、类方法<code>@classmethod</code>装饰器。</li>
+<li>在<code>Django</code>中随处可见诸如<code>@require_login</code>检查登陆之类的功能。</li>
+</ul>
+<p>不管咋说，它始终都是用来做<code>功能解耦、代码分离</code>的。在 Java Spring 中，我们也经常需要做类似的事情，比如为某些组件添加权限检查、日机功能，一个好的思路就是采用 <a href="http://www.itminus.com/tags/AOP/">AOP</a> ,就是为相应组件建立切面(<code>Aspect</code>)，然后针对相应的连接点(<code>JointPoint</code>)进行增强(<code>Advice</code>)。</p>
+<p>回到本文开头提到的游戏装备强化的概念上来，假如现在我们想为某款游戏开发一个辅助工具——装备模拟器，要模拟宝石强化后附伤效果。</p>
+<p>首先定义一个伤害数据类型:</p>
+<pre><code class="language-Python">
+class Damage:
+    '''
+    damage data structure
+    '''
+
+    def __init__(self):
+        self._damage={ 'fire':0, 'ice':0, 'poison':0, 'wind':0 }
+
+    def add(self,key,value):
+        self._damage[key]=self._damage[key]+value
+    
+    def minus(self,key,value):
+        self._damage[key]=self._damage[key]-value
+        if(self._damage[key]&lt;0):
+            self._damage[key]=0
+
+    def __getattr__(self,key):
+        return self._damage[key]
+
+</code></pre>
+<p>现有一个白板武器伤害计算公式(根据武器等级计算)，返回<code>Damage</code>对象。其中某个实现可能是长这样：</p>
+<pre><code class="language-Python">def weapon_damage(weapon_level):
+    '''
+    calculate the damage according to weapon_level
+    '''
+
+    damage=Damage()
+    damage.add('fire',weapon_level*2.1)
+    damage.add('poison',weapon_level*1.7)
+    return damage 
+</code></pre>
+<p>许多游戏都有武器强化系统，经过某种宝石镶嵌，会为之添加附伤效果。为了扩展 <code>weapon_damage</code> 的功能，使得可以计算经过宝石镶嵌后的武器伤害，我们需要为之编写装饰器：</p>
+<pre><code class="language-Python">def perled_damage(weapon_damage,perl_level): 
+    '''
+    decorator:return a new weapon_damage function
+    '''
+    def wrap_weapon_damage(weapon_level):
+        damage=weapon_damage(weapon_level)
+        damage.add('fire',perl_level*0.5)
+        damage.add('ice',perl_level*1.0)
+        return damage 
+    return wrap_weapon_damage
+</code></pre>
+<p>然后把这个装饰函数装饰到原有的武器伤害函数<code>weapon_damage</code>上，即可得到扩展后的伤害计算函数:</p>
+<pre><code class="language-Python">
+weapon_damage=perled_damage(weapon_damage,10)
+
+damage=weapon_damage(2)
+print damage.__dict__
+</code></pre>
+<p>输出：</p>
+<pre><code>{'_damage': {'fire': 9.2, 'wind': 0, 'poison': 3.4, 'ice': 10.0}}
+</code></pre>
+<p>当然，为了灵活起见，我们完全可以把装饰、调用在一个语句里完成：</p>
+<pre><code class="language-Python">damage=perled_damage(weapon_damage,10)(2)
+print damage.__dict__
+</code></pre>
+<p>这样即可得到一个通用的方法，变量只有<code>weapon_level</code>、<code>weapon_damage</code>！也即是拿到这两个数据就能计算出相应的伤害！</p>
+<h2>其他语言</h2>
+<p>为了理解真正理解装饰器的核心原理，可以写下其它语言的实现：</p>
+<h3>PHP版</h3>
+<pre><code class="language-PHP">
+//执行某功能的函数
+$have_fun_with_brz=function (){
+    echo &quot;have fun with brz\r\n&quot;;
+};
+
+//装饰器
+$dec=function ($func) {
+    $wrap=function ()use ($func) {
+        echo &quot;before calling\r\n&quot;;
+        $func();
+        echo &quot;after calling\r\n &quot;;
+    };
+    return $wrap;
+};
+
+//装饰
+$have_fun_with_brz=$dec($have_fun_with_brz);
+
+//调用经过装饰的目标函数
+$have_fun_with_brz();
+</code></pre>
+<p>输出为：</p>
+<pre><code>before calling
+have fun with brz
+after calling
+</code></pre>
+<h3>JavaScript版</h3>
+<pre><code class="language-JavaScript">
+// 某功能
+function haveFunWithBrz(){
+  console.log(&quot;have fun with brz\r\n&quot;);
+}
+
+// 装饰器
+var dec=function (func) {
+    return function (){
+         console.log(&quot;before calling\r\n&quot;);
+        func();
+         console.log(&quot;after calling\r\n &quot;);
+    };
+};
+
+// 装饰
+haveFunWithBrz=dec(haveFunWithBrz);
+
+// 调用
+haveFunWithBrz();
+</code></pre>
+<p>输出为:</p>
+<pre><code>before calling
+have fun with brz
+after calling
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page25.html">
+          Previous
+        </a>
+        27 of 32
+        <a href="/posts/page27.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

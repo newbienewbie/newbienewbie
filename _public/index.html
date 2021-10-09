@@ -1,0 +1,382 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/post6.html">
+                    Paging
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    @k_cieslak
+                  </a>
+                  on 2020-05-01
+                </p>
+              </div>
+              <div class="content article-body">
+                <h1>Paging</h1>
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi nisi diam, vehicula quis blandit id, suscipit sed libero. Proin at diam dolor. In hac habitasse platea dictumst. Donec quis dui vitae quam eleifend dignissim non sed libero. In hac habitasse platea dictumst. In ullamcorper mollis risus, a vulputate quam accumsan at. Donec sed felis sodales, blandit orci id, vulputate orci.</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/DI/如何避免在ASP.NET Core手工构建 ServiceProvider.html">
+                    ASP.NET Core 依赖注入 — 如何避免手工构建 Service Provider 实例
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-31
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>依赖注入是个很好的理念。不过服务的注册都是在启动时（<code>Startup-time</code>)完成的。在Host完成启动之前的<code>Startup::ConfigureServices()</code>里，我们是没法拿到所注册服务的实例的。如果全盘采用依赖注入，这当然不成问题：服务和服务之间的依赖，可以在动态时刻自动解析。但是，有时候现实并不会那么完美，当配置一些选项的时候，我们可能需要一个具体的实例。有时候这会造成一定的困惑，尤其是当我们需要配合传统的手工<code>new</code>一个服务实例的时候（e.g.: <code>new SomeServiceA(serviceB, serviceC,...)</code>)。在以前，网上随处可见有人推荐<code>ServiceCollection.BuilServiceProvider()</code>然后通过<code>ServiceProvier.GetRequiredService&lt;ServiceB&gt;()</code>获取所依赖的服务。</p>
+<p>然而，自 ASP.NET Core 3.x 起，如果我们在应用层代码手工调用<code>ServiceCollection.BuildServiceProvider()</code>，很可能会得到一条警告消息：</p>
+<blockquote>
+<p>Warning ASP0000 Calling 'BuildServiceProvider' from application code results in an additional copy of singleton services being created.</p>
+</blockquote>
+<p>这是因为构建新的<code>ServiceProvider</code>会导致构建新的服务实例副本，而且这些新的服务实例副本完全独立于原来的服务容器。这往往会造成一些难以发现的Bug，例如这个<a href="https://stackoverflow.com/q/58212736/10091607">Stack Overflow上的这个问题</a>。</p>
+<p>那么如何避免手工创建<code>ServiceCollection.BuildServiceProvider()</code>呢？</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/IActionResult执行/0. IActionResult与执行的工作原理.html">
+                    ASP.NET Core MVC — IActionResult执行(0) IActionResult与执行的工作原理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>IActionResult</code>接口表达了<code>Action</code>执行完毕之后的结果，该接口只规定了一个<code>ExecuteResultAsync(ctx)</code>方法：</p>
+<pre><code class="language-csharp">public interface IActionResult
+{
+    Task ExecuteResultAsync(ActionContext context);
+}
+</code></pre>
+<p>当某个<code>Action</code>返回<code>IActionResult</code>实例之后，此实例的该方法会被<code>MVC</code>调用，从而把相应的<code>IActionResult</code>对象写到响应中。例如，我们可以自定义一个<code>IActionResult</code>实现，用于生成带<code>BOM</code>头的CSV文件流，代码可能长这样（引自<a href="https://stackoverflow.com/a/52492851/10091607">我的SO回答</a>）：</p>
+<pre><code class="language-csharp">public class Utf8ForExcelCsvResult : IActionResult
+{
+    public string Content{get;set;}
+    public string ContentType{get;set;}
+    public string FileName {get;set;}
+    public Task ExecuteResultAsync(ActionContext context)
+    {
+        var Response =context.HttpContext.Response;
+        Response.Headers[&quot;Content-Type&quot;] = this.ContentType;
+        Response.Headers[&quot;Content-Disposition&quot;]=$&quot;attachment; filename={this.FileName}; filename*=UTF-8''{this.FileName}&quot;;
+        using(var sw = new StreamWriter(Response.Body,System.Text.Encoding.UTF8)){
+            sw.Write(Content);
+        }
+        return Task.CompletedTask ;
+    }
+}
+</code></pre>
+<p>对于一个简单的情形这种写法是没有太大问题的，但是对于更复杂的<code>IActionResult</code>，这种方式在代码解耦方面并不好。因为<code>IActionResult</code>更多是在描述结果，而这里参杂了如何把结果写入响应流。比如说我们要根据请求的<code>Accept</code>字段来返回不同的响应，就需要加入更多逻辑。这种逻辑可以纳入<code>IActionResult</code>的执行。<!-- more --></p>
+<p>为了解耦&quot;执行<code>IActionResult</code>&quot;这一过程，<code>MVC</code>又引入了<code>IActionResultExecutor&lt;in TResult&gt;</code>接口：</p>
+<pre><code class="language-csharp">public interface IActionResultExecutor&lt;in TResult&gt; where TResult : IActionResult
+{
+    Task ExecuteAsync(ActionContext context, TResult result);
+}
+</code></pre>
+<p>那么，对于某种<code>IActionResult</code>只要拿到对应的<code>IActionResultExecutor&lt;TResult&gt;</code>，然后转发调用<code>IActionResultExecutor::ExecuteAsync(ctx,result)</code>即可。比如，内置的<code>ObjectResult::ExecuteResultAsync(ctx)</code>的实现即是如此:</p>
+<pre><code class="language-csharp">public class ObjectResult : ActionResult, IStatusCodeActionResult
+{
+    ...
+    
+    public override Task ExecuteResultAsync(ActionContext context)
+    {
+        var executor = context.HttpContext.RequestServices.GetRequiredService&lt;IActionResultExecutor&lt;ObjectResult&gt;&gt;();
+        return executor.ExecuteAsync(context, this);
+    }
+}
+</code></pre>
+<p>当然，这需要把这些<code>IActionResultExecutor&lt;&gt;</code>都提前注册为服务。不过这部分工作并不需要我们操心，相关服务会在<code>AddMvcCore()</code>时被注册到<code>DI</code>容器</p>
+<pre><code class="language-csharp">internal static void AddMvcCoreServices(IServiceCollection services)
+{
+    ...
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;ObjectResult&gt;, ObjectResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;PhysicalFileResult&gt;, PhysicalFileResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;VirtualFileResult&gt;, VirtualFileResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;FileStreamResult&gt;, FileStreamResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;FileContentResult&gt;, FileContentResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;RedirectResult&gt;, RedirectResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;LocalRedirectResult&gt;, LocalRedirectResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;RedirectToActionResult&gt;, RedirectToActionResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;RedirectToRouteResult&gt;, RedirectToRouteResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;RedirectToPageResult&gt;, RedirectToPageResultExecutor&gt;();
+    services.TryAddSingleton&lt;IActionResultExecutor&lt;ContentResult&gt;, ContentResultExecutor&gt;();
+    ...
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/IActionResult执行/1. ObjectResultExecutor与OutputFormatter的工作原理.html">
+                    ASP.NET Core MVC — IActionResult执行(1) ObjectResultExecutor与OutputFormatter的工作原理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在命名空间<code>Microsoft.AspNetCore.Mvc.Infrastructure</code>下，有一个<code>ObjectResultExecutor</code>类，继承自<code>IActionResultExecutor&lt;ObjectResult&gt;</code>，负责执行<code>ObjectResult</code>。其构造函数会注入被两个参数：</p>
+<ul>
+<li><code>OutputFormatterSelector</code>: 用于选择当前输出格式</li>
+<li><code>IHttpResponseStreamWriterFactory</code>: 用于向 HttpResponse 写入Stream的Writer</li>
+</ul>
+<pre><code class="language-csharp">public class ObjectResultExecutor : IActionResultExecutor&lt;ObjectResult&gt;
+{
+    public ObjectResultExecutor( OutputFormatterSelector formatterSelector,IHttpResponseStreamWriterFactory writerFactory, ILoggerFactory loggerFactory)
+    {
+        if (formatterSelector == null) { /* throw ;*/ }
+        if (writerFactory == null) { /* throw ;*/ }
+        if (loggerFactory == null) { /* throw ;*/ }
+
+        FormatterSelector = formatterSelector;
+        WriterFactory = writerFactory.CreateWriter;
+        Logger = loggerFactory.CreateLogger&lt;ObjectResultExecutor&gt;();
+    }
+    
+    ...
+}
+</code></pre>
+<p>这里的<code>ObjectResultExecutor</code>所依赖的服务是在<code>AddMvcCore()</code>时自动注册的</p>
+<pre><code class="language-csharp">services.TryAddSingleton&lt;IHttpResponseStreamWriterFactory, MemoryPoolHttpResponseStreamWriterFactory&gt;();
+...
+services.TryAddSingleton&lt;OutputFormatterSelector, DefaultOutputFormatterSelector&gt;();
+</code></pre>
+<p>注意这里的<a href="https://github.com/aspnet/AspNetCore/blob/c565386a3ed135560bc2e9017aa54a950b4e35dd/src/Mvc/Mvc.Core/src/Infrastructure/MemoryPoolHttpResponseStreamWriterFactory.cs#L15"><code>MemoryPoolHttpResponseStreamWriterFactory</code></a>会生成一个<a href="https://github.com/aspnet/AspNetCore/blob/92cae6faab9cd414eccf77eab687c32c7a6a0f1b/src/Http/WebUtilities/src/HttpResponseStreamWriter.cs#L18"><code>HttpResponseStreamWriter</code></a>向 HttpResponse中写入文本数据：</p>
+<pre><code class="language-csharp">internal class MemoryPoolHttpResponseStreamWriterFactory : IHttpResponseStreamWriterFactory
+{
+    ...
+    
+    public TextWriter CreateWriter(Stream stream, Encoding encoding)
+    {
+        if (stream == null) { /* throw ;*/ }
+        if (encoding == null){ /* throw ;*/ }
+
+        return new HttpResponseStreamWriter(stream, encoding, DefaultBufferSize, _bytePool, _charPool);
+    }
+}
+</code></pre>
+<p>总之，借助于此工厂函数生成的<code>TextWriter</code>,我们可以把<code>Text</code>型数据（不可用于<code>Binary</code>数据）输出到响应流。</p>
+<p><code>ObjectResultExecutor</code>的关键方法实现如下:</p>
+<pre><code class="language-csharp">public virtual Task ExecuteAsync(ActionContext context, ObjectResult result)
+{
+    if (context == null) { /* throw ;*/ }
+    if (result == null) { /* throw ;*/ }
+
+    InferContentTypes(context, result);
+
+    var objectType = result.DeclaredType;
+    if (objectType == null || objectType == typeof(object))
+    {
+        objectType = result.Value?.GetType();
+    }
+    
+    // 构建格式器上下文
+    var formatterContext = new OutputFormatterWriteContext( context.HttpContext,  WriterFactory, objectType, result.Value);
+    // 生成对应的Formatter
+    var selectedFormatter = FormatterSelector.SelectFormatter( formatterContext, (IList&lt;IOutputFormatter&gt;)result.Formatters ?? Array.Empty&lt;IOutputFormatter&gt;(), result.ContentTypes);
+    
+    if (selectedFormatter == null) { /* sttauscode=406 */ }
+
+    Logger.ObjectResultExecuting(result.Value);
+    // change result.ContentTypes
+    result.OnFormatting(context);  
+    
+    // 使用指定的格式化器写数据
+    return selectedFormatter.WriteAsync(formatterContext);
+}
+</code></pre>
+<p>总体逻辑是：</p>
+<ol>
+<li>构建格式化上下文(<code>OutputFormatterWriteContext</code>)</li>
+<li>选择对应的输出格式化器(<code>IOutputFormatter</code>)</li>
+<li>执行<code>IOutputFormatter::WriteAsync(formatterContext)</code></li>
+</ol>
+<p>这里的<code>FormatterSelector</code>服务类似于一个<code>Provider</code>，会根据指定的<code>FormatterContext</code>等信息生成一个<code>IOutputFormatter</code>。从而根据运行时的外部请求和特定条件把<code>ObjectResult</code>转换成特定格式的输出。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/MVC/IActionResult执行/2. 如何自定义一个OutputFormatter.html">
+                    ASP.NET Core MVC — IActionResult执行(2) 如何自定义一个OutputFormatter
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-12-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在之前的<a href="./IActionResult%E4%B8%8E%E6%89%A7%E8%A1%8C%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86">IActionResult与执行的工作原理</a>笔记中，我们直接新建了一个<code>Utf8ForExcelCsvResult</code>类来返回一个<code>Csv</code>文件。但是这种代码有个局限性——无法动态返回不同格式的数据。不妨考虑我们有一个<code>Action</code>方法，调用后返回一个列表：</p>
+<pre><code class="language-csharp">public IActionResult Privacy()
+{
+    var records = new List&lt;Foo&gt; {
+        new Foo { Id = 1, Name = &quot;你好&quot; },
+        new Foo { Id = 2, Name = &quot;こんにちは&quot; },
+    };
+    return new ObjectResult(records);
+}
+</code></pre>
+<p>通常情况下，我们希望它能返回<code>JSON</code>。但是我们希望这个方法不只是简单地把结果转换成<code>JSON</code>，而是可以在不改代码的前提下，根据需要，有选择地生成<code>CSV</code>格式的数据。</p>
+<p>这种需求可以通过新建一个<code>CsvOutputFormatter</code>(参见<a href="https://stackoverflow.com/a/56252088/10091607">我的SO回答</a>):<!-- more --></p>
+<pre><code class="language-csharp">public class CsvOutputFormatter : TextOutputFormatter
+{
+    private readonly UTF8Encoding _encoding;
+
+    public CsvOutputFormatter()
+    {
+        _encoding = new UTF8Encoding(true);
+        SupportedEncodings.Add(_encoding);
+        SupportedMediaTypes.Add(Microsoft.Net.Http.Headers.MediaTypeHeaderValue.Parse(&quot;text/csv&quot;));
+    }
+
+    public override void WriteResponseHeaders(OutputFormatterWriteContext ctx )
+    {
+        var response = ctx.HttpContext.Response;
+        response.Headers.Add(&quot;Content-Disposition&quot;, $&quot;attachment; filename=test.csv&quot;);
+        response.ContentType = &quot;text/csv&quot;;
+    }
+
+    public override async Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
+    {
+        var response = context.HttpContext.Response;
+        var preamble = _encoding.GetPreamble();
+        response.Body.Write(preamble, 0, preamble.Length);
+        using (var writer = context.WriterFactory(response.Body, _encoding))
+        {
+            var csv = new CsvWriter(writer);
+            csv.Configuration.HasHeaderRecord = true;
+            csv.WriteRecords((IEnumerable&lt;object&gt;)context.Object);
+            await writer.FlushAsync();
+        }
+    }
+
+}
+</code></pre>
+<p>然后，我们需要把这个<code>OutputFormatter</code>注册到<code>MvcOptions</code>中：</p>
+<pre><code class="language-csharp">services.AddMvc(o =&gt; {
+    o.OutputFormatters.Add(new CsvOutputFormatter());
+});
+</code></pre>
+<p>最后，在请求时带上<code>Accept: text/csv</code>请求头即可。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="#">
+          Previous
+        </a>
+        1 of 32
+        <a href="/posts/page1.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

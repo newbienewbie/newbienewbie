@@ -1,0 +1,140 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/PHPCMS/PHPCMS分析1-基础架构分析.html">
+                    PHPCMS分析1-基础架构分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>PHPCMS整体设计思路，还是遵循基本的MVC模式。</p>
+<h2>路由功能与控制器的分离</h2>
+<p>PHPCMS访问index.php文件时，会加载phpcms/base.php文件，
+该base.php文件定义了一堆常量、和一个pc_base类。此pc_base类提供一系列静态方法，这些静态方法的功能大多都是用于加载与index.php同级目录下的phpcms/下的各个相关文件(load_config除外)，如：</p>
+<pre><code class="language-PHP">//加载系统类 位于phpcms/libs/classes/下
+pc_base::load_sys_class(&quot;类名&quot;,&quot;模块名&quot;,$initialize);
+//加载系统函数 位于phpcms/libs/functions/下 
+pc_base::load_sys_func('函数名');
+
+//加载模块下的类 位于phpcms/modules/模块/classes/下
+pc_base::load_app_class(&quot;类名&quot;,&quot;模块名&quot;,$initialize);
+//加载模块下的函数 位于phpcms/modules/模块/functions/下 
+pc_base::load_app_func();
+
+//加载数据模型 位于phpcms/model/下 
+$db=pc_base::load_model(&quot;文件名_无后缀&quot;);
+
+//加载配置 位于caches/下
+$v=pc_base::load_config($filename,$key);
+</code></pre>
+<p>在index.php加载完base.php后，又执行了pc_base::creat_app()函数。此函数定义为：</p>
+<pre><code class="language-PHP">public static function creat_app() {
+    return self::load_sys_class('application');
+}
+
+</code></pre>
+<p>此方法只是简单加载系统类application。
+从功能上说，application类起到了一个路由功能，其构造函数__construct()会调用init()方法，根据传入的相关URL参数去调用对应的module下相关controller的特定action方法。</p>
+<p>module、controller、action对应参数m、c、和a。如果不提供action参数，则会默认调用控制器的init()方法。</p>
+<p>例如url为<code>index.php?m=product&amp;c=index&amp;a=lists</code>会调用product模块下的index类中的lists方法。</p>
+<h2>数据模型加载</h2>
+<p>在控制器中利用语句</p>
+<pre><code class="language-PHP">$md=pc_base::load_model('your_model');
+</code></pre>
+<p>可以加载相关模型类，系统的模型类在libs/classes/model.class.php中定义，各模块下模型定义在model/文件下，并继承自系统的model类。</p>
+<h2>视图层模板加载</h2>
+<p>对于控制器模板，基本思路还是利用</p>
+<pre><code class="language-PHP">include $your_template_file_name;
+</code></pre>
+<p>但是PHPCMS根据前后台的不同，在自身文件结构目录上自定义两个求得路径的函数</p>
+<ul>
+<li>template($module,$file) 获取指定module前台模板</li>
+<li>admin_tpl($file,$module) 获取指定module下的后台模板（默认是获取当前module的后台模板）</li>
+</ul>
+<p>如后台模板经常会在顶部调用：</p>
+<pre><code class="language-PHP">include $this-&gt;admin_tpl('header', 'admin');
+</code></pre>
+<p>以此来加载admin/templates/header.tpl.php文件</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

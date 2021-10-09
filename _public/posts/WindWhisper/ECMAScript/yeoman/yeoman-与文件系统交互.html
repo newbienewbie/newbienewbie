@@ -1,0 +1,145 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/yeoman/yeoman-与文件系统交互.html">
+                    yeoman 与文件系统交互
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>.yo-rc.json</code>文件定义了一个<code>yeoman</code>项目的根目录（<code>root</code>）。 这个文件允许用户运行在子目录里运行命令。</p>
+<h2>两个 context</h2>
+<p><code>yeoman</code>文件功能都是基于这样一个简单设想：在磁盘上，你总是有两个 <code>location contexts</code>。大部分情况下是从一个地方读，然后向另一个地方写。</p>
+<h3>destination context</h3>
+<p><code>destination context</code>被定义为当前工作目录或者最近一级包含<code>.yo-rc.json</code>文件的父目录。</p>
+<ul>
+<li>使用<code>destinationRoot()</code>方法获取<code>destination path</code></li>
+<li>使用<code>.destinationPath('sub/path')</code>方法来连接一个<code>path</code></li>
+</ul>
+<h3>template context</h3>
+<p><code>template context</code>是存放模板文件的地方。<code>template context</code>默认定义为<code>./templates/</code>。可以通过使用调用<code>sourceRoot('new/template/path')</code>方法覆盖这个默认值。</p>
+<ul>
+<li>使用<code>sourceRoot()</code>方法获取<code>path</code>值。</li>
+<li>使用<code>.templatePath('app/index.js')</code>连接一个<code>path</code></li>
+</ul>
+<h2>in-memory file System 和 文件功能</h2>
+<p>由于异步<code>API</code>难以使用, <code>yeoman</code>提供了同步的<code>file-system API</code>，将所有的文件都写到<code>in-memory</code>文件系统，当<code>yeoman</code>完成运行后，再写到磁盘。<code>in-memory</code>文件系统在所有的<code>composed generators</code>之间共享.
+<code>Generator</code>通过<code>this.fs</code>暴露所有的文件方法，<code>this.fs</code>是<code>mem-fs editor</code>的一个实例。</p>
+<h3>拷贝模板文件</h3>
+<p>使用<code>copyTpl()</code>方法来拷贝模板，此方法使用<code>ejs</code>模板语法：</p>
+<pre><code class="language-HTML">&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+  &lt;/head&gt;
+&lt;/html&gt;
+</code></pre>
+<p>调用的时候只要像渲染视图文件那样进行就可以了：</p>
+<pre><code class="language-JavaScript">class extends Generator {
+  writing() {
+    this.fs.copyTpl(
+      this.templatePath('index.html'),
+      this.destinationPath('public/index.html'),
+      { title: 'Templating with Yeoman' }
+    );
+  }
+}
+</code></pre>
+<h3>更新已经存在的文件内容</h3>
+<p>更新已经存在的文件内容是很复杂的工作，最可靠的方法是把文件解析为<code>AST</code>，然后编辑之。一些流行的<code>AST parser</code>包括：</p>
+<ul>
+<li><code>Cheerio</code>：解析<code>HTML</code>。</li>
+<li><code>Esprima</code>：解析<code>JavaScript</code>。</li>
+<li>对于<code>JSON</code>文件，使用原生的<code>JSON</code>对象方法。</li>
+<li>对于<code>Gruntfile</code>，使用<code>Gruntfile Editor</code>。</li>
+</ul>
+<p>使用<code>Regex</code>解析一个代码文件是邪道。</p>
+<h2>通过流转换输出文件</h2>
+<p><code>Generator</code>系统允许对每一个文件使用定制的<code>filter</code>,比如美化文件等。一旦<code>yeoman</code>通过<a href="https://github.com/gulpjs/vinyl">vinyl</a>处理完，再把每一个修改过的文件写入磁盘。</p>
+<p>通过调用<code>registerTransformStream()</code>方法即可注册一个新的修改器：</p>
+<pre><code class="language-JavaScript">var beautify = require('gulp-beautify');
+this.registerTransformStream(beautify({indentSize: 2 }));
+</code></pre>
+<p>需要注意的是，每一个文件都会被这个<code>stream</code>处理。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

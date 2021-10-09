@@ -1,0 +1,186 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/Rust/Rust-WASM/Rust与WebAssembly 2——stdweb.html">
+                    Rust与WebAssembly 2——stdweb
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在上一篇笔记里，记录了<code>Rust</code>如何编译到<code>WASM</code>，这一篇我们将重点放在<code>stdweb</code>编写一个<code>Hello,world</code>上。首先创建一个项目：</p>
+<pre><code>cargo new helloworld --bin
+</code></pre>
+<p>添加依赖：</p>
+<pre><code class="language-toml">[dependencies]
+stdweb =&quot;0.4&quot;
+</code></pre>
+<p>然后即可开始编码了。</p>
+<h2>如何控制浏览器</h2>
+<p>第一步毫无疑问当然是要写个<code>Hello,world</code>。不过<code>WebAssembly</code>暂时没有操作浏览器的接口，所以直接嵌入<code>js</code>即可：<!--more--></p>
+<pre><code class="language-Rust">#![recursion_limit=&quot;128&quot;]
+#![feature(proc_macro)]
+#[macro_use
+extern crate stdweb;
+
+use stdweb::js_export;
+
+fn main() {
+    stdweb::initialize();
+    let msg=&quot;Hello, world&quot;;
+    js!{
+        alert(@{msg});
+    }
+    stdweb::event_loop();
+}
+</code></pre>
+<p>调用命令<code>cargo+ nightly web start --target=wasm32-known-known</code>即可看到弹窗效果。根据<a href="http://www.itminus.com/blog/2018/03/02/WindWhisper/Rust/Rust-WASM/Rust%E4%B8%8EWebAssembly%201%E2%80%94%E2%80%94%E7%BC%96%E8%AF%91/">上一篇笔记</a>的分析，<code>Rust</code>的<code>main</code>函数会在初始化的某个时间点调用，这也是当我们打开浏览器就可以看到弹窗的原因。</p>
+<h2>嵌入<code>js!{}</code>宏的工作机理</h2>
+<p>事实上，<code>WebAssembly</code>现在并没有操作浏览器的接口，要想和浏览器交互，必须借助于<code>javascript</code>。<code>stdweb</code>给了在<code>Rust</code>中嵌入<code>js</code>的能力。但是，它是如何工作的？难道这段宏会对<code>js</code>进行分析然后编译为<code>wasm</code>?其实并不是。</p>
+<p>其工作机理很简单，由于<code>JavaScript</code>的对象可以无缝导入<code>WASM</code>中，所以只需要把这段函数作为导入项来实例化<code>WebAssembly</code>模块，随后即可在<code>WebAssembly</code>中调用了。事实上，每一段<code>Rust</code>代码中的<code>js!{}</code>宏，都会被转换为一个<code>js</code>函数。不妨尝试用<code>canvas API</code>输出个<code>Hello,world</code>来分析下:</p>
+<pre><code class="language-Rust">fn main() {
+    stdweb::initialize();
+    let msg=&quot;Hello,world&quot;;
+    js!{
+        const canvas=document.createElement(&quot;canvas&quot;);
+        canvas.width=300;
+        canvas.height=300;
+        canvas.style.border=&quot;2px solid gray&quot;;
+        console.log(canvas);
+        document.querySelector(&quot;body&quot;).append(canvas);
+        const context=canvas.getContext(&quot;2d&quot;);
+        context.fillStyle=&quot;green&quot;;
+        context.fillRect(0,0,200,200);
+        context.fillStyle=&quot;orange&quot;;
+        context.font = &quot;48px serif&quot;;
+        context.fillText(@{msg}, 20, 150);
+    }
+    stdweb::event_loop();
+}
+</code></pre>
+<p>上面<code>main()</code>中的这段<code>js!{}</code>宏会对应地生成:</p>
+<pre><code class="language-javascript">const __imports={
+    env:{
+        // ...
+        &quot;__extjs_3736f25989972a9a197f542330e37b10f196f77c&quot;: function ($0) {
+            Module.STDWEB_PRIVATE.from_js($0, (function () {
+                const canvas = document.createElement(&quot;canvas&quot;);
+                canvas.width = 300;
+                canvas.height = 300;
+                canvas.style.border = &quot;2px solid gray&quot;;
+                console.log(canvas);
+                document.querySelector(&quot;body&quot;).append(canvas);
+                const context = canvas.getContext(&quot;2d&quot;);
+                context.fillStyle = &quot;green&quot;;
+                context.fillRect(0, 0, 200, 200);
+                context.fillStyle = &quot;orange&quot;;
+                context.font = &quot;48px serif&quot;;
+                context.fillText(&quot;Hello world&quot;, 20, 150);
+            })());
+        },
+        // ...
+    },
+};
+</code></pre>
+<p>而对应的<code>WASM</code>代码中会有一个关于此<code>js</code>函数的导入:</p>
+<pre><code class="language-wat">(import &quot;env&quot; &quot;__extjs_3736f25989972a9a197f542330e37b10f196f77c&quot; (func $env.__extjs_3736f25989972a9a197f542330e37b10f196f77c (type $t5)))
+</code></pre>
+<p>这也是为什么<code>js!{}</code>嵌入代码得以无缝执行的原因。不过由于单引号<code>'</code>在<code>Rust</code>中被用作<code>lifetime</code>，所以无法在<code>js!{}</code>内使用单引号表示字符串——这完全不是什么大事，因为<code>JavaScript</code>还支持双引号 <em>&quot;</em> 和 <em>`</em> 表示字符串。</p>
+<h2>如何暴露函数供<code>javascript</code>调用</h2>
+<p>既然<code>WebAssembly</code>尚无浏览器的操作接口，那么还有什么用处？当然是计算！要暴露一个<code>CPU</code>密集的函数给<code>javascript</code>函数使用非常简单：</p>
+<pre><code class="language-Rust">#[js_export]
+fn add( x: i32 , y :i32) -&gt; i32{
+    x+y
+}
+</code></pre>
+<p>事实上，如果不用<code>#[js_export]</code>，也可以直接采用<code>pub extern &quot;C&quot;</code>声明函数，这样编译出的<code>wasm</code>文件同样是会<code>export</code>相关函数的。只不过配套的<code>js</code>导出代码需要自己写(参见<a href="http://www.itminus.com/blog/2018/03/02/WindWhisper/Rust/Rust-WASM/Rust%E4%B8%8EWebAssembly%201%E2%80%94%E2%80%94%E7%BC%96%E8%AF%91/">上一篇笔记</a>)。这里我们并不想自己写<code>js</code>加载<code>wasm</code>代码，所以仍然采用<code>#[js_export]</code>的方式。</p>
+<p>随后，我们就可以在浏览器中拿到<code>Rust</code>暴露的<code>add()</code>函数：</p>
+<pre><code class="language-javascript">Rust.hello.then(e=&gt;{
+    const {add}=e;
+    console.log(add(3,4));    // 7
+});
+</code></pre>
+<h2>小结</h2>
+<p><code>stdweb</code>最值得称道的地方在于提供了<code>Rust</code>和<code>JavaScript</code>的交互能力，从而让<code>Rust</code>专注于<code>CPU</code>密集的计算部分，让<code>JavaScript</code>负责与浏览器交互。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

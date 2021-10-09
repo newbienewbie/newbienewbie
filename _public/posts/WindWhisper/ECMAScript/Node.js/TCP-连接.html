@@ -1,0 +1,229 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/Node.js/TCP-连接.html">
+                    TCP 连接
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-15
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>TCP Socket</h2>
+<p>该类代表了 <code>TCP socket</code> 或者<code>local socket</code>。</p>
+<p>其实例实现了<code>duplex Stream</code>接口。即可用作<code>client</code>,也可用作<code>server</code></p>
+<h3>事件</h3>
+<p>TCP Socket 也是<code>EventEmitter</code>，重要的事件包括：</p>
+<ul>
+<li><code>lookup</code>: 在解析<code>hostname</code>(但在连接之前)触发</li>
+<li><code>connect</code>: 当一个<code>socket</code>连接成功建立后触发</li>
+<li><code>data</code>: 当<code>socket</code>接收到数据后触发</li>
+<li><code>drain</code>: emitted when the write buffer becomes empty</li>
+<li><code>end</code>: 当<code>socket</code>的另一端发送了<code>FIN packet</code>触发</li>
+<li><code>close</code>: 当<code>socket</code>被完全关闭后触发</li>
+<li><code>timeout</code>: 当<code>socket</code>非活动时超时触发，注意这只是提示<code>socket</code>是空闲的，用户需要手工关闭连接。</li>
+<li><code>error</code>: 当发生错误时触发</li>
+</ul>
+<h3>重要方法：</h3>
+<h4>socket.connect(options[, connectListener])</h4>
+<p>对给定的<code>socket</code>，打开连接</p>
+<h4>socket.write(data[, encoding][, callback])</h4>
+<p>在<code>socket</code>上发送数据，默认为<code>UTF8</code>编码，
+Returns <code>false</code> if all or part of the data was queued in user memory. <code>drain</code> will be emitted when the buffer is again free.</p>
+<h4>socket.end([data][, encoding])</h4>
+<p>半关闭<code>socket</code>，即发送一个<code>FIN</code>包。如果指定<code>data</code>，等效于</p>
+<pre><code class="language-JavaScript">socket.write(data, encoding);
+socket.end();
+</code></pre>
+<h2>TCP client</h2>
+<ul>
+<li><code>net.createConnection(options,connectListener)</code></li>
+<li><code>net.connect(options,connectListener)</code></li>
+</ul>
+<p>工厂函数，创建一个新的<code>net.Socket</code>实例，并调用<code>socket.connect</code> 方法进行连接远程服务器，返回<code>socket</code>。</p>
+<pre><code class="language-JavaScript">const net = require('net');
+
+const client = net.connect({port: 8124}, () =&gt; {
+    // 'connect' listener
+    console.log('connected to server!');
+    client.write('world!\r\n');
+});
+
+/* or
+const client = net.createConnection({port: 8124}, () =&gt; {
+    //'connect' listener
+    console.log('connected to server!');
+    client.write('world!\r\n');
+});
+*/
+
+client.on('data', (data) =&gt; {
+    console.log(data.toString());
+    client.end();
+});
+
+client.on('end', () =&gt; {
+    console.log('disconnected from server');
+});
+</code></pre>
+<h2>TCP server:</h2>
+<p>使用<code>net.createServer((client)=&gt;{})</code>工厂方法创建服务器：</p>
+<pre><code class="language-JavaScript">const net = require('net');
+
+const server = net.createServer((c) =&gt; {
+    // 'connection' listener
+    console.log('client connected');
+    c.on('end', () =&gt; {
+        console.log('client disconnected');
+    });
+    c.write('hello\r\n');
+    c.pipe(c);
+});
+
+
+server.on('error', (err) =&gt; {
+    throw err;
+});
+
+server.listen(8124, () =&gt; {
+    console.log('server bound');
+});
+</code></pre>
+<h2>一个例子：</h2>
+<p>实现一个TCP程序，在服务器和客户端之间建立连接，如果服务器接到来自客户端的消息，就在2秒后回复消息；而当客户端收到服务器的消息后，立刻给服务器发送消息。
+服务端程序如下：</p>
+<pre><code class="language-JavaScript">const net=require('net');
+
+let i=0;
+
+const server=net.createServer((client)=&gt;{
+    client.on('data',function(data){
+        console.log('message from client received:',data.toString());
+        setTimeout(function() {
+            client.write(`server message ${i++}`);
+        }, 2000);
+    });
+    client.on('end',function(){
+        console.log('client disconnected');
+    });
+    client.on('close',function(){
+        console.log('socket closed !');
+    });
+    client.on('error',function(error){
+        console.log('shit happens ...');
+    });
+});
+
+server.listen(7788,()=&gt;{
+    console.log('server bound');
+});
+</code></pre>
+<p>客户端：</p>
+<pre><code class="language-JavaScript">const net=require('net');
+
+let i=0;
+
+const socket=net.createConnection(
+    {
+        port:7788,
+        host:'127.0.0.1',
+    },
+    ()=&gt;{
+        console.log('connect!');
+        socket.write(`initial data`);
+    }
+);
+
+socket.on('data',function(data){
+    console.log(`data from server received:`,data.toString());
+    socket.write(`client data: ${i++}`);
+});
+
+socket.on('error',function(error){
+    console.log(`shit happens ...`);
+});
+
+</code></pre>
+<p>最后的效果：</p>
+<p>{% asset_img &quot;talk-screenshot.jpg&quot; &quot;node tcp talk&quot; %}</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

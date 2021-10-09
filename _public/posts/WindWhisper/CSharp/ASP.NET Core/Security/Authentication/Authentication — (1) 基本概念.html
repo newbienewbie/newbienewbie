@@ -1,0 +1,406 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (1) 基本概念.html">
+                    Authentication — (1) 基本概念
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这部分代码在<code>HttpAbstractions</code>项目中定义，定义在<code>Microsoft.AspNetCore.Authentication</code>命名空间下。</p>
+<p>本篇笔记分为两大部分：</p>
+<ol>
+<li>第一部分主要讲述<strong>认证模式</strong>、<strong>认证处理器</strong>及相应的<strong>认证模式Provider</strong>和<strong>认证处理器Provider</strong></li>
+<li>第二部分主要对认证过程中涉及的相关类型进行描述，主要包括<strong>认证属性</strong>、<strong>认证票据</strong>、<strong>认证结果</strong></li>
+</ol>
+<h3>认证模式</h3>
+<p>认证模式类<code>AuthenticationScheme</code>非常简单，顾名思义，它代表了某一种特定的认证模式，其中还包含了对应的认证处理器的类型信息：</p>
+<pre><code class="language-csharp">public class AuthenticationScheme
+{
+    public AuthenticationScheme(string name, string displayName, Type handlerType)
+    {
+        if (name == null) { /* throw */ }
+        if (handlerType == null) { /* throw */ }
+        if (!typeof(IAuthenticationHandler).IsAssignableFrom(handlerType)) { /* throw */ }
+
+        Name = name;
+        HandlerType = handlerType;
+        DisplayName = displayName;
+    }
+
+    public string Name { get; }
+    public string DisplayName { get; }
+
+    public Type HandlerType { get; }
+}
+</code></pre>
+<p>常见的认证模式有 <code>Cookies</code>、<code>Bearer</code>、<code>OAuth</code>、<code>OpenIdConnect</code>、<code>Google</code>、<code>Microsoft</code>、<code>Facebook</code>等。每种 认证模式都有各自的处理器负责处理用户认证事宜。注意，<strong><code>Scheme</code>中存储的并非是<code>Handler</code>实例，而是<code>Handler</code>的类型！</strong> <!-- more --></p>
+<h3>认证处理器相关接口</h3>
+<p><code>IAuthenticationHandler</code>接口负责针对每个请求进行认证处理，包含了<strong>初始化</strong>、<strong>认证</strong>、<strong>质询</strong>、和<strong>禁止</strong>访问几个功能：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandler
+{
+    Task InitializeAsync(AuthenticationScheme scheme, HttpContext context); // 初始化
+    Task&lt;AuthenticateResult&gt; AuthenticateAsync();                           // 认证
+    Task ChallengeAsync(AuthenticationProperties properties);               // 质询
+    Task ForbidAsync(AuthenticationProperties properties);                  // 禁止
+}
+</code></pre>
+<p>除了以上几个通用的功能，还有两个特化的认证处理器接口用于<strong>登入</strong>和<strong>登出</strong>：</p>
+<pre><code class="language-csharp">public interface IAuthenticationSignOutHandler : IAuthenticationHandler
+{
+    Task SignOutAsync(AuthenticationProperties properties);
+}
+
+public interface IAuthenticationSignInHandler : IAuthenticationSignOutHandler
+{
+    Task SignInAsync(ClaimsPrincipal user, AuthenticationProperties properties);
+}
+</code></pre>
+<p>最后，还有一个特化的接口<code>IAuthenticationRequestHandler</code> 用于<strong>中间件级别的请求处理</strong>：</p>
+<pre><code class="language-csharp">public interface IAuthenticationRequestHandler : IAuthenticationHandler
+{
+    Task&lt;bool&gt; HandleRequestAsync();
+}
+</code></pre>
+<p>如果一个<code>IAuthenticationHanlder</code>接口对象可以转换为<code>IAuthenticationRequestHandler</code>接口，则说明该 接口对象否想参与中间件级别的请求处理，其<code>HandlerRequestAsync()</code>方法将用于对请求进行处理；当该方法完成后，如果希望系统停止后续中间件的处理，则返回<code>true</code>，否则返回<code>false</code>。</p>
+<h3><code>AuthenticationSchemeProvider</code></h3>
+<p><code>IAuthenticationSchemeProvider</code>接口用于</p>
+<ul>
+<li>枚举当前认证模式</li>
+<li>增、删某种认证模式</li>
+<li>查找某种认证模式</li>
+</ul>
+<pre><code class="language-csharp">public interface IAuthenticationSchemeProvider
+{
+    Task&lt;IEnumerable&lt;AuthenticationScheme&gt;&gt; GetAllSchemesAsync();
+    Task&lt;AuthenticationScheme&gt; GetSchemeAsync(string name);
+   
+    Task&lt;AuthenticationScheme&gt; GetDefaultAuthenticateSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultChallengeSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultForbidSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultSignInSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultSignOutSchemeAsync();
+
+    void AddScheme(AuthenticationScheme scheme);
+    void RemoveScheme(string name);
+
+    Task&lt;IEnumerable&lt;AuthenticationScheme&gt;&gt; GetRequestHandlerSchemesAsync();
+}
+</code></pre>
+<p>其默认实现为<code>AuthenticationSchemeProvider</code>，由于源码较为简单，此处不再赘述。</p>
+<h3><code>AuthenticationHandlerProvider</code></h3>
+<p><code>IAuthenticationHandlerProvider</code>用于提供与指定模式名相匹配的认证处理器的实例，其接口定义为：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandlerProvider
+{
+    Task&lt;IAuthenticationHandler&gt; GetHandlerAsync(HttpContext context, string authenticationScheme);
+}
+</code></pre>
+<p>作为<code>IAuthenticationHandlerProvider</code>接口的默认实现，<code>AuthenticationHandlerProvider</code>包含了一个<code>IAuthenticatioSchemProvider</code>属性，获取相应认证模式处理器的类型，然后根据类型信息创建一个实例并存入缓存：</p>
+<pre><code class="language-csharp">namespace Microsoft.AspNetCore.Authentication
+{
+    public class AuthenticationHandlerProvider : IAuthenticationHandlerProvider
+    {
+        public AuthenticationHandlerProvider(IAuthenticationSchemeProvider schemes)
+        {
+            Schemes = schemes;
+        }
+
+        public IAuthenticationSchemeProvider Schemes { get; }
+        // 创建一个字典作为缓存
+        private Dictionary&lt;string, IAuthenticationHandler&gt; _handlerMap = new Dictionary&lt;string, IAuthenticationHandler&gt;(StringComparer.Ordinal);
+
+        public async Task&lt;IAuthenticationHandler&gt; GetHandlerAsync(HttpContext context, string authenticationScheme){
+            // 优先从缓存中查询
+            if (_handlerMap.ContainsKey(authenticationScheme)){ return _handlerMap[authenticationScheme]; }
+
+            var scheme = await Schemes.GetSchemeAsync(authenticationScheme);
+            if (scheme == null){ return null; }
+            
+            // 创建实例、初始化、存入缓存
+            var handler = (context.RequestServices.GetService(scheme.HandlerType) ??
+                ActivatorUtilities.CreateInstance(context.RequestServices, scheme.HandlerType))
+                as IAuthenticationHandler;
+            if (handler != null){
+                await handler.InitializeAsync(scheme, context);
+                _handlerMap[authenticationScheme] = handler;
+            }
+            return handler;
+        }
+    }
+}
+</code></pre>
+<h3>认证属性、认证票据和认证结果</h3>
+<h4><code>AuthenticationProperties</code></h4>
+<p>认证属性是一个简单的类似于字典一样的对象，用于存取关于认证会话的各项属性。其中，最核心的是两个字典属性：</p>
+<ul>
+<li><code>Items</code> ： <code>Dictionary&lt;string,string&gt;</code>型字典</li>
+<li><code>Parameters</code>：<code>Dictionary&lt;string,object&gt;</code>型字典，用于在handler之间共享对象，不可序列化或者持久化</li>
+</ul>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+
+    public IDictionary&lt;string, string&gt; Items { get; }
+
+    public IDictionary&lt;string, object&gt; Parameters { get; }
+}
+</code></pre>
+<p>为了方便起见，<code>AuthenticationProperties</code>针对<code>Parameters</code>字典和<code>Items</code>提供了如下的取、存方法</p>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+    
+    public T GetParameter&lt;T&gt;(string key) =&gt; Parameters.TryGetValue(key, out var obj) &amp;&amp; obj is T value ? value : default;
+
+    public void SetParameter&lt;T&gt;(string key, T value) =&gt; Parameters[key] = value;
+        
+    public string GetString(string key)
+    {
+        return Items.TryGetValue(key, out string value) ? value : null;
+    }
+
+    public void SetString(string key, string value)
+    {
+        if (value != null) {
+            Items[key] = value;
+        } else if (Items.ContainsKey(key)) {
+            Items.Remove(key);
+        }
+    }
+}       
+</code></pre>
+<p>而<code>Items</code>虽然只能存储<code>string</code>型值，但是配合<code>ToString()</code>和从字符串解析的功能，还可以对<code>bool</code>、<code>DateTime</code>型数据类型进行存取：</p>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+    
+    protected bool? GetBool(string key) { /* ...*/ }
+
+    protected void SetBool(string key, bool? value) { /* ...*/ }
+    
+    protected DateTimeOffset? GetDateTimeOffset(string key) { /* ...*/ }
+
+    protected void SetDateTimeOffset(string key, DateTimeOffset? value) { /* ...*/ }
+}
+</code></pre>
+<p>在此基础之上，对一些常用属性及值提供了便利方法：</p>
+<pre><code class="language-csharp">{
+    internal const string IssuedUtcKey = &quot;.issued&quot;;
+    internal const string ExpiresUtcKey = &quot;.expires&quot;;
+    internal const string IsPersistentKey = &quot;.persistent&quot;;
+    internal const string RedirectUriKey = &quot;.redirect&quot;;
+    internal const string RefreshKey = &quot;.refresh&quot;;
+    internal const string UtcDateTimeFormat = &quot;r&quot;;
+
+    public bool IsPersistent
+    {
+        get =&gt; GetString(IsPersistentKey) != null;
+        set =&gt; SetString(IsPersistentKey, value ? string.Empty : null);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the full path or absolute URI to be used as an http redirect response value.
+    /// &lt;/summary&gt;
+    public string RedirectUri
+    {
+        get =&gt; GetString(RedirectUriKey);
+        set =&gt; SetString(RedirectUriKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the time at which the authentication ticket was issued.
+    /// &lt;/summary&gt;
+    public DateTimeOffset? IssuedUtc
+    {
+        get =&gt; GetDateTimeOffset(IssuedUtcKey);
+        set =&gt; SetDateTimeOffset(IssuedUtcKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the time at which the authentication ticket expires.
+    /// &lt;/summary&gt;
+    public DateTimeOffset? ExpiresUtc
+    {
+        get =&gt; GetDateTimeOffset(ExpiresUtcKey);
+        set =&gt; SetDateTimeOffset(ExpiresUtcKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets if refreshing the authentication session should be allowed.
+    /// &lt;/summary&gt;
+    public bool? AllowRefresh
+    {
+        get =&gt; GetBool(RefreshKey);
+        set =&gt; SetBool(RefreshKey, value);
+    }
+}
+</code></pre>
+<h4><code>AuthenticationTicket</code></h4>
+<p>认证票据封装了用户身份信息和一些配套的认证属性，如过期信息、是否允许刷新等。</p>
+<pre><code class="language-csharp">public class AuthenticationTicket
+{
+
+    public AuthenticationTicket(ClaimsPrincipal principal, AuthenticationProperties properties, string authenticationScheme)
+    {
+        if (principal == null) { /* throw */ }
+
+        AuthenticationScheme = authenticationScheme;
+        Principal = principal;
+        Properties = properties ?? new AuthenticationProperties();
+    }
+
+    public AuthenticationTicket(ClaimsPrincipal principal, string authenticationScheme) 
+        : this(principal, properties: null, authenticationScheme: authenticationScheme)
+    { }
+
+
+    public string AuthenticationScheme { get; private set; }
+
+    public ClaimsPrincipal Principal { get; private set; }
+
+    public AuthenticationProperties Properties { get; private set; }
+}
+</code></pre>
+<h4><code>AuthenticationResult</code></h4>
+<p>认证结果有三种，分别是：</p>
+<ul>
+<li>没有结果：暂时无法确定最终认证结果，留待其他认证处理程序处理。</li>
+<li>认证成功：需要提供认证票据</li>
+<li>认证失败：需要指定失败消息</li>
+</ul>
+<p><code>AuthenticationResult</code>提供了一个类来封装了以上所有信息：</p>
+<pre><code class="language-csharp">public class AuthenticateResult
+{
+    public AuthenticationTicket Ticket { get; protected set; }    // 认证成功时的票据
+
+    public ClaimsPrincipal Principal =&gt; Ticket?.Principal;        // 认证成功时票据中的主体
+
+    public AuthenticationProperties Properties { get; protected set; } // 认证属性
+
+    public Exception Failure { get; protected set; }               // 认证失败时的失败异常
+
+    public bool None { get; protected set; }                       // 认证是否没有结果
+     
+    public bool Succeeded =&gt; Ticket != null;                       // 认证是否已经成功
+}
+</code></pre>
+<p><code>AuthenticationResult</code>还提供了三类静态方法来创建认证结果</p>
+<pre><code class="language-csharp">public class AuthenticateResult
+{
+    // ...
+    
+    
+    public static AuthenticateResult NoResult()
+    {
+        return new AuthenticateResult() { None = true };
+    }
+    
+    public static AuthenticateResult Success(AuthenticationTicket ticket)
+    {
+        if (ticket == null)
+        {
+            throw new ArgumentNullException(nameof(ticket));
+        }
+        return new AuthenticateResult() { Ticket = ticket, Properties = ticket.Properties };
+    }
+
+    public static AuthenticateResult Fail(Exception failure)
+    {
+        return new AuthenticateResult() { Failure = failure };
+    }
+
+    public static AuthenticateResult Fail(Exception failure, AuthenticationProperties properties)
+    {
+        return new AuthenticateResult() { Failure = failure, Properties = properties };
+    }
+
+    public static AuthenticateResult Fail(string failureMessage)
+        =&gt; Fail(new Exception(failureMessage));
+
+    public static AuthenticateResult Fail(string failureMessage, AuthenticationProperties properties)
+        =&gt; Fail(new Exception(failureMessage), properties);
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

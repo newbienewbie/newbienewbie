@@ -1,0 +1,125 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Alchemy/Math/牛顿下山法.html">
+                    牛顿下山法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-09
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>方程求根可以视作函数的零点求解问题，牛顿迭代法与方程求解有密切的关联。</p>
+<h2>朴素的迭代思想</h2>
+<p>对于方程<code>$f(x)=0$</code>，若已知相应函数<code>$f(x)$</code>在 <code>$[x_1,x_2]$</code> 之间单调有根，并且直接求解根比较困难。一种朴素的思想是，我们可以转而去求解一个近似方程<code>$s(x)=0$</code>的根(假设这种求解又比较容易)。</p>
+<p>不妨记此近似方程的根为 <code>$x_r$</code>。若 <code>$x_r$</code> 位于区间<code>$[x_1,x_2]$</code> 中，则实际根必位于区间 <code>$[x_1,x_r]$</code>中或者 <code>$[x_r,x_2]$</code> 之中。显然，我们通过这种近似求解的操作，把根的区间缩小到了更精确的范围。如此多次迭代到一定程度，就可以求出方程<code>$f(x)=0$</code>在区间  <code>$[x_1,x_2]$</code> 上的数值解。</p>
+<h2>牛顿迭代法</h2>
+<p>既然叫“牛顿”，必然要用到导数或者说切线的概念，这里就是利用泰勒公式对函数进行近似。利用一阶泰勒公式可以对函数 <code>$f(x)$</code> 在 <code>$x_2$</code> 点进行展开</p>
+<!--more-->
+<pre><code class="language-math">%% KaTex
+f(x) = f(x_2)+f'(x_2)*(x-x_2)
+</code></pre>
+<p>令此近似函数等于零，即：</p>
+<pre><code class="language-math">%% KaTex
+f(x_2)+f'(x_2)*(x-x_2)=0
+</code></pre>
+<p>求得的根就是近似根:</p>
+<pre><code class="language-math">%% KaTex
+x_r=x_2 - \frac{f(x_2)}{f'(x_2)}
+</code></pre>
+<p>从另一个角度说，由于近似函数也是在 <code>$x=x_2$</code> 点的切线函数，考虑到导数=切线斜率，则有：</p>
+<pre><code class="language-math">%% KaTex
+f'(x_2)= \frac{f(x_2)- 0}{x_2 - x_r}
+</code></pre>
+<p>也从一方面说明了近似根为</p>
+<pre><code class="language-math">%% KaTex
+x_r=x_2 - \frac{f(x_2)}{f'(x_2)}
+</code></pre>
+<p>既然就得了更精确的近似根，从而可以缩小根所在的区间为 <code>$[x_1,x_r]$</code> ，如此多次迭代，就可以求出方程的数值解。以上公式也是零点求解的迭代公式。</p>
+<h2>牛顿法与极值：</h2>
+<p>函数的极值求解问题，可以转化为导函数的零点求解问题，因为一阶导函数的零点就是函数的极值或者驻点。</p>
+<p>根据零点求解迭代公式，显然函数的驻点求解的迭代公式为：</p>
+<pre><code class="language-math">%% KaTex
+x_r=x - \frac{f'(x_2)}{f''(x_2)}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

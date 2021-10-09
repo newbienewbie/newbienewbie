@@ -1,0 +1,311 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/misc/百度地图-BMap-的-React-封装.html">
+                    百度地图 BMap 的 React 封装
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-02-15
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>百度地图的常规使用</h2>
+<p>要使用百度地图<code>BMap</code>，需要引入一个入口脚本。根据加载<code>BMap</code>策略的不同，可以分为<code>同步</code>和<code>异步</code>两种方式。</p>
+<h3>同步式</h3>
+<p><code>同步式</code>入口脚本的<code>URL</code>地址为：</p>
+<pre><code>http://api.map.baidu.com/api?v=2.0&amp;ak=马赛克
+</code></pre>
+<p>返回的脚本内容类似于：</p>
+<pre><code class="language-JavaScript">(function(){ 
+    window.BMap_loadScriptTime = (new Date).getTime(); 
+    document.write('&lt;script type=&quot;text/javascript&quot; src=&quot;http://api.map.baidu.com/getscript?v=2.0&amp;ak=${这里是马赛克}&amp;services=&amp;t=20170207140543&quot;&gt;&lt;/script&gt;');
+})();
+</code></pre>
+<p>很明显，入口脚本会再创建一个<code>script</code>再远程请求服务端返回真正的核心脚本。当核心脚本加载完毕后，就可以调用百度地图<code>BMap</code>的相关<code>API</code>进行操作了。</p>
+<p>来自<a href="http://lbsyun.baidu.com/index.php?title=jspopular/guide/helloworld">官方文档示例</a>：</p>
+<pre><code class="language-HTML">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=utf-8&quot; /&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;initial-scale=1.0, user-scalable=no&quot; /&gt;
+    &lt;style type=&quot;text/css&quot;&gt;
+    body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:&quot;微软雅黑&quot;;}
+    &lt;/style&gt;
+    &lt;script type=&quot;text/javascript&quot; src=&quot;http://api.map.baidu.com/api?v=2.0&amp;ak=您的密钥&quot;&gt;&lt;/script&gt;
+    &lt;title&gt;地图展示&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;allmap&quot;&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;script type=&quot;text/javascript&quot;&gt;
+    // 百度地图API功能
+    var map = new BMap.Map(&quot;allmap&quot;);    // 创建Map实例
+    map.centerAndZoom(new BMap.Point(116.404, 39.915), 11);  // 初始化地图,设置中心点坐标和地图级别
+    map.addControl(new BMap.MapTypeControl());   //添加地图类型控件
+    map.setCurrentCity(&quot;北京&quot;);          // 设置地图显示的城市 此项是必须设置的
+    map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放
+&lt;/script&gt;
+</code></pre>
+<p><code>同步式</code>的缺点很明显，入口脚本会继续创建一个核心脚本，核心脚本加载完毕后浏览器才会继续执行之后的相关代码。</p>
+<h3>异步式</h3>
+<p>由于<code>同步式</code>的加载方式会让浏览器等待百度服务器返回脚本才能继续执行，从而影响了用户体验，百度地图还提供了<code>异步式</code>的接口，大致思路是在接口<code>URL</code>中指定一个回调函数，百度服务器返回相应脚本，当<code>BMap</code>完成加载后，再触发回调函数。</p>
+<p>假设请求<code>URL</code>为：</p>
+<pre><code>http://api.map.baidu.com/api?v=2.0&amp;ak=马赛克&amp;callback=init
+</code></pre>
+<p>则百度返回的入口脚本类似于：</p>
+<pre><code class="language-JavaScript">(function(){ 
+    window.BMap_loadScriptTime = (new Date).getTime(); 
+    window.BMap=window.BMap||{};
+    window.BMap.apiLoad=function(){
+        delete window.BMap.apiLoad;
+        //# 注意这里的回调函数
+        if(typeof init==&quot;function&quot;){ init() }
+    };
+    var s=document.createElement('script');
+    s.src='http://api.map.baidu.com/getscript?v=2.0&amp;ak=马赛克&amp;services=&amp;t=20170207140543';
+    document.body.appendChild(s);
+})();
+</code></pre>
+<p>至于使用方式很明显了，这里是官方的使用示例：</p>
+<pre><code class="language-HTML">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=utf-8&quot; /&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;initial-scale=1.0, user-scalable=no&quot; /&gt;
+    &lt;style type=&quot;text/css&quot;&gt;
+    body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:&quot;微软雅黑&quot;;}
+    &lt;/style&gt;
+    &lt;title&gt;异步加载地图&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;allmap&quot;&gt;&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;script type=&quot;text/javascript&quot;&gt;
+    //百度地图API功能
+    function loadJScript() {
+        var script = document.createElement(&quot;script&quot;);
+        script.type = &quot;text/javascript&quot;;
+        script.src = &quot;http://api.map.baidu.com/api?v=2.0&amp;ak=您的密钥&amp;callback=init&quot;;
+        document.body.appendChild(script);
+    }
+    function init() {
+        var map = new BMap.Map(&quot;allmap&quot;);            // 创建Map实例
+        var point = new BMap.Point(116.404, 39.915); // 创建点坐标
+        map.centerAndZoom(point,15);                 
+        map.enableScrollWheelZoom();                 //启用滚轮放大缩小
+    }  
+    window.onload = loadJScript;  //异步加载地图
+&lt;/script&gt;
+</code></pre>
+<h2>百度地图的<code>React</code>封装思路</h2>
+<p>为什么要封装百度地图？原因是在使用<code>React</code>的<code>SPA</code>中使用<code>BMap</code>，每次都要手工引入百度地图的入口脚本<code>script</code>不够优雅；更关键的是，由于需要提前在视图文件中引入入口脚本，那么不管用户是否点开触发百度地图的路由，<code>SPA</code>都会主动加载<code>BMap</code>。</p>
+<p><code>React</code>封装<code>BMap</code>的思路比较简单，即</p>
+<ol>
+<li>在组件加载前先判断当前是否已经有入口脚本，如果没有，则创建之。</li>
+<li>创建用于显示百度地图的容器</li>
+<li>在组件加载完毕后，检查当前<code>BMap</code>是否可用：如果不可用，等待一段时间后再检查；如果可用，创建<code>BMap.Map</code>实例</li>
+<li>调用事先准备好的回调函数。</li>
+</ol>
+<p>然而这里有个坑——必须采用百度的异步入口脚本：因为<code>React</code>异步创建了入口脚本<code>script</code>，如果入口脚本是同步式的，则会调用<code>document.write()</code>方法，很显然，在异步创建的<code>script</code>中调用<code>document.write()</code>会触发错误。
+解决方法很简单，直接采用百度地图的异步式入口脚本，随便指定一个<code>callback</code>参数——比如叫<code>init</code>，则百度地图服务器返回的回调代码类似于：</p>
+<pre><code>if(typeof init==&quot;function&quot;){ init() }
+</code></pre>
+<p>如果<code>init</code>不存在，就不会有任何副作用。而我们真正想要执行的回调函数则通过属性的方式传递给<code>React</code>封装好的组件，并在合适的时候予以触发。</p>
+<p>核心代码为：</p>
+<pre><code class="language-JavaScript">export const BMapComponent=React.createClass({
+
+    getDefaultProps:function(){
+        const ID=`itminus_bmap${parseInt(Math.random()*10000000)}`;
+        return {
+            ak:'',
+            callback:function(map){},
+            id:ID,
+        };
+    },
+
+    componentWillMount(){
+        // 注意callback=init参数不能去掉，因为这是百度地图异步加载的接口，
+        // 否则，会因为React异步创建了script，百度返回的script中又调用document.write()，从而触发错误
+        let bmapSrc=`http://api.map.baidu.com/api?v=2.0&amp;ak=${this.props.ak}&amp;callback=init`;
+        if(typeof BMap !='undefined'){
+            return;
+        }else{
+            let script=document.querySelector(`script[src='${bmapSrc}']`);
+            if(!script){
+                script= document.createElement(&quot;script&quot;);
+                script.src = bmapSrc;
+                document.body.appendChild(script);
+            }
+        }
+    },
+
+    componentDidMount(){
+        function timeoutPromise(timeout){
+            return new Promise(function(resolve,reject){
+                setTimeout(function() {
+                    resolve();
+                }, timeout);
+            });
+        }
+        function waitUntil(props){
+            return new Promise(function(resolve,reject){
+                const map=new BMap.Map(props.id);
+                resolve(map);
+            }).catch(err=&gt;{
+                console.log(&quot;there's no BMap yet. Waitting ...&quot;,err);
+                return timeoutPromise(300).then(()=&gt;{
+                    return waitUntil(props);
+                });
+            });
+        }
+        waitUntil(this.props).then(map=&gt;{
+            console.log(`[+] bmap loaded`,map);
+            this.props.callback(map);
+        });
+    },
+
+    render:function(){ 
+        return &lt;div id={this.props.id}&gt;&lt;/div&gt;;
+    } 
+});
+
+export default BMapComponent;
+</code></pre>
+<p>使用的时候则非常简单：</p>
+<pre><code>export const Contact=React.createClass({
+    render:function(){
+        return (&lt;div className=&quot;contact&quot;&gt;
+            &lt;div className=&quot;feedback&quot;&gt;
+                &lt;h1&gt;FEEDBACK&lt;/h1&gt;
+                &lt;form&gt;
+                &lt;/form&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;map&quot;&gt;
+                &lt;BMapComponent 
+                    ak={&quot;马赛克&quot;}  
+                    callback={(map)=&gt;{
+                        var point = new BMap.Point(116.404, 39.915);  // 创建点坐标  
+                        var bs = map.getBounds();   //获取可视区域
+                        var bssw = bs.getSouthWest();   //可视区域左下角
+                        var bsne = bs.getNorthEast();   //可视区域右上角
+                        map.centerAndZoom(point, 15);  
+                    }}
+                /&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;);
+    }
+});
+</code></pre>
+<p>显示效果类似于：
+{% asset_img &quot;baidu_map_demo.jpg&quot; &quot;百度地图 BMap 的 React 封装&quot; %}</p>
+<h2>封装好的组件</h2>
+<p>在 <code>simple-react-ui</code> 中实现<code>BaiduMap</code>，使用<code>TypeScript</code>编写，编译后发布。</p>
+<ul>
+<li><a href="https://github.com/newbienewbie/simple-react-ui">GitHub地址</a></li>
+<li><a href="https://www.npmjs.com/package/simple-react-ui">npm地址</a></li>
+</ul>
+<p>使用：</p>
+<pre><code>import BaiduMap from 'simple-react-ui/dist/baidumap';
+
+
+export const Contact = React.createClass({
+
+    render: function () {
+        return (&lt;div className=&quot;map&quot;&gt;
+            &lt;BaiduMap
+                ak={&quot;马赛克&quot;}
+                callback={(map) =&gt; {
+                    var point = new BMap.Point(116.404, 39.915);  // 创建点坐标  
+                    var bs = map.getBounds();   //获取可视区域
+                    var bssw = bs.getSouthWest();   //可视区域左下角
+                    var bsne = bs.getNorthEast();   //可视区域右上角
+                    map.centerAndZoom(point, 15);
+                }}
+            /&gt;
+        &lt;/div&gt;);
+    }
+});
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

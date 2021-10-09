@@ -1,0 +1,141 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/WASM/基本原理/WASM基本原理1——世界观.html">
+                    WebAssembly基本原理1——世界观
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-01-17
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>世界观</h2>
+<p><code>WebAssembly</code>是<code>W3C</code>组织制定的一项开放标准，正如其名字暗示的那样，它是<code>Web</code>平台上的“汇编语言”，具有速度快、效率高、可移植、安全、向后兼容等特点。</p>
+<p>模块是一段可执行的机器码，经过加载、编译、实例化后，即可与<code>JavaScript</code>充分互动。基本的样板代码为：</p>
+<pre><code class="language-JavaScript">fetch('simple.wasm')
+    // 获取字节码
+    .then(response =&gt;response.arrayBuffer())
+    // 编译和实例化
+    .then(bytes =&gt;WebAssembly.instantiate(bytes, importObject))
+    .then(results =&gt; {
+        results.instance // 使用实例
+    });
+</code></pre>
+<!--more-->
+<h2>实例化</h2>
+<p>上面这段样板代码中实例化核心的功能是：</p>
+<pre><code class="language-JavaScript">WebAssembly.instantiate(bytes, importObject)
+</code></pre>
+<p>这里，我们给<code>WebAssembly.instantiate()</code>函数传递了一段字节码，此函数会以<code>Promise</code>的方式，对其编译，完成后返回的对象包含了对编译后的<code>Module</code>对象的引用和相应的一个<code>Instance</code>对象:</p>
+<pre><code class="language-JavaScript">{
+  module : Module,      // 编译后的Module对象
+  instance : Instance   // 实例化后的Instance对象
+}
+</code></pre>
+<p>另外，也可以直接给<code>WebAssembly.instantiate()</code>函数传递一个编译后的<code>Module</code>对象，这样此函数就会返回一个实例对象：</p>
+<pre><code class="language-JavaScript">WebAssembly.instantiate(mod, importObject)
+    .then(function(instance) {
+        // 使用实例
+    });
+</code></pre>
+<h3>导入对象</h3>
+<p>这里的第二个参数<code>importObject</code>是什么呢？这是一个导入对象，其可能有四种对象</p>
+<ul>
+<li><code>values</code>：由于目前<code>WASM</code>只支持整型和浮点型，所以传进去的值也只能是这两种类型。</li>
+<li><code>function closures</code>：可以传递一个<code>JavaScript</code>函数闭包进去。</li>
+<li><code>memory</code>：代表一段内存对象。<code>WASM</code>的<code>memory</code>对象在<code>JavaScript</code>里可以被当作<code>ArrayBuffer</code>对象来管理，二者通过<code>memory</code>对象来回传递数据。当一个<code>WASM</code>模块实例化的时候，它需要这样一个内存对象，我们可以通过创建一个新的<code>WebAssembly.Memory</code>然后传进去；或者，让<code>WASM</code>自动创建一个内存对象并和相应的实例挂接起来。这块内存由<code>JavaScript</code>的<code>GC</code>管理，一旦<code>WASM</code>的模块对象作用域完毕，这块内存数组也会将会被<code>GC</code>回收。</li>
+<li><code>tables</code>：位于<code>WASM</code>内存之外的数组，目前其中的值只能引用函数。</li>
+</ul>
+<h2>使用</h2>
+<p>一旦我们获取了实例，就可以在<code>JavaScript</code>中使用了：</p>
+<pre><code class="language-JavaScript">// 调用 导出的函数:
+instance.exports.exported_func();
+
+// 访问 导出的内存:
+var i32 = new Uint32Array(instance.exports.memory.buffer);
+
+// 访问导出的表:
+var table = instance.exports.table;
+console.log(table.get(0)());
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

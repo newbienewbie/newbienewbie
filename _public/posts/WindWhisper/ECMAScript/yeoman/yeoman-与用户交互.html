@@ -1,0 +1,233 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/yeoman/yeoman-与用户交互.html">
+                    yeoman 与用户交互
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-18
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>输出信息</h2>
+<p>在<code>yeoman</code>中，想要输出信息给用户非常简单，直接调用<code>log</code>方法即可：</p>
+<pre><code class="language-JavaScript">const Base=require('yeoman-generator');
+
+class MyGenerator extends Base{
+
+  constructor( ...args ) {
+    super(...args);
+  }
+
+  get prompting(){
+      return {
+          double:function(){
+              this.log(`${this.appname} double kill`);
+          },
+          triple:function(){
+              this.log(`${this.appname} triple kill`);
+          }
+      };
+  }
+
+  method1() {
+    this.log(`The name is: ${ this.appname }`);
+  }
+
+  default(){
+      this.log(`holy shit`);
+  }
+
+  initializing(){
+      this.log(`first blood`);
+  }
+
+} 
+
+module.exports=MyGenerator;
+</code></pre>
+<h2>处理用户输入</h2>
+<p>处理用户输入包括两类情况，一类是主动进行<code>Prompt</code>问询，一类是接收传递来的参数。</p>
+<h3>Prompts</h3>
+<p><code>Prompt</code>是与用户互动的主要方式。此模块背后是通过<a href="https://github.com/SBoudrias/Inquirer.js">Inquirer.js</a>支撑的。根据预设的运行优先级，应该把相关代码放入<code>prompting</code>中。</p>
+<pre><code class="language-JavaScript">class MyGenerator extends Base{
+
+  constructor(...args) {
+    super(...args);
+  }
+
+  prompting(){
+    return this.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'Your project name',
+            default: this.appname 
+        }, 
+        {
+            type: 'confirm',
+            name: 'safe',
+            message: 'safe mode ?'
+        }
+    ]).then((answers) =&gt; {
+      this.log('app name', answers.name);
+      this.log('safe mode', answers.safe);
+    });
+  }
+
+} 
+
+</code></pre>
+<h3>Arguments 和 Options</h3>
+<p><code>Arguments</code>是直接从命令行传递的，而<code>Options</code>则是利用附带<code>flag</code>标记进行传递：</p>
+<pre><code>yo yeo --email webbot@webbot.com --username webbot myarg
+</code></pre>
+<p>比如这里的 <code>--email</code>、<code>--username</code> 即为<code>Options</code>，则 <code>myarg</code> 则为<code>Arguments</code>。</p>
+<ul>
+<li>为了告知<code>yeoman generarator</code>我们将来要接收一个<code>Argument</code>参数，应该在构造函数中调用<code>this.argument()</code>方法。</li>
+<li>为了告知<code>yeoman generarator</code>我们将来要接收这样一个<code>Option</code>选项，应该在构造函数中调用<code>this.option()</code>方法。</li>
+</ul>
+<p>这两个方法的签名类似，都接收两个参数：</p>
+<ol>
+<li><code>name</code></li>
+<li><code>hash</code></li>
+</ol>
+<p>第二参数<code>hash</code>是可选的，可接收多个键值对:</p>
+<ul>
+<li><code>desc</code>：一段描述</li>
+<li><code>required</code>：是否必填的<code>Boolean</code></li>
+<li><code>type</code>：<code>String</code>, <code>Number</code>, <code>Array</code>或者自定义函数</li>
+<li><code>default</code>：默认值</li>
+</ul>
+<p>默认的<code>Arguments</code>是<code>String</code>类型，而默认的<code>Options</code>是<code>Boolean</code>类型。</p>
+<h2>示例：</h2>
+<pre><code class="language-JavaScript">class MyGenerator extends Base{
+
+  constructor(...args) {
+    super(...args);
+    this.argument('hello');
+    this.option('email',{type:String});
+    this.option('username',{type:String});
+  }
+
+  prompting(){
+    // 异步依次问询
+    return this.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'Your project name',
+            default: this.appname 
+        }, 
+        {
+            type: 'confirm',
+            name: 'safe',
+            message: 'safe mode ?'
+        }
+    ]).then((answers) =&gt; {
+      this.log('app name', answers.name);
+      this.log('safe mode', answers.safe);
+    });
+  }
+
+  default(){
+      this.log(this.options.hello);
+      this.log(this.options.email);
+      this.log(this.options.username);
+  }
+
+} 
+</code></pre>
+<p>若在一个<code>activiti-client</code>项目中执行命令：</p>
+<pre><code>yo yeo myarg --email webbot@itminus.com --username webbot
+</code></pre>
+<p>则交互效果将类似于：</p>
+<pre><code>? Your project name activiti client
+? safe mode ? Yes
+app name activiti client
+safe mode true
+myarg
+webbot@itminus.com
+webbot
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

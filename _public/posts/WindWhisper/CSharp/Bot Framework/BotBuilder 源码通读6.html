@@ -1,0 +1,177 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读6.html">
+                    BotBuilder 源码通读6 —— 对话建模与实现2
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-05-30
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>上一篇关于<a href="/blog/2019/03/20/WindWhisper/CSharp/Bot%20Framework/BotBuilder%20%E6%BA%90%E7%A0%81%E9%80%9A%E8%AF%BB5/"><code>BotBuilder</code>对话建模</a>的博文中讲述了对话建模的一些基本思想和工作原理。这一篇作为补充，记录几个具体的对话类作用。</p>
+<h2><code>Prompt</code></h2>
+<p><code>Prompt&lt;T&gt;</code>类对话是最为基础的一类<code>Dialog</code>。这类<code>Dialog</code>无非就是询问用户、提示用户输入，并对用户输入的结果予以检验。比如<code>Prompt&lt;T&gt;::ContinueDialogAsync()</code>方法实现为：</p>
+<pre><code class="language-csharp">public override async Task&lt;DialogTurnResult&gt; ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default(CancellationToken))
+{
+    if (dc == null) { /* throw */ }
+    // Don't do anything for non-message activities
+    if (dc.Context.Activity.Type != ActivityTypes.Message) { return EndOfTurn; }
+
+    // Perform base recognition
+    var instance = dc.ActiveDialog;
+    var state = (IDictionary&lt;string, object&gt;)instance.State[PersistedState];
+    var options = (PromptOptions)instance.State[PersistedOptions];
+
+    //识别用户输入
+    var recognized = await OnRecognizeAsync(dc.Context, state, options, cancellationToken).ConfigureAwait(false);
+    // 记录所尝试的次数
+    state[AttemptCountKey] = Convert.ToInt32(state[AttemptCountKey]) + 1;
+
+    // 验证是否有效
+    // ... set `isValid` by : `_validator(promptContext,cancellationToken)`
+
+    // 结束对话并恢复上一级对话执行
+    if (isValid) { return await dc.EndDialogAsync(recognized.Value, cancellationToken).ConfigureAwait(false); }
+
+    if (!dc.Context.Responded) { await OnPromptAsync(dc.Context, state, options, true, cancellationToken).ConfigureAwait(false); }
+    return EndOfTurn;
+}
+</code></pre>
+<p>从上面的代码可以看出，<code>Prompt&lt;T&gt;</code>的<code>ContinueDialogAsync()</code>方法需要子类提供<code>OnPromptAsync()</code>方法和<code>OnRecognizeAsync()</code>的实现，以负责提示用户输入、及识别用户输入。：</p>
+<pre><code class="language-csharp">protected abstract Task OnPromptAsync(ITurnContext turnContext, IDictionary&lt;string, object&gt; state, PromptOptions options, bool isRetry, CancellationToken cancellationToken = default(CancellationToken));
+
+protected abstract Task&lt;PromptRecognizerResult&lt;T&gt;&gt; OnRecognizeAsync(ITurnContext turnContext, IDictionary&lt;string, object&gt; state, PromptOptions options, CancellationToken cancellationToken = default(CancellationToken));
+</code></pre>
+<p><code>Prompt&lt;T&gt;</code>有不同的子类实现，最常见的莫过于<code>TextPrompt</code>，它接受一个<code>string</code>类型作为输入。其他常见的<code>Prompt&lt;&gt;</code>子类包括：<code>NumberPrompt&lt;T&gt;</code>、<code>DateTimePrompt</code>、<code>ConfrimPrompt</code>、<code>ChoicePrompt</code>、<code>AttachmentPrompt</code>等。此外，还有一些极个别的对话类，名字中带有<code>Prompt</code>，但并非继承自<code>Prompt&lt;T&gt;</code>，比如<code>OAuthPrompt</code>类，此处不予赘述。<!-- more --></p>
+<h2><code>WaterfallDialog</code></h2>
+<p><code>WaterfallDialog</code>是一种对瀑布流执行流程的抽象。简单的说，它有若干小步，每个小步都是一个委托类型：</p>
+<pre><code class="language-csharp">public delegate Task&lt;DialogTurnResult&gt; WaterfallStep(WaterfallStepContext stepContext, CancellationToken cancellationToken);
+</code></pre>
+<p>这些小步接受<code>WaterfallStepContext</code>参数，并像一个对话<code>API</code>那样返回一个<code>DialogTurnResult</code>。在<code>WaterfallDialog</code>运行时，这些小步依次执行，直至全部完成。</p>
+<p>从实现上说，这些小步会被组织为一个<code>List&lt;WaterfallStep&gt;</code>，然后在状态里保存一个<code>stepIndex</code>的整型变量记录当前是第几步。每当<code>ContinueDialogAsync()</code>/<code>ResumeDialogAsync()</code>执行后，都会触发下一步的运行:</p>
+<pre><code class="language-csharp">public override async Task&lt;DialogTurnResult&gt; ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default(CancellationToken))
+{
+    if (dc == null) { /* throw */ }
+    // Don't do anything for non-message activities.
+    if (dc.Context.Activity.Type != ActivityTypes.Message) { return Dialog.EndOfTurn; }
+
+    // Run next step with the message text as the result.
+    return await ResumeDialogAsync(dc, DialogReason.ContinueCalled, dc.Context.Activity.Text, cancellationToken)
+        .ConfigureAwait(false);
+}
+
+
+public override async Task&lt;DialogTurnResult&gt; ResumeDialogAsync(DialogContext dc, DialogReason reason, object result, CancellationToken cancellationToken = default(CancellationToken))
+{
+    if (dc == null) { /* throw */ }
+    // Increment step index and run step
+    var state = dc.ActiveDialog.State;
+    var index = Convert.ToInt32(state[StepIndex]);
+    return await RunStepAsync(dc, index + 1, reason, result, cancellationToken)
+        .ConfigureAwait(false);
+}
+</code></pre>
+<h2><code>ComponentDialog</code></h2>
+<p><code>ComponentDialog</code>是一个组件对话。顾名思义，这是按照设计模式中的组合模式来设计的对话组件。我们可以把一组对话组合成一个<code>ComponentDialog</code>，这个<code>ComponentDialog</code>本身又继承自<code>Dialog</code>类，故可以将之作为一个整体用于<code>Dialog</code>的相关场景。</p>
+<h3><code>AddDialog(dialog)</code></h3>
+<p><code>ComponentDialog</code>在内部嵌入了一个<code>DialogSet</code>，通过调用<code>AddDialog(Dialog dialog)</code>方法可以向其中添加子对话。借助于<code>DialogSet</code>，这些子对话之间可以互相调用。</p>
+<pre><code class="language-csharp">public ComponentDialog AddDialog(Dialog dialog)
+{
+    _dialogs.Add(dialog);                         // 把子对话加入对话集
+    if (string.IsNullOrEmpty(InitialDialogId))
+    {
+        InitialDialogId = dialog.Id;              // 设置初始对话ID
+    }
+
+    return this;
+}
+</code></pre>
+<p>一种可能的执行流程为:</p>
+<ul>
+<li>在启动时，<code>BeginDialogAsync(DialogContext outerDc, object opts, CancellationToken ct)</code>会启动当前自身<code>DialogSet</code>中的Id为初始ID的<code>Dialog</code>。如此，对话栈中就被压入了一个的子对话。</li>
+<li>当程序收到消息继续执行时，程序无脑执行栈顶对话的<code>ContinueDialogAsync()</code>方法。假设当前栈顶是子对话A，子对话A根据自身需要，可能调用了对话B</li>
+<li>当程序收到消息继续执行时，程序无脑执行栈顶B对话的<code>ContinueDialogAsync()</code>方法，假设B对话只是简单询问用户消息并保存在某个状态中，那么B对话在收到消息后<code>ContinueDialogAsync()</code>执行时保存相关消息，结束当前对并返回上一步对话（通过<code>dc.EndDialogAsync(result)</code>结束当前会话并触发上一级对话的<code>ResumeDialogAsync()</code>）</li>
+<li>当程序收到消息继续执行(当前栈顶为A对话)，程序无脑执行栈顶A对话的<code>ContinueDialogAsync()</code>方法。A对话的<code>ContinueDialogAsync()</code>发现相关信息均已收集到，通过<code>dc.EndDialogAsync(result)</code>结束会话，如何触发A的上一级会话的<code>Resume</code>。如果栈中再无其他会话，则会直接返回一个状态为<code>DialogTurnStatus.Complete</code>的结果。</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

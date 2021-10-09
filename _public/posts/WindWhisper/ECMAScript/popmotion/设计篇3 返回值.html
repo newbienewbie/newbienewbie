@@ -1,0 +1,176 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/popmotion/设计篇3 返回值.html">
+                    popmotion 设计篇3 ：返回值
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-30
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在上一篇中，我们设计出了这样一种动作类：</p>
+<pre><code class="language-javascript">class Action{
+    constructor(props){
+        this.props=props;
+        // this.props.do 是一个算法框架函数
+        // this.props.middlewares 是一个中间件数组
+    }
+    
+    // 这里为了直观，我们直接修改当前对象，
+    // todo: 改为创建一个新对象，让代码更函数式
+    filter(predicate){
+    
+        // 自定义一个用于转换的中间件
+        let mw=(update,complete,error)=&gt;{
+            return {
+                &quot;update&quot;: (v)=&gt;{
+                    if(predicate(v)) update(v); 
+                },
+                &quot;complete&quot;: complete,
+                &quot;error&quot;: error
+            },
+        };
+        
+        this.props.middlewares.push(mw);
+    }
+
+    /**
+      * 根据executor和自身的middlewares合成新的函数对象
+      */
+    _produce(executor){
+        let {
+            update = (v)=&gt;{},
+            complete =()=&gt;{},
+            error=()=&gt;{},
+        }=executor;
+        
+        let middlewares=this.props.middlewares;
+        
+        for(let i=0;i&lt;middwares.length;i++){
+            let mw=this.middlewares[i];
+            let r=mw(update,complete,error);
+            update=r.update;     
+            complete=r.complete;
+            error=r.error;
+        }
+
+        return {update,complete, error };
+    }
+    
+    start(executor){
+        let {do}=this.props;
+        
+        let {update,complete,error}=this._produce(executor);
+        
+        do(update,complete,error);
+    }
+}
+</code></pre>
+<p>注意到<code>start(executor)</code>方法中，我们只是简单调用了算法框架<code>do(update,complete,error)</code>，为什么不顺带返回算法框架的返回值？<!--more--></p>
+<pre><code class="language-javascript">class Action{
+    constructor(props){
+        this.props=props;
+    }
+    
+    start(executor){
+        let {do}=this.props;
+        let {update,complete,error}=this._produce(executor);
+        return do(update,complete,error);
+    }
+}
+</code></pre>
+<p>这样的话，<code>start(executor)</code>就可以返回算法框架在具体executor下执行的结果，为进一步自定义<code>API</code>提供了更多的可能，比如：</p>
+<pre><code class="language-javascript">const oneEverySecond = action(({ update }) =&gt; {
+  const updateOne = () =&gt; update(1);
+  const interval = setInterval(updateOne, 1000);
+
+  return {
+    stop: () =&gt; clearInterval(interval)
+  };
+});
+
+const foo = oneEverySecond.start();
+setTimeout(() =&gt; foo.stop(), 3000); // 1, 1, 1
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,158 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Alchemy/machine-learning/机器学习 - 分类技术/KNN.html">
+                    机器学习 KNN算法
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-05-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2><code>KNN</code>算法的基本思想</h2>
+<p>考虑一个平面上有数百个样点，这些样点分属于<code>A</code>类、<code>B</code>类和<code>C</code>类。已知各个点的类别与其坐标存在某种密切的关联，特定类别的点会在某个区域富集。现有一个新的点，已知该点周边最近的<code>$K$</code>个点中，几乎都属于<code>A</code>类，问该点最有可能是哪个类？</p>
+<p>常识告诉我们，该点很可能也属于<code>A</code>类。这便是<code>KNN</code>的基本思想——最邻近的<code>$K$</code>个点中，如果其中大部分点都属于某个类别，那么该点就很可能也属于该类。</p>
+<h2><code>KNN</code>算法的实现</h2>
+<p><code>KNN</code>算法非常简单：</p>
+<ol>
+<li>计算该点与所有样点之间的距离(这里采用<strong>欧几里得距离</strong>)</li>
+<li>找出最近的<code>k</code>个样品</li>
+<li>统计这<code>k</code>个样品的类别</li>
+</ol>
+<p>对于点<code>$\bold x^{(p)}$</code> 和点<code>$\bold x^{(q)}$</code>之间的<strong>欧几里得距离</strong>，其实就是各个<strong>分量之差的平方和</strong>再取平方根。令:</p>
+<p><code>$\bold x^{(p)}=(x^{(p)}_1,x^{(p)}_2,x^{(p)}_3,...,x^{(p)}_n)$</code>，
+<code>$\bold x^{(q)}=(x^{(q)}_1,x^{(q)}_2,x^{(q)}_3,...,x^{(q)}_n)$</code>,</p>
+<p>则<strong>欧几里得距离</strong>可以表示为：</p>
+<pre><code class="language-math">%% KaTex
+\text{Distance}^2 =\displaystyle \sum_{t=1}^{n} (x^{(p)}_t - x^{(q)}_t)^{2}
+</code></pre>
+<p>不过，这里我们并不需要取平方根，因为二者呈正相关，我们只需要计算各个分量之差的平方和即可得到最近的<code>$k$</code>个样品点。用代码表示则是：</p>
+<pre><code class="language-fsharp">/// Euclidean distance function 
+let distance (values1: float list) (values2: float list) = 
+    List.sumBy 
+        (fun it -&gt; Math.Pow( float( (fst it) - (snd it)), 2.0)) 
+        (List.zip values1 values2)
+</code></pre>
+<p>根据前面描述的算法，可以给出<code>KNN</code>的算法完整实现如下(由于最近在学习<code>F#</code>，所以这里使用<code>F#</code>)：<!-- more --></p>
+<pre><code class="language-fsharp">/// Sample Entry
+type Entry = { Label: string; Value: float list }
+
+/// KNN algo
+let KNN (k: int) (entries: Entry list) (entry: Entry)  = 
+    entries 
+    |&gt; List.map (fun x -&gt;  (x.Label, distance (x.Value) (entry.Value) ) )
+    |&gt; List.sortBy snd
+    |&gt; List.take k
+    |&gt; List.countBy fst
+</code></pre>
+<h3>测试</h3>
+<p>考虑有一个<code>wdbc.data</code>文件，第一列是人员编号，第二列是当前分类，后面各列是相应的特性分量，则可以通过以下函数加载成一个<code>List&lt;Entry&gt;</code>:</p>
+<pre><code class="language-csharp">/// 加载数据集文件，生成 Entry List
+let loadValues (fileName: string) : Entry list =
+    File.ReadAllLines fileName
+    |&gt; Array.skip 1
+    |&gt; Array.map (fun line -&gt;
+        let items = line.Split(&quot;,&quot;)
+        {
+            Label = items.[1];
+            Value = items
+                |&gt; Array.skip 2
+                |&gt; Array.map float 
+                |&gt; Array.toList
+        }
+    )
+    |&gt; Array.toList
+</code></pre>
+<p>测试代码：</p>
+<pre><code class="language-fsharp">[&lt;EntryPoint&gt;]
+let main argv =
+    let dir = Directory.GetCurrentDirectory()
+    let path = Path.Combine(dir,&quot;wdbc.data&quot; )
+    let entries = loadValues path
+    let result = KNN 5 (entries|&gt; List.take 50 ) (entries|&gt; List.skip 50 |&gt; List.head)
+
+    printf &quot;%A\r\n&quot; result
+
+    0 // return an integer exit code
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

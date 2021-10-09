@@ -1,0 +1,285 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/OS/二进制基础/数据表示.html">
+                    操作系统笔记 二进制基础——数据表示
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>数制转换</h2>
+<p>我们知道，一个数N从一个数制X转换到另一个数制Y，可以使用以下公式展开，得到的相应幂序列就是结果：</p>
+<pre><code class="language-math">%% KaTex
+N_X=\sum\limits_{i=0}^m Y^i
+</code></pre>
+<p>具体到二进制整数，相应公式为：<code>$\sum\limits_{i=0}^m 2^i$</code>。 比如，一个10进制数100，转换到2进制，其基本过程可以表示为：</p>
+<pre><code class="language-math">%% KaTex
+100D=64D+32D+4D=2^{6}D+2^{5}D+2^2D=110\,0100B
+</code></pre>
+<p>二数制小数部分转换同理，只要把N以如下公式分解：</p>
+<pre><code class="language-math">%% KaTex
+\sum\limits_{j=1}^{n} 2^{-j}
+</code></pre>
+<p>即可得到结果。比如有十进制纯小数0.75D，欲转换为二进制的纯小数，其基本过程为：</p>
+<pre><code class="language-math">%% KaTex
+0.75D=0.5D+0.25D=2^{-1}D+2^{-2}D=\bigodot11B
+</code></pre>
+<p>在这里，用<code>$\bigodot$</code>表示隐含的小数点位置。对于小数而言，采用这种展开的方法并不方便，因为记住或者推算 0.5、0.25、0.125、... 这种小数序列并没有记忆或推算 2、4、8、16、...、这种整数序列方便。故另外一个可选的办法是乘2取整法，以十进制的0.625为例：</p>
+<pre><code class="language-math">%% KaTex
+0.625D *2=\color{orange}{1} \color{white}.25D
+0.25\enspace D *2=\color{orange}{0} \color{white}.50D
+0.50\enspace D *2=\color{orange}{1} \color{white}.00D
+</code></pre>
+<p>所以最终得到的结果为<code>$\bigodot101B$</code></p>
+<!-- more -->
+<h2>码制</h2>
+<p>计算机中常用的码制有原码、反码、补码、移码。</p>
+<h3>原码</h3>
+<p>计算机并不认识负数。为了用二进制表示负数，可以人为的设定一个负数标志。原码规定，对于正数，表示方法并没有什么两样；但是为了表示负数，我们需要把最高位作为标志位，也就是说当符号位为1，表示负数。</p>
+<p>设X为二进制的n位纯整数，当<code>$X&lt;0$</code>，需要在最高位也就是<code>$2^n$</code>位设置符号位为1，用公式表达为：</p>
+<pre><code class="language-math">%% KaTex
+X_o=2^{n-1}+ |X|  \qquad(\color{white} -(2^{n-1}-1) \le X \le 0)
+</code></pre>
+<p>若X为n位纯小数，当<code>$X&lt;0$</code>，需要在最高位也就是<code>2^0</code>设置设置符号为1，用公式表达为：</p>
+<pre><code class="language-math">%% KaTex
+X_o=2^{0}+ |X|    \qquad(\color{white} -1&lt;X \le 0)
+</code></pre>
+<h3>减法的计算</h3>
+<h4>原码之痛</h4>
+<p>我们知道，计算机有专门的加法电路来求解加法，并没有专门的减法器。所有的减法计算都要转换为加法运算来求解。似乎有大家都知道的解决办法：<code>$X-Y=X+(-Y)$</code>。</p>
+<p>假设要求 <code>$1-1$</code> 的值，计算机将使用加法器计算<code>$1+(-1)$</code>的值：</p>
+<pre><code class="language-math">%% Katex
+\overbrace{0\enspace 000\;0001}^{\text{1}}
+
+\overbrace{1\enspace 000\;0001}^{\text{-1}}
+
++-------------
+\overbrace{1\enspace 000\;0010}^{\text{-2}}
+</code></pre>
+<p>显然，这里得到的结果是-2而非0。这是因为我们人为规定的符号标志位(最高位)也被当作了数的一部分参与了求和运算。用原码表示，虽然直观易懂，但是不能正确地直接处理减法：公式<code>$X-Y = X+(-Y)$</code>并不能帮助我们把减法转换为加法运算，我们还需要寻求另外的转换方法。</p>
+<h4>模运算</h4>
+<p>为了解决减法向加法转换的问题，先考虑以下两个简单的小问题：</p>
+<ol>
+<li>对于一个12进制的表盘式的时钟，其时针刻度最多可以容纳1点、2点、...、到12点共12个数字。我们想求5点之前8小时是几点，由于存在借位关系，普遍的做法是计算(5点+12点)-8点=5点+(12点-8点)=9点。</li>
+<li>现在有一个24进制的时钟时针刻度，其时钟刻度最多容纳1点、2点、...、到24点共24个数字。我们想求凌晨6点之前的9小时是几点，由于存在借位关系，通常的做法是计算(6点+24点)-9点=6点+(24点-9点）=21点。</li>
+</ol>
+<p>其实上述的减法计算无论是否存在借位关系都成立，12进制下任意整点时刻X之后的12小时还是X，因此有<code>$X-Y \equiv X+12-Y \quad (\mod 12)$</code>，所以求X之前的Y小时可以转化为</p>
+<pre><code class="language-math">%% KaTex
+X-Y \equiv X+(12-Y) \quad (\mod 12)
+</code></pre>
+<p>而24进制下任意整点时刻X之后的24小时还是X，所以X之前的Y小时可以转换为：</p>
+<pre><code class="language-math">%% KaTex
+X-Y \equiv X+(24-Y) \quad(\mod 24)
+</code></pre>
+<p>这里的12、24实际上是在表达一种容量大小——容纳数字的空间最多可以放多少个数字，称之为模。超过模的数溢出的结果等同于取余数。</p>
+<p>我们知道，在计算机里存放整数可能有<code>int</code>、<code>short</code>、<code>long</code>、<code>long long</code>等很多类型，每种类型能表示的整数范围不一样。假设某种类型大小是n位，则该类型一共可以容纳<code>$2^n$</code>个数字，故该类型的模大小为<code>$M=2^n$</code>，也就是说：</p>
+<pre><code class="language-math">%% KaTex
+X-Y \equiv X+(M-Y) \quad ( \mod M)
+</code></pre>
+<p>记<code>$C=M-Y$</code>，所以该类型下的减法可以表示为:</p>
+<pre><code class="language-math">%% KaTex
+X -Y =X + C
+</code></pre>
+<p>这样，就从形式上把减法运算转换成了加法运算。现在的问题在于，如何求解C呢？计算机中没有专门的减法器，所有的减法都是用加法来进行的，然而定义式中<code>$C=M-Y$</code>还是使用了减法运算。所以我们需要对其进行等价转换。</p>
+<h4>补数推导</h4>
+<p>考虑有一个正数Y可以表示成n位二进制原码数，其中最高位是符号位。则必有</p>
+<pre><code class="language-math">%% KaTex
+Y= k_0*2^0 + k_1*2^1 + k_2*2^2 + ... +k_{n-2}*2^{n-2}  \qquad (1)
+</code></pre>
+<p>所以对应的二进制数为 <code>$\color{orange}{S} \color{green} \overbrace{ k_{n-2} k_{n-1} ... k_2 k_1  k_0}^\text{(n-1) bits} $</code>，其中<code>$\color{orange}{S}$</code>代表符号位，Y自身可以展开为<code>$\color{green}(n-1)$</code>位</p>
+<p>显然，这(n-1)位二进制数最多能表示<code>$2^{n-1}$</code>个数，故其模为<code>$2^{n-1}$</code>，所以对于正数Y，相应的有<code>$C=2^{n-1}-Y$</code>。</p>
+<p>根据等比数列求和公式： <code>$2^0+2^1+2^2+...+2^{n-2}= 2^{n-1} -1 $</code>，即有</p>
+<pre><code class="language-math">%% KaTex
+2^{n-1}=1+ \left( 2^0+2^1+2^2+...+2^{n-2} \right) \quad (2)
+</code></pre>
+<p>由 (1)(2)式，得到：</p>
+<pre><code class="language-math">%% KaTex
+2^{n-1} -Y =1+ \left(  (1-k_0)*2^0 + (1-k_1)*2^1 + (1-k_2)*2^2 + ... +(1-k_{n-2})*2^{n-2}   \right)
+</code></pre>
+<p>这里<code>$ k_0 , k_1, k_2, ... k_{n-2} $</code>都只会取值 0 或者1 。所以上式中的<code>$1-k_i \quad( i\in [0,n-2])$</code>实际上在表达按位取反的意思。可见：对于一个正数Y，相应的C等于其二进制码按位取反再+1。换言之，一个数的减法运算<code>$X-Y$</code>被转化为了加法运算<code>$X+C$</code>。</p>
+<p>还是举<code>$1-1$</code>的例子，对于一个8比特型有符号整数，最高位为符号位:</p>
+<pre><code class="language-math">%% KaTex
+1B=\color{orange}0\enspace \color{green}000\,0001
+
+C(1)=\color{orange}0\enspace \color{green}111\;1110 \color{white}+ 1 = \color{orange}1\enspace \color{green}000\;0001
+
+\therefore \quad 1-1=1+C(1) =
+
+\overbrace{\color{orange}0\enspace \color{green}000\;0001}^{\text{1}}
+
+\overbrace{\color{orange}1\enspace \color{green}111\;1111}^{\text{C(1)}}
+
++-------------
+\overbrace{0\enspace 000\;0000}^{\text{0}}
+</code></pre>
+<h3>补码</h3>
+<p>何为负数？ 对于一个正数Y，相应的负数=0-Y。在上文推导C的过程中，我们假定的场景是：<code>某个数X-正数Y</code>。推导的结论表明，我们可以把<code>负数Y</code>代换成<code>补数C</code>(注意，这里要求<code>$Y&gt;0$</code>，如果<code>$Y&lt;0$</code>，则其实是直接对两个正数相加)。美中不足的是，我们为了加上一个负数还需要将其中被减数表示为原码，再将减去减数这个操作表示为加上补码，最后计算出补码后再对二者求和。</p>
+<h4>补码的统一定义</h4>
+<p>为了更进一步，统一<code>$X \pm Y$</code>对正负零<code>X</code>和<code>Y</code>均成立，可以规定正数<code>Y</code>的补码还是<code>Y</code>本身，而<code>负数Y</code>的补码为C。</p>
+<p>例如：为了计算-127的补码，先计算其等价的二进制表示:</p>
+<pre><code class="language-math">%% KaTex
+127D=128D-1D=1000 \; 0000B -1 B= 0111 \; 1111B 
+</code></pre>
+<p>假定采用8bits的<code>char</code>型来存储，其中最高位为符号位，则按位取反应该是对后7位进行：</p>
+<pre><code class="language-math">%% KaTex
+\therefore \quad \lnot(111 \; 1111B)=000 \; 0000B
+</code></pre>
+<p>所以，最后求得的补码为：</p>
+<pre><code class="language-math">%% KaTex
+\therefore \quad C(-127)=\color{orange}1 \color{white}000 \; 0000B + 1B= \color{orange}1 \color{white}000 \; 0001B
+</code></pre>
+<p>再例如，为了计算 -0.5的补码，先计算其等价的二进制表示:</p>
+<pre><code class="language-math">%% KaTex
+0.5D=\bigodot 1B
+</code></pre>
+<p>其中，<code>$\bigodot$</code>表示隐含的小数点位置。假定采用 8bits 存储，则其中最高位为符号位，按位取反应该是对后7位进行：</p>
+<pre><code class="language-math">%% KaTex
+\therefore \quad  \lnot(\bigodot 100 \; 0000B ) =\bigodot 011 \; 1111B
+</code></pre>
+<p>所以，最后求得的补码为：</p>
+<pre><code class="language-math">%% KaTex
+\therefore \quad C(-0.5)=\color{orange}1 \color{white}\bigodot 011 \; 1111B + 1B= \color{orange}1 \color{white}\bigodot 100 \; 0000B
+</code></pre>
+<h4>补码的加减法</h4>
+<p>统一使用补码的好处是两个二进制的加减法只要计算非常符合数学直觉。以两个补码的加法为例：</p>
+<pre><code class="language-math">%% KaTex
+-1+1=
+
+\overbrace{1111\,1111}^{\text{-1}}
+
+\overbrace{0000\,0001}^{\text{1}}
+
++-----
+\overbrace{0000\,0000}^{\text{0}}
+</code></pre>
+<p>而两个补码的减法等价于被减数的补码+((-减数)的补码)，同样非常自然：</p>
+<pre><code class="language-math">%% KaTex
+1-1=
+
+\overbrace{0000\,0001}^{\text{1}}
+
+\overbrace{1111\,1111}^{\text{-1}}
+
++-----
+\overbrace{0000\,0000}^{\text{0}}
+</code></pre>
+<h3>反码</h3>
+<p>注意到上述求解补码的过程有:<code>负数的补码=按位取反部分+1</code>，这里把按位取反部分叫反码。为了表达按位取反，我们可以给其中每位加1，由于<code>$2^n=1\overbrace{000....000}^{\text{(n-1)bits}}$</code>，所以可以利用<code>$2^n-1$</code>构造出<code>$\overbrace{111...111}^{\text{(n-1)bits}}$</code>，然后加到原二进制数上，从而起到按位取反的效果，故所谓反码，还用公式表示为：</p>
+<pre><code class="language-math">%% KaTex
+X = \begin{cases}  X &amp;\text{if } X\ge 0   \\    (2^{n}-1) +X &amp;\text{if } X \lt 0 \end{cases}
+</code></pre>
+<p>对于负的纯小数，用公式表示为：</p>
+<pre><code class="language-math">%% KaTex
+X =2-2^{-(n-1)}+ X    \qquad(\color{white} -1&lt;X \le 0)
+</code></pre>
+<h3>移码</h3>
+<p>对补码的符号位取反就得了移码。移码主要用于表达浮点数的阶码。</p>
+<h2>浮点数的表示</h2>
+<p>上述计算小数的过程都是小数点的位置隐含在固定位置。对于纯整数而言，假定小数点固定住数据末尾；而对于纯小数而言，则假定小数点固定在最高有效位之前。</p>
+<p>浮点数是小数点位置可以浮动的数。一个二进制数N表示数值可以表示为：<code>$N=2^E*F$</code>。采用这种表示法称之为浮点表示法。</p>
+<pre><code>---------------------------------
+| 阶符 | 阶码(E) | 数符 | 尾数(F) |
+---------------------------------
+</code></pre>
+<p>通常，阶码E采用移码来表示，而尾数F通常采用补码或者原码来表示。</p>
+<p>阶码决定了浮点数的数值范围，而尾数决定了浮点数的数值精度。由于<code>0.111B</code>可以表示为<code>$1.11B*2^{-1}D$</code>，而后者可以多出一位小数表达数值，因而可以达到更高的精度。基于这样的思想，通常采用规格化浮点数，即让尾数的绝对值限定在<code>[0.5,1]</code>之间</p>
+<h3>IEEE 754 工业标准</h3>
+<p>IEEE754标准规定浮点数的表现形式为：</p>
+<pre><code class="language-math">%% KaTex
+(-1)^S 2^E \overbrace{(f_0 f_1 f_2 ... f_{p-1})}^\text{F}
+</code></pre>
+<p>其中:</p>
+<ol>
+<li><code>$(-1)^S$</code>为数符，S为0表示正数，S为1为负数。</li>
+<li><code>$E$</code> 为指数，即阶码，用移码表示。</li>
+<li><code>$f_0 f_1 f_2 ... f_{p-1}$</code> 为尾数，其长度为P位，用原码表示。</li>
+</ol>
+<p>根据使用的二进制位数的不同，可以分为单精度、双精度、扩充精度。</p>
+<ol>
+<li>单精度:是指浮点数字长32位（符号位长度为1，指数长度8，尾数长度23）</li>
+<li>双精度：是指浮点数字长64位（符号位长度为1，指数长度11，尾数长度52）</li>
+<li>扩充精度:是指浮点数字长80位（符号位长度为1，指数长度15，尾数长度64）</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

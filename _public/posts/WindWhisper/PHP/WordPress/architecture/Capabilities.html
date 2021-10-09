@@ -1,0 +1,238 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/WordPress/architecture/Capabilities.html">
+                    WordPress Capabilities
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>内置的Roles与Capabilities</h2>
+<p>WordPress内置了以下的角色(Roles)：</p>
+<ol>
+<li>Super Admin</li>
+<li>Administrator</li>
+<li>Editor</li>
+<li>Author</li>
+<li>Contributor</li>
+<li>Subscriber</li>
+</ol>
+<p>没个角色都拥有特定的capabilities，诸如:read类、 edit类、 delete类、 publish类、 manage categories类、 manage links类、 moderate comments类、 upload files类、 remove users类等等。</p>
+<p>WordPress中capabilities分为两种：</p>
+<ul>
+<li>permitive   表示一个指定角色能否做一件事儿</li>
+<li>meta     用于根据上下文语境来确定一个指定用户能否做一件事儿</li>
+</ul>
+<p>二者的重要区别是，前者针对的是Role，是宽泛性的，常为复数；后者一般针对的是User，为单数。</p>
+<p><code>map_meta_cap()</code> translates a user's primitive capabilities to his/her meta capabilities.</p>
+<h2>WordPress的用户-角色原理</h2>
+<h3>基本思想</h3>
+<p>从本质上说，角色能力控制的基础是要表达这样的一种信息：</p>
+<ol>
+<li>角色集合的管理: 都有哪些角色？如何增加、删除和修改角色。</li>
+<li>角色能力管理: 都有哪些能力？如何增加、删除、和修改能力</li>
+</ol>
+<p>可以表达为这样的PHP数组形式：</p>
+<pre><code class="language-PHP">array (
+
+  	'role1' =&gt; array (
+  		'name' =&gt; 'rolename1',
+  		'capabilities' =&gt; array(
+            'cap1'=&gt;true,
+            'cap2'=&gt;false,
+            //...
+        )
+  	),
+
+  	'role2' =&gt; array (
+  		'name' =&gt; 'rolename2',
+  		'capabilities' =&gt; array(
+            'cap1'=&gt;true,
+            'cap2'=&gt;false,
+            //...
+        )
+  	),
+
+    //...
+
+)
+</code></pre>
+<h3>文件定义概述</h3>
+<p>为了实现上述功能，WordPress的<code>wp-includes/capabilities.php</code>文件定义了这样几个类：</p>
+<ul>
+<li><code>WP_Roles</code>    # 管理一系列<code>WP_Role</code>的类，其有一个全局类实例<code>$wp_roles</code></li>
+<li><code>WP_Role</code>     # 管理一个角色的capabilities</li>
+<li><code>WP_User</code>     # 管理用户</li>
+</ul>
+<p>和这样的几个函数：</p>
+<ul>
+<li><code>map_meta_cap($cap,$user_id)</code></li>
+<li><code>current_user_can($capability)</code></li>
+<li><code>current_user_can_for_blog( $blog_id, $capability )</code></li>
+<li><code>author_can($post,$capability)</code></li>
+<li><code>user_can($post,$capability)</code></li>
+<li><code>wp_roles()</code>         #获取全局的<code>WP_Roles</code>实例</li>
+<li><code>get_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>get_role($role)</code> 方法</li>
+<li><code>add_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>add_role($role)</code> 方法</li>
+<li><code>remove_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>remove_role($role)</code> 方法</li>
+<li><code>get_super_admins()</code>                #获取超级管理员数组</li>
+<li><code>is_super_admin($user_id=false)</code>    #是否是超级管理员</li>
+</ul>
+<p>其中，<code>WP_Roles</code> 用于管理一组角色，<code>WP_Role</code>用于管理一个角色的各项能力。</p>
+<h2>用法：</h2>
+<h3>检查用户的capability</h3>
+<p>最实用的函数是：<code>current_user_can($capability)</code>，可以用来检查当前用户是否有做某件事的权限。</p>
+<h3>新建角色</h3>
+<p>当内置的角色不满足实际需求时，还可以自定义自己的角色：</p>
+<ul>
+<li><code>wp_roles()</code>         #获取全局的<code>WP_Roles</code>实例</li>
+<li><code>get_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>get_role($role)</code> 方法</li>
+<li><code>add_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>add_role($role)</code> 方法</li>
+<li><code>remove_role($role)</code>    #调用全局<code>WP_Roles</code>实例的<code>remove_role($role)</code> 方法</li>
+</ul>
+<p>比如，要增加一个新的角色<code>photo_uploader</code>,默认的capability是<code>organize_gallery</code>:</p>
+<pre><code class="language-PHP">add_role('photo_uploader','Photo Uploader','organize_gallery');
+</code></pre>
+<p>要删除这个角色：</p>
+<pre><code class="language-PHP">remove_role('photo_uploader');
+</code></pre>
+<h3>特定角色的capabilities管理</h3>
+<p>如果想给一个已经存在的特定角色添加capability，可以获取该角色<code>WP_Role</code>实例后再调用<code>add_cap()</code>方法:</p>
+<pre><code class="language-PHP">$role=get_role('author');
+$role-&gt;add_cap('organize_gallery');
+</code></pre>
+<h3>用户角色-能力管理</h3>
+<p>获取用户对象：</p>
+<pre><code class="language-PHP">
+//利用id获取用户对象
+$user=new WP_User($id);
+
+// 利用用户名获取用户对象
+$user=new WP_User(null,$user_name);
+
+</code></pre>
+<p>管理用户的角色:</p>
+<pre><code class="language-PHP">
+//添加角色
+$user-&gt;add_role($role);
+
+//移除角色
+$user-&gt;remove_role($role_name);
+
+//设置角色(覆盖)
+$user-&gt;set_role($role_name);
+
+</code></pre>
+<h2>WP_Roles类</h2>
+<p><code>WP_Roles</code>是用来管理角色集合的，内部维护了具有之前提到的那种结构的<code>$roles</code>属性(PHP数组)，提供对一组角色进行管理的功能，当调用：</p>
+<p><code>add_role($role,$display_name,$capabilities=array())</code></p>
+<p>时，会优先检查该数组结构是否存在相应的$role是否已经存在，如果没有，再同步到数据库中，然后同步其他属性。</p>
+<h2>WP_Role类</h2>
+<p><code>WP_Role</code>类是非常简单的类，用于管理具体的角色都能做那些事。具有这样两个属性：</p>
+<ul>
+<li>name             # 此角色名</li>
+<li>capabilities     # 此角色的能力集合</li>
+</ul>
+<p>然后针对capabilities这个集合提供这样几个方法：</p>
+<ul>
+<li><code>has_cap( $cap )</code></li>
+<li><code>add_cap( $cap, $grant=true )</code></li>
+<li><code>remove_cap( $cap )</code></li>
+</ul>
+<p><code>WP_Roles</code>中为指定角色添加$capabilities<code>add_cap()</code>方法：</p>
+<pre><code>public function add_cap( $role, $cap, $grant = true ) {
+
+    if ( ! isset( $this-&gt;roles[$role] ) )
+        return;
+
+    $this-&gt;roles[$role]['capabilities'][$cap] = $grant;
+    if ( $this-&gt;use_db )
+        update_option( $this-&gt;role_key, $this-&gt;roles );
+}
+</code></pre>
+<p>本质上还是在操作$roles这个内部数组，然后同步到数据库中。</p>
+<h2>WP_User类</h2>
+<p><code>WP_User</code>类用于管理一个用户的角色和能力。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

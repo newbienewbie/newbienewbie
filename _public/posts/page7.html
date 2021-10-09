@@ -1,0 +1,305 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Boulevard/Alchemy/machine-learning/机器学习 - BP网络/BP神经网络的原理.html">
+                    机器学习 BP神经网络原理
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-06-12
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在<a href="/blog/2018/06/12/Boulevard/Alchemy/machine-learning/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%20-%20%20%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95/%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95/">关于梯度下降法的机器学习笔记中</a>，我们给出了一个通用的理论，也即每次沿着梯度的反方向进行迭代搜素最小值。</p>
+<h2>使用最速下降法进行BP网络求解</h2>
+<p>考虑有一个多层神经网络，我们可以迭代调节各层的权重<code>$w^{m}_{i,j}$</code>，来令性能函数<code>$F$</code>取得更小的值。这里采用最速下降法，为了计算其梯度，不妨先考察其通用形式：<code>$\frac {\partial F}{ \partial w^{m}_{i,j}}$</code>。又由于<code>$n^{m}_{i}$</code>和<code>$w^{m}_{i,j}$</code>存在函数关系:</p>
+<pre><code class="language-math">%% KaTex
+n^{m}_{i}=\displaystyle\sum_{j}{ w^{m}_{i,j}a^{m-1}_{j}}+ b^{m}_{i}
+</code></pre>
+<p>根据链式法则，有：</p>
+<pre><code class="language-math">%% KaTex
+\frac {\partial F}{ \partial w^{m}_{i,j}} = \underbrace{\frac{\partial F}{\partial n^{m}_{i} }} _{\text{记作} s^{m}_{i}} \cdot \frac{\partial n^{m}_{i}}{\partial w^{m}_{i,j}} = s^{m}_{i} \cdot a^{m-1}_{j}
+</code></pre>
+<p>其中，<code>$s^{m}_{i}$</code>表达了性能函数<code>$F$</code>对第<code>$m$</code>层的第<code>$i$</code>个的元素发生变化的敏感程度。</p>
+<p>显然，根据最速下降法，迭代式为：</p>
+<pre><code class="language-math">%% KaTex
+w^{m}_{i,j}(k+1) = w^{m}_{i,j}(k) - \alpha s^{m}_{i} a^{m}_{j}
+
+b^{m}_{i}(k+1) = b^{m}_{i}(k) - \alpha s^{m}_{i} 
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/popmotion/设计篇3 返回值.html">
+                    popmotion 设计篇3 ：返回值
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-30
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在上一篇中，我们设计出了这样一种动作类：</p>
+<pre><code class="language-javascript">class Action{
+    constructor(props){
+        this.props=props;
+        // this.props.do 是一个算法框架函数
+        // this.props.middlewares 是一个中间件数组
+    }
+    
+    // 这里为了直观，我们直接修改当前对象，
+    // todo: 改为创建一个新对象，让代码更函数式
+    filter(predicate){
+    
+        // 自定义一个用于转换的中间件
+        let mw=(update,complete,error)=&gt;{
+            return {
+                &quot;update&quot;: (v)=&gt;{
+                    if(predicate(v)) update(v); 
+                },
+                &quot;complete&quot;: complete,
+                &quot;error&quot;: error
+            },
+        };
+        
+        this.props.middlewares.push(mw);
+    }
+
+    /**
+      * 根据executor和自身的middlewares合成新的函数对象
+      */
+    _produce(executor){
+        let {
+            update = (v)=&gt;{},
+            complete =()=&gt;{},
+            error=()=&gt;{},
+        }=executor;
+        
+        let middlewares=this.props.middlewares;
+        
+        for(let i=0;i&lt;middwares.length;i++){
+            let mw=this.middlewares[i];
+            let r=mw(update,complete,error);
+            update=r.update;     
+            complete=r.complete;
+            error=r.error;
+        }
+
+        return {update,complete, error };
+    }
+    
+    start(executor){
+        let {do}=this.props;
+        
+        let {update,complete,error}=this._produce(executor);
+        
+        do(update,complete,error);
+    }
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/popmotion/设计篇2 中间件与扩展.html">
+                    popmotion 设计篇2 ：中间件与扩展
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-29
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在上一篇中，我们设计出了这样一种动作类：</p>
+<pre><code class="language-JavaScript">class Action{
+    constructor(props){
+        this.props=props;
+    }
+    
+    start(executor){
+        let {
+            update=v=&gt;{},
+            complete=()=&gt;{},
+            error=()=&gt;{}
+        }=executor;
+        
+        let {do}=this.props;
+        
+        do(update,complete,error);
+    }
+}
+
+function action(do){
+    return new Action({do,});
+}
+</code></pre>
+<p>我们为<code>Action</code>在初始化的时候提供一个算法框架函数<code>do(update,complete,error)</code>，其中以三个名为<code>update</code>、<code>complete</code>、<code>error</code>三个函数作为基础，构建了整个函数的执行逻辑。具体在启动动作的时候，再传递一个执行器<code>executor</code>即可。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/ECMAScript/popmotion/设计篇1 动作与执行.html">
+                    popmotion 设计篇1 ：动作与执行
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>动作<code>action</code>是可以执行的对象。为了从头设计这样一种<code>API</code>我们希望其具有以下特征？</p>
+<ol>
+<li>一种动作用一个 <code>action</code> 对象表示，一个<code>action</code>对象表示一种动作类型</li>
+<li>我们希望一个动作对象可以在未来被启动执行</li>
+<li>我们希望一个动作对象可以反复被执行，也即是说，无状态、不可变</li>
+</ol>
+<p>据此，我们可能设想需要这样一种<code>API</code>调用方式：</p>
+<pre><code class="language-javascript">actionInstance.start();    // 执行一种动作——动作对象调用启动方法: .start()
+</code></pre>
+<p>我们想让这种动作是无状态的，也就是说，可以反复调用：</p>
+<pre><code class="language-javascript">actionInstance.start();
+actionInstance.start();
+// ...
+actionInstance.start();
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/Misc/记Swiper.js 复制DOM引发的Bug.html">
+                    记 Swiper.js 复制DOM引发的Bug
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-27
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>最近接手了有个小项目，大致是做个类似于易企秀之类的前端页面。核心功能是，对于指定模板：</p>
+<ol>
+<li>在编辑模式下，可以对文字、图片进行在线编辑，点击保存后提交相应数据到服务器</li>
+<li>在浏览模式下，向服务器请求数据，渲染生成个性页面</li>
+</ol>
+<p>在我之前已经有个前端做好的各屏样式、动效。但是他写的在线可编辑功能是用纯手工的<code>input name=&quot;&quot;</code>做的，这导致在线编辑基本是废的——因为每个模板都有很多不同的可编辑部分，不可能全靠手工完成；而且一到渲染环节就抓瞎。</p>
+<h2>解决方案</h2>
+<p>本想用<code>HTML5</code>的<code>content-editable</code>做，不过这货在移动端的监听内容改变比较操蛋；而且对于图片无能为力。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page6.html">
+          Previous
+        </a>
+        8 of 32
+        <a href="/posts/page8.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

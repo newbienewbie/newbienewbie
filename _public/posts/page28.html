@@ -1,0 +1,1011 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item is-active" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony-EventDispatcher.html">
+                    Symfony EventDispather
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>Event和EventDispatcher</h2>
+<p>Event是什么？</p>
+<p>其实很简单，Event是用于描述“what happens?” 的东西。正因为此，Event对象中通常包含了一些数据，用来表示发生了什么。事实上，事件对象只是在描述发生了什么—准确的说，事件对象提供了一个接口，让别人知道发生了什么。</p>
+<p>Symfony/EventDispather 提供了Event基础类来描述“What Happens”，这个基础类非常简单，只是对以下信息进行抽象：</p>
+<ul>
+<li>Event调度器是谁？（dispatcher属性及getter/setter）</li>
+<li>Event是否还能传播？（propagationStopped属性及getter/setter）</li>
+<li>Event叫什么名字？（deprecated:name属性及getter/setter））</li>
+</ul>
+<p>对于包含特殊信息的特定事件，可以继承自Event类，再添加自己对该类事件的特殊属性的抽象。比如：</p>
+<pre><code class="language-PHP">class FilterOrderEvent extends Event{
+
+    protected $order;
+	public function __construct(){
+	    $this-&gt;order=$order;
+	}
+	
+	public function getOrder(){
+	    return $this-&gt;getOrder();
+	}
+
+}
+</code></pre>
+<p>这样，FilterOrderEvent事件除了包含Event基础类中那些对发生了什么的描述，还增加了对order这类信息的描述（提供了getOrder()接口让其他人获取Order对象）。</p>
+<p>再比如，Symfony/Form组件中的FormEvent类，除了基础的Event属性外，还添加了两个额外属性:</p>
+<pre><code class="language-PHP">class FormEvent extends Event
+{
+    private $form;
+    protected $data;
+    
+    public function __construct(FormInterface $form, $data)
+    {
+        $this-&gt;form = $form;
+        $this-&gt;data = $data;
+    }
+    
+    //....
+}
+</code></pre>
+<p>一个是实现了FormInterface的表单对象$form，代表与当前事件相关的是哪个表单;一个是混合类型的$data参数，用于对特定数据的动态修改，如modelData之类。</p>
+<p>很多时候，我们并不仅仅想知道发生了什么，我们还想根据发生了什么做出相应的动作。关于这一点，可以参见Wiki给出的Event定义：</p>
+<blockquote>
+<p>In computing, an event is an action or occurrence detected by the program that may be handled by the program</p>
+</blockquote>
+<p>这段话说明了一点很重要的东西：事件应当可以被检测、处理。通常由事件监听器(event listener)或者说事件处理器(event handle)来完成这一工作。</p>
+<p>Symfony/EventDispather组件提供了这类对事件发布、调度、监听的功能。</p>
+<p>EventDispather对象的dispatch()方法会根据某一个事件对应的Listeners,按优先级逐一进行调用。EventDispather支持两套风格事件处理程序的绑定。最常用的是addListener(),这是一种快速编码的回调风格，类似于JavaScript中的回调函数。还有一种使用Subscriber对象的风格。</p>
+<h2>使用具有回调风格的Listener</h2>
+<p>添加监听器的方法原型为：</p>
+<pre><code class="language-PHP">addListener($eventName,$listener,$priority=0)
+</code></pre>
+<p>这一方法的关键特征是:传递给addListener的第二个参数是一个callable对象。这十分类似于JavaScript的回调函数:</p>
+<pre><code class="language-PHP">
+$dispather-&gt;addListener(
+    'foo.action',
+    array($listener,'onFooAction')       //a PHP callable
+);
+
+$dispather-&gt;addListener(
+    'bar.action',
+    function(Event $event){              //a PHP callable
+        //...
+    }
+);
+</code></pre>
+<h2>使用EventSubscriber对象</h2>
+<p>EventDispather还支持另外一种风格的监听绑定：</p>
+<pre><code class="language-PHP">addSubscriber(EventSubscriberInterface $subscriber);
+</code></pre>
+<p>此方法接受一个实现了EventSubscriberInterface接口的对象作为参数。该接口非常简单：</p>
+<pre><code class="language-PHP">interface EventSubscriberInterface
+{
+    public static function getSubscribedEvents();
+}
+</code></pre>
+<p>接口方法getSubscribedEvents()返回一个数组，该数组可以是三种方式中的一种：</p>
+<ul>
+<li>array('eventName' =&gt; 'methodName')</li>
+<li>array('eventName' =&gt; array('methodName', $priority))</li>
+<li>array('eventName' =&gt; array(array('methodName1', $priority), array('methodName2'))</li>
+</ul>
+<p>addSubscriber()方法会自动检测接收到的$subscriber对象并解析出合适的方法名，再通过过addListener()方法完成事件绑定监听。其源码及实现分析如下：</p>
+<pre><code class="language-PHP">
+    public function addSubscriber(EventSubscriberInterface $subscriber)
+    {
+        foreach ($subscriber-&gt;getSubscribedEvents() as $eventName =&gt; $params) {
+
+            //$subscripter-&gt;getSubscribedEvents   返回的数组类似于: 
+            //    array(
+            //        'eventName'=&gt;&quot;methodName&quot;,
+            //         //... 
+            //    )
+            if (is_string($params)) {
+                $this-&gt;addListener($eventName, array($subscriber, $params));
+            }
+
+            //$subscripter-&gt;getSubscribedEvents   返回的数组类似于: 
+            //    array(
+            //        'eventName'=&gt;array(&quot;methodName&quot;,$priority),
+            //         //... 
+            //    )
+             elseif (is_string($params[0])) {      
+                $this-&gt;addListener($eventName, array($subscriber, $params[0]), isset($params[1]) ? $params[1] : 0);
+             } 
+
+            //$subscripter-&gt;getSubscribedEvents   返回的数组类似于: 
+            //    array(
+            //        'eventName'=&gt;array(
+            //            array(&quot;methodName1&quot;,$priority)
+            //            array(&quot;methodName22&quot;)
+            //         ),
+            //        //... 
+            //    )
+             else {
+                foreach ($params as $listener) {
+                    $this-&gt;addListener($eventName, array($subscriber, $listener[0]), isset($listener[1]) ? $listener[1] : 0);
+                }
+            }
+        }
+    }
+</code></pre>
+<p>可以看到，addSubscriber()始终都是把形如<code>array($subscriber,$methodName)</code>这样的callable传递给addListener。显而易见，一个Subscrber应该有如下的类似形式：</p>
+<pre><code class="language-PHP">class StoreSubscriber implements EventSubscriberInterface{
+    
+    public static function getSubscribedEvents(){
+        return array(
+            'kernel.repsonse'=&gt;array(
+                array('onKernelResponsePre',10),
+                array('onKernelResponseMid',5),
+                array('onKernelResponsePost',0),
+            ),
+            'store.order'=&gt;array('onStoreOrder',0)
+        );
+    }
+
+
+    public static function onKernelResponsePre{
+        //...
+    }
+
+    public static function onKernelResponseMid{
+        //...
+    }
+
+    public static function onKernelResponsePost{
+        //...
+    }
+
+    public static function onStoreOrder{
+        //...
+    }
+}
+</code></pre>
+<p>这种十分类似于Java Swing中事件监听接口，比如MouseListener类：</p>
+<pre><code class="language-Java">button.addMouseListener(new MouseListener() {
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        System.out.println(&quot;mouseClicked&quot;);
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        System.out.println(&quot;鼠标被按住&quot;);
+    }
+
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        System.out.println(&quot;鼠标被释放&quot;);
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+        System.out.println(&quot;鼠标被进入&quot;);
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+        System.out.println(&quot;鼠标被退出&quot;);
+    }
+});
+</code></pre>
+<p>Symfony中的EventSubscriber对象为一组事件监听器提供了良好的组织形式，使得代码更具有可读性。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony-Translation.html">
+                    Symfony Translation
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>翻译的过程可以理解为从消息<code>message</code>到译文<code>translation</code>的过程。Symfony/Translation这个组件的工作流程大致可以分为三步：</p>
+<ol start="0">
+<li>创建翻译器</li>
+<li>为翻译器添加资源: <code>source</code>到<code>target</code>的消息映射关系</li>
+<li>根据<code>domain</code>、<code>locale</code>及对应的<code>message</code>给出译文<code>translation</code>。</li>
+</ol>
+<h2>创建翻译器</h2>
+<p>翻译器的创建非常简单，仅需提供一个默认的<code>locale</code>值：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\Translator;
+
+$translator=new Translator('fr_FR');    #默认locale='fr_FR'
+</code></pre>
+<p>所谓<code>locale</code>，大致可以当成一个指代用户语言和国家/地区的字符串。推荐用
+<code>ISO639-1LanguageCode_ISO3166-1Alpha-2CountryCode&gt;</code>
+这样的格式来表示。比如：<code>fr_FR</code>。</p>
+<h2>翻译资源的加载</h2>
+<h3>Translation Resources</h3>
+<p>Translation Resources定义了一组从源(<code>source</code>)到目标<code>target</code>的消息映射关系。这种映射关系可以用不同的形式来表达，比如XML：</p>
+<pre><code class="language-XML">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xliff version=&quot;1.2&quot; xmlns=&quot;urn:oasis:names:tc:xliff:document:1.2&quot;&gt;
+    &lt;file source-language=&quot;en&quot; datatype=&quot;plaintext&quot; original=&quot;file.ext&quot;&gt;
+        &lt;body&gt;
+            &lt;trans-unit id=&quot;1&quot;&gt;
+                &lt;source&gt;Symfony is great&lt;/source&gt;
+                &lt;target&gt;J'aime Symfony&lt;/target&gt;
+            &lt;/trans-unit&gt;
+            &lt;trans-unit id=&quot;2&quot;&gt;
+                &lt;source&gt;symfony.great&lt;/source&gt;
+                &lt;target&gt;J'aime Symfony&lt;/target&gt;
+            &lt;/trans-unit&gt;
+        &lt;/body&gt;
+    &lt;/file&gt;
+&lt;/xliff&gt;
+</code></pre>
+<p>又如YAML：</p>
+<pre><code class="language-YAML">Symfony is great: J'aime Symfony
+symfony.great:    J'aime Symfony
+</code></pre>
+<p>再如PHP的Array：</p>
+<pre><code class="language-PHP">return array(
+    'Symfony is great' =&gt; 'J\'aime Symfony',
+    'symfony.great'    =&gt; 'J\'aime Symfony',
+);
+</code></pre>
+<p>当然，还支持JSON等其他形式——只要他们表达了这种映射关系，即可以被当做一个Translation Resources。</p>
+<h4>消息占位符</h4>
+<p>上面例子中的<code>%...%</code>这种表达（如<code>%name%</code>）是一种消息占位符。这种占位符机制可以动态映射一些message到translation。</p>
+<h4>复数形式</h4>
+<p>借助占位符和管道符可以很好的表达复数形式。</p>
+<pre><code>'There is one apple|There are %count% apples'
+</code></pre>
+<p>有时候我们需要借助于区间获取更多的控制：</p>
+<p>'{0} There are no apples|{1} There is one apple|]1,19] There are %count% apples|[20,Inf[ There are many apples'</p>
+<p>区间表达遵循<code>ISO 311-11</code>的记法规则,可以是两端(可以借助于-Inf和+Inf表达正负无穷)之间的数字，还可以是有限个数字的集合如:</p>
+<pre><code>{1,2,3}
+</code></pre>
+<h3>资源加载的过程：</h3>
+<ol>
+<li>设置资源加载器</li>
+<li>利用资源加载器加载资源</li>
+</ol>
+<p>Symfony支持不同的资源加载方法，:</p>
+<ul>
+<li>ArrayLoader</li>
+<li>CsvFileLoader</li>
+<li>IcuDatFileLoader</li>
+<li>PhpFileLoader</li>
+<li>XliffFileLoader</li>
+<li>JsonFileLoader</li>
+<li>YamlFileLoader</li>
+<li>...</li>
+</ul>
+<p>所有的加载器都实现了LoaderInterface接口，其load()方法返回一个catalog以用作将来的翻译。</p>
+<p>我们还可以设置定义自己的资源类型，比如采用</p>
+<pre><code>(source)(target)
+</code></pre>
+<p>这种形式，只要我们为之定义加载器：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\MessageCatalogue;
+use Symfony\Component\Translation\Loader\LoaderInterface;
+
+class MyFormatLoader implements LoaderInterface
+{
+    public function load($resource, $locale, $domain = 'messages')
+    {
+        $messages = array();
+        $lines = file($resource);
+
+        foreach ($lines as $line) {
+            if (preg_match('/\(([^\)]+)\)\(([^\)]+)\)/', $line, $matches)) {
+                $messages[$matches[1]] = $matches[2];
+            }
+        }
+
+        $catalogue = new MessageCatalogue($locale);
+        $catalogue-&gt;add($messages, $domain);
+
+        return $catalogue;
+    }
+
+}
+</code></pre>
+<p>加载Translation Resources的示例代码为:</p>
+<pre><code class="language-PHP">$translator-&gt;addLoader('xlf',new XliffFileLoader());
+$translator-&gt;addResource('xlf','message.fr.xlf','fr_FR');    # 默认domain为'messages'
+$translator-&gt;addResource('xlf','message.fr.xlf','fr_FR','admin');
+$translator-&gt;addResource('xlf','navigation.fr.xlf','fr_FR','navigation');
+
+</code></pre>
+<h2>翻译过程</h2>
+<p>翻译实际上是分成两步完成的：</p>
+<ol>
+<li>从translation resources中加载翻译好的message一览表(catalog)</li>
+<li>从catalog中定位message并返回对应的翻译。如果定位不到，则返回原始message。</li>
+</ol>
+<p>可以通过调用<code>ITranslator</code>接口提供两个关键的方法<code>trans()</code>或者<code>transChoice()</code>来执行这个过程。</p>
+<pre><code class="language-PHP">public function trans($id, array $parameters = array(), $domain = null, $locale = null);
+public function transChoice($id, $number, array $parameters = array(), $domain = null, $locale = null);
+</code></pre>
+<p>如果不提供locale，trans()方法在默认情况下会使用fallback的locale，</p>
+<pre><code class="language-PHP">$translator-&gt;trans('hello, %name%',array('name'=&gt;'Chicago'),'admin','fr_FR');
+
+$translator-&gt;transChoice(
+    '{0} There are no apples|{1} There is one apple|]1,Inf[ There are %count% apples',
+    10,
+    array('%count%' =&gt; 10),
+    'messages',
+    'fr_FR'
+);
+
+</code></pre>
+<h2>例子</h2>
+<p>来自官方文档的<a href="http://symfony.com/doc/current/components/translation/usage.html">一个例子</a>：</p>
+<pre><code class="language-PHP">use Symfony\Component\Translation\Translator;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+
+$translator = new Translator('fr_FR');
+$translator-&gt;addLoader('array', new ArrayLoader());
+$translator-&gt;addResource('array', array(
+    'Symfony is great!' =&gt; 'J\'aime Symfony!',
+), 'fr_FR');
+
+var_dump($translator-&gt;trans('Symfony is great!'))
+</code></pre>
+<h2>在Symfony框架中使用翻译组件</h2>
+<p>Symfony框架集成了翻译功能，</p>
+<p>翻译资源的位置在以下位置寻找（按照以下优先级）：</p>
+<ul>
+<li><code>app/Resources/translations</code></li>
+<li><code>app/Resources/&lt;bundle name&gt;/translations</code></li>
+<li><code>Path/to/SomeBundle/Resources/translations/</code></li>
+</ul>
+<p>翻译资源文件的命名必须遵循这样的规则：</p>
+<p><code>domain.locale.loader</code></p>
+<p>domain是可选项；Symfony自带的loader包括xlf、php、yml等。例如：<code>FOSUserBundle.zh_CN.yml</code>、<code>validators.en.yml</code>等。</p>
+<p>设想用户的<code>locale</code>是<code>fr_FR</code>，当要翻译“Symfony is great” 时，会按照以下顺序寻找：</p>
+<ol>
+<li>尝试寻找<code>fr_FR</code>对应的翻译资源,例如messages.fr_FR.xlf;</li>
+<li>如果第一步没找到，则会寻找<code>fr</code>对应的翻译资源,例如messages.fr.xlf;</li>
+<li>如果还没找到，则使用<code>fallbacks</code>对应的资源。</li>
+</ol>
+<h2>在Symfony框架集成的Twig模板中使用翻译组件</h2>
+<p>绝大部分时候，我们都是在在Symfony框架的Twig中使用翻译组件。</p>
+<p>Twig提供了tags和filters支持翻译功能：</p>
+<p>tags：</p>
+<pre><code class="language-Twig">{% trans with {'%name%': 'Fabien'} f
+    rom &quot;app&quot; %}Hello %name%
+{% endtrans %}
+{% trans with {'%name%': 'Fabien'} from &quot;app&quot; into &quot;fr&quot; %}
+    Hello %name%
+{% endtrans %}
+{% transchoice count with {'%name%': 'Fabien'} from &quot;app&quot; %}
+    {0} %name%, there are no apples|{1} %name%, there is one apple|]1,Inf[ %name%, there are %count% apples
+{% endtranschoice %}
+</code></pre>
+<p>filters:</p>
+<pre><code class="language-Twig">{{ message|trans }}
+{{ message|transchoice(5) }}
+{{ message|trans({'%name%': 'Fabien'}, &quot;app&quot;) }}
+{{ message|transchoice(5, {'%name%': 'Fabien'}, 'app') }}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony架构分析.html">
+                    Symfony架构分析
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>接触到的第一个PHP 框架就是CodeIgniter。轻巧，入门简单,概念清晰。</p>
+<p>然而我快发现，我很难复用CodeIgniter的代码--代码耦合度太高了，所以我开始试着写了一个自己的MVC框架 <a href="https://github.com/newbienewbie/Bamboo">Bamboo</a>。我想包装自己的类和模块，这样我就可以搭积木一样搭建各种网站了。当然，我只写了个基本框架，下面的重头戏是把所有的模块都自己实现。比如，Logger，Security，Upload，etc.我开始意识到这是个浩大的工程，然后计划搁浅了。</p>
+<p>直到有一天,我在Laravel里看到了它使用了Symfony组件的时候，我才发现，原来我在视图造一个很大的轮子。Symfony是可复用的,是组件化的。</p>
+<h2>Request-Response模型</h2>
+<p>从本质上来说，HTTP协议实际上描述了一个Request-Response模型。与之相关的PHP代码实际上都在做着<code>解释请求、生成响应</code>的工作，Symfony则更进一步的将Request和Response对象化了。</p>
+<p>Request-Response模型是整个Symfony的基础模型，可以毫不夸张的说，整个Symfony都构筑在这个基础模型之上(参见Front Controller部分)。</p>
+<h3>Request对象</h3>
+<p>Request类很简单，封装了原生PHP的各大超全局输入变量:</p>
+<pre><code class="language-PHP">use Symfony\Component\HttpFoundation\Request
+
+
+$request = Request::createFromGlobals();
+
+$request-&gt;getPathInfo();    //the URI being requested (e.g. /about) minus any query parameters
+$request-&gt;query-&gt;get('foo');    //$_GET 
+$request-&gt;request-&gt;get('bar', 'default value if bar does not exist');    /$_POST
+$request-&gt;server-&gt;get('HTTP_HOST');    //$_SERVER
+$request-&gt;files-&gt;get('foo');     //retrieves an instance of UploadedFile identified by foo
+$request-&gt;cookies-&gt;get('PHPSESSID');   //$_COOKIE 
+$request-&gt;headers-&gt;get('host');
+$request-&gt;headers-&gt;get('content_type');
+$request-&gt;getMethod();    //GET, POST, PUT, DELETE, HEAD
+$request-&gt;getLanguages(); // an array of languages the client accepts
+</code></pre>
+<h3>Response对象</h3>
+<p>Response类也非常简单，用来代替原生PHP的echo(),header():</p>
+<pre><code class="language-PHP">Symfony\Component\HttpFoundation\Response
+
+$response = new Response();
+
+$response-&gt;setContent('&lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello world!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;');
+$response-&gt;setStatusCode(Response::HTTP_OK);
+$response-&gt;headers-&gt;set('Content-Type', 'text/html');
+// prints the HTTP headers followed by the content
+
+$response-&gt;send();
+</code></pre>
+<h2>Front Controller</h2>
+<p><img src="#" alt="Symfony分层架构图" /></p>
+<p>说来惭愧，第一次看到Front Controller的概念还是在PHPWind的9.x的源代码里看到的，当时还天真的以为它是PHPWind9.x的开发人员想出来的名词。后来看Symfony也有这个概念，这才发现原来自己是多么的孤陋寡闻。当然，我们一直都在使用这个东西，只是不知道那就叫FrontController.</p>
+<p>一般情况下，代码会以各个独立的模块分层存在。为了根据请求的不同调用合适的功能代码，一些如CodeIgniter的框架(包括我自己写的Bamboo)都有一个统一入口文件(index.php)负责这项工作。
+在Symfony等一些框架(其他如PHPWind9.x以后的版本)中，单独抽象出了Front Controller的概念。和CodeIgniter中的index.php一样，Front Controller是一个统一入口，一切发到我们Application的请求都会由其处理，然后根据接收到的Request不同，按照配置的Route规则加载对应的Controller的Action。
+处理请求之后，生成响应对象并send()到客户端。</p>
+<p>根据环境的不同，Symfony自带有两个Front Controller：</p>
+<ul>
+<li><code>web/app.php</code>    #生产环境</li>
+<li><code>web/app_dev.php</code>  #开发环境</li>
+</ul>
+<p>之所以没有测试环境对应的前端控制器，是因为测试环境可以通常只在单元测试时使用。</p>
+<p>当然console工具也提供了能在任意环境下运行的Front Controller。</p>
+<p>Symfony中的Front Controller非常简单，遵循的逻辑可以概括为&quot;<code>处理请求，发送响应</code>&quot;,这也是整个Symfony框架对Request-Response模型的实现：</p>
+<pre><code class="language-PHP">// web/app.php
+
+require_once __DIR__.'/../app/bootstrap.php';
+require_once __DIR__.'/../app/AppKernel.php';
+use Symfony\Component\HttpFoundation\Request;
+
+//初始化一个prod环境、非debug模式运行的AppKernel
+$kernel = new AppKernel('prod', false);
+
+$kernel-&gt;handle(Request::createFromGlobals())    //处理请求
+        -&gt;send();    //发送响应
+</code></pre>
+<p>至此，针对Request-Response模型的处理流程已经总体规划完毕了。</p>
+<p>对于一个Symfony项目<code>myproj</code>,为了方便起见，假设整个文件夹都位于<code>/var/www/</code>下,当我们在浏览器中访问：</p>
+<p><code>localhost/myproj/web/some_route</code></p>
+<p>实际上是在调用Front Controller来执行与some_route对应的代码。事实上，上面这个URL在默认情况下等效于：</p>
+<p><code>localhost/myproj/web/app.php/some_route</code></p>
+<p>当然，在开发模式下，可以访问：</p>
+<p><code>localhost/myproj/web/app_dev.php/some_route</code></p>
+<p>激活debug工具并能自动重建缓存。</p>
+<p>正是由于Front Controller已经实现了Request-Response这样的基本流程，在Symfony中为一个基本组件（Bundle）添加页面只需要要遵循两步：</p>
+<ol>
+<li>创建Controller    #定义如何根据Response生成Response对象</li>
+<li>配置Route    #配置URL和Controller的映射关系</li>
+</ol>
+<p>当然，为了避免组织混乱、保持结构清晰，实际中，Route、Controller等等都是以Bundle来设计的。</p>
+<h2>Bundle</h2>
+<p>Bundle从PHP的角度而言，可以视作一个命名空间。一旦一个PHP命名空间添加了Bundle Class，就成为Bundle。这个Bundle Class的命名必须遵循以下规则：</p>
+<ul>
+<li>只使用字母和下划线</li>
+<li>使用CamelCased命名风格</li>
+<li>使用descriptive和short的名字</li>
+<li>以vender名为prefix</li>
+<li>以&quot;Bundle&quot;为suffix</li>
+</ul>
+<p>Bundle Class的getClass()方法返回这个类名。</p>
+<p>Bundle是Symfony的基本组件。Bundle存放了与某个特性相关的一切文件(比如PHP类、配置、甚至是css文件和JavaScript文件)的目录。
+事实上，Symfony的Bundle和PHPCMS里的module作用相当，类似于模块、插件。但是相较于PHPCMS之类其他的框架，Symfony的Bundle具有更好的抽象和实现。</p>
+<p>一个Bundle，通常位于src/VenderOfBundle/BundleName之下,其中的目录结构多为：</p>
+<pre><code>Vender/
+    YourBundle/
+        VenderYourBundle.php
+        Controller/               #控制器
+            Spec1Controller.php
+            Spec2Controller.php
+        DependencyInjection/      #DI
+        Resources/
+            config/
+            views/
+        Tests/                    #测试
+</code></pre>
+<p>想要添加一个Bundle，应该先创建以上目录，然后修改app/Kernel.php文件，为registerBundles()方法添加一个该Bundle的实例：</p>
+<pre><code class="language-PHP">// app/AppKernel.php
+
+public function registerBundles(){
+
+    $bundles=array(
+        //...
+        new Vender\YourBundle\VenderYourBundle();
+    );
+
+    //...
+
+    return $bundles;
+}
+</code></pre>
+<p>以上两步可以归纳为：</p>
+<ol>
+<li>创建Bundle</li>
+<li>注册Bundle</li>
+</ol>
+<p>当然，添加Bundle的这些步骤可以用一个命令代替：</p>
+<pre><code class="language-bash">    php app/console generate:bundle --namespace=Vender/YourBundle --format=yml
+</code></pre>
+<h2>Route</h2>
+<p>Route是指从Request（如URL路径,HTTP Method)到控制器(具体到Action)的映射。所以， 一条路由规则有两个要素组成：</p>
+<ol>
+<li>URL Path</li>
+<li>与URL Path匹配的Controller</li>
+</ol>
+<p>我们还可以为这条路由规则起一个独一无二的名字，这样我们就能用于生成URL了。</p>
+<p>路由层的作用就是把输入进来的URL转换为要执行的Controller。</p>
+<p>Symfony会从一个单独的路由配置文件中加载所有的路由规则。这个路由配置文件通常是</p>
+<p><code>app/config/routing.yml</code></p>
+<p>,当然，Symfony支持高度定制，我们可以把默认的路由文件配置成其他任意其他文件(包括XML和PHP文件)。如：</p>
+<pre><code class="language-YAML"># app/config/config.yml
+framework
+    # ....
+    router: { resource: &quot;%kernel.root_dir%/config/routing.yml&quot;}
+</code></pre>
+<p>当然，从URL到控制器动作，参数匹配是必不可少的。Symfony的路由系统支持:</p>
+<ul>
+<li>URL匹配         #通过@Route()设置
+<ul>
+<li>必选参赛    #通过占位符来设置</li>
+<li>可选参数    #通过占位符和设置defaults来设置</li>
+<li>正则匹配    #通过requirements设置</li>
+</ul>
+</li>
+<li>HTTP Method匹配 #通过@Method()</li>
+</ul>
+<pre><code class="language-PHP">/**
+ *@Route(&quot;/blog/{page}&quot;,defaults={&quot;page&quot;: 1},requirements={
+ *    &quot;page&quot;: &quot;\d+&quot;
+ *})
+ *@Method(&quot;GET&quot;)
+ */
+public function indexAction($page){
+    //...
+}
+</code></pre>
+<p>当然，威力更巨大的是condition属性，支持无限可能的定制。</p>
+<pre><code class="language-YAML">contact:
+    path: /contact
+    defaults: { _controller: AcmeDemoBundle:Main:contact}
+    condition: &quot;context.getMethod() in ['GET','HEAD'] and request.headers.get('User-Agent') matches '/firefox/i' &quot;
+</code></pre>
+<p>这个配置会被转换为以下的PHP代码：</p>
+<pre><code class="language-PHP">if(rtrim($pathinfo,&quot;/contact&quot;)===''&amp;&amp;
+    (
+        in_array($context-&gt;getMethod(),array(0=&gt;'GET',1=&gt;'HEAD')) &amp;&amp;
+        preg_match('/firefox/i',$request-&gt;headers-&gt;get(&quot;User-Agent&quot;))
+    )
+    
+){
+    //....
+}
+</code></pre>
+<h3>一个Bundle中的Route</h3>
+<p>要让合适的Controller和Action发生调用，必须建立url与之的映射。</p>
+<pre><code class="language-PHP">#src/Vender/YourBundle/Resources/config/routing.yml
+
+specController:
+    path: /specController/{limit}
+    defaults: { _controller: VenderYourBundle:specController:yourAction}
+
+</code></pre>
+<h3>app级Route</h3>
+<p>尽管所有的路由配置规则是从一个单独的文件中读取的，大家在实际中还是会通过<code>resource</code>导入其他路由规则。比如，使用Annotation格式的路由配置应设置:</p>
+<pre><code class="language-YAML">app: 
+    resource: &quot;@AppBundle/Controller&quot;
+    type: annotation  #使用Annotation reader来读取resource变量
+</code></pre>
+<p>如果我们手工添加了一个Bundle，我们可以把它自身包含的Route规则导入app level的配置中，即应该在app/config/routing.yml中添加配置：</p>
+<pre><code class="language-YAML"># app/config/routing.yml
+
+vender_yourbundlename
+    resource: &quot;@VenderYourBundle/Resources/config/routing.yml&quot;
+    prefix: /
+    
+</code></pre>
+<p>当然，如果是用<code>php app/console generate:bundle</code>命令生成的bundle，那么这一步已经由Symfony替我们做好了。</p>
+<h3>双向映射</h3>
+<p>Route提供了bidirectional System:</p>
+<ol>
+<li>match($URL)      #返回匹配到的控制器及参数构成的数组</li>
+<li>generate($RouteName,$paramsArray)       #生成URL</li>
+</ol>
+<h2>Controller</h2>
+<p>我们知道，每一个Route规则都有一个<code>_controller</code>对象，我们当然可以用</p>
+<p><code>完全限定名的ClassName::ActionName</code></p>
+<p>的形式来引用一个Controller，比如：</p>
+<p><code>AppBundle\Controller\BlogController::ShowAction </code>。</p>
+<p>但实际上这样的表达是有冗余信息的，最起码还要指出BlogController位于的命名空间Controller是没必要的，所以Symfony还支持对Controller的逻辑命名, 一条指定Controller的Action的逻辑命名通常遵循这样的约定：</p>
+<p><code>BundleName:ControllerName:ActionName</code></p>
+<p>通常这样的逻辑名称会被映射为</p>
+<p><code>path/to/BundleName/Controller/ControllerName.php</code>文件中的<code>ActionName</code>方法</p>
+<p>比如：</p>
+<p><code>AcmeDemoBundle:Random:Index</code></p>
+<p>这个控制器通常会会映射为：</p>
+<p><code>Acme\DemoBundle\Controller\RandomController</code>类中的<code>indexAction</code>方法。</p>
+<p>另外值得注意的是，Symfony中Controller的Action 与CodeIgniter之类的框架并完全一样:</p>
+<ol>
+<li>CodeIgniter中的控制器直接输出响应，而Symfony中则是必须返回Response对象;</li>
+<li>Symfony支持从Route和Request定制Action方法的参数。而且对于Action方法声明，参数顺序并不重要。</li>
+</ol>
+<pre><code class="language-PHP">
+use Symfony\Component\HttpFoundation\Request;
+
+/**
+ * @Route(&quot;/hello/{firstName}/{lastName}&quot;,name=&quot;hello&quot;)
+ */
+public function indexAction($lastName,$firstName,Request $request){
+
+    //$firstName和$lastName等参赛顺序并不重要
+    //可以直接使用$request
+    $page=$request-&gt;query-&gt;get(&quot;page&quot;,1);
+}
+</code></pre>
+<p>此外，Symfony\Bundle\FrameworkBundle\Controller\Controller提供了一系列helper方法。</p>
+<ul>
+<li>Redirecting
+<ul>
+<li>generateUrl($route)</li>
+<li>redirect($absUrl)</li>
+<li>redirectToRoute($route)   # new RedirectResponse($this-&gt;generateUrl($route))</li>
+</ul>
+</li>
+<li>Rendering Templates
+<ul>
+<li>render($pathOrLogicalTemplateName,$array)    #render a template and return a Response object</li>
+</ul>
+</li>
+<li>Accessing other Services
+<ul>
+<li>get('templating')</li>
+<li>get('router')</li>
+<li>get('mailer')</li>
+</ul>
+</li>
+<li>Exception</li>
+<li>FlashMessage
+<ul>
+<li>addFlash()</li>
+</ul>
+</li>
+<li>Forwarding</li>
+</ul>
+<h2>Symfony目录结构</h2>
+<p>Symfony的基本架构便如上文所述，十分清晰。与架构相对应，Symfony的目录结构也是非常清晰的。默认的结构组织形式为：</p>
+<pre><code>app/    #application config ,cache,
+src/    #project源码
+vender/ #第三方依赖,由composer独占管理权
+web/    #包含了公共访问文件,比如Front Controller和静态文件
+</code></pre>
+<p><code>web/</code>目录类似于网站的根目录，一切的公开访问都是从这里开始的，其下的Front Controller文件如<code>app.php</code>和<code>app_dev.php</code>是整个网站的入口管理文件。其他一些静态资源也会以一定的结构组织在这个目录下。</p>
+<p><code>app/</code>目录是Application级的一些文件存放地。如<code>app/console</code>、<code>app/config</code>，<code>app/cache</code></p>
+<p><code>src/</code>目录是针对网站各个功能的源码存放地，其中文件一般以各个Vender提供的Bundle分别组织。</p>
+<p>尽管拥有如此清晰的文件结构，Symfony也支持任意定制目录结构。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/Symfony模板系统.html">
+                    Symfony 模板系统
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>Template的逻辑命名和Controller的类似，模板的逻辑名称遵循这样的约定：</p>
+<p><code>BundleName:ControllerName:TemplateName</code></p>
+<p>一般会被映射会这样的物理地址：</p>
+<ol>
+<li><code>app/Resources/{BundleName}/views/ControllerName/TemplateName</code></li>
+<li><code>{path/to/BundleName/}Resources/views/ControllerName/TemplateName</code></li>
+</ol>
+<p>当第1个地址找不到对应的模板时，会继续查找第2个位置的模板。</p>
+<h2>Template Services</h2>
+<p>Symfony模板系统的核心是模板引擎(服务)，</p>
+<p>从控制器渲染模板：</p>
+<pre><code class="language-PHP">return $this-&gt;render('article/index.html.twig');
+</code></pre>
+<p>与直接使用服务是等价的：</p>
+<pre><code class="language-PHP">use Symfony\Component\HttpFoundation\Response;
+$engine=$this-&gt;container-&gt;get('templating');
+$content=$engine-&gt;render('article/index.html.twig');
+$return $response=new Response($content);
+</code></pre>
+<p>Symfony的模板引擎可以在<code>app/config/config.yml</code>中配置：</p>
+<pre><code class="language-YAML">framework: 
+    #...
+    templating: { engines: ['twig']}
+</code></pre>
+<h2>Twig模板</h2>
+<p>Twig模板的语法和Django模板语法非常相似。Twig提供了三种语法：</p>
+<ol>
+<li>says sth</li>
+</ol>
+<pre><code class="language-Twig">{{ ... }}
+</code></pre>
+<ol start="2">
+<li>does sth</li>
+</ol>
+<pre><code class="language-Twig">// does sth
+{% ... %}
+</code></pre>
+<ol start="3">
+<li>comment sth</li>
+</ol>
+<pre><code class="language-Twig">
+{# ... #}
+</code></pre>
+<h3>Twig链接：</h3>
+<pre><code class="language-HTML">&lt;a href=&quot;{{ path(routeName,context) }} &quot; &gt; home &lt;/a&gt;
+&lt;img src=&quot;{{ assets(images/logo.png) }}&quot;/&gt;
+&lt;link href=&quot;{{ assets(css/blog.css) }}&quot; rel='stylesheet' type='text/css' /&gt;
+</code></pre>
+<h3>Twig filters:</h3>
+<pre><code class="language-PHP">{{ title|upper }}
+
+</code></pre>
+<h3>Twig模板嵌入</h3>
+<p>为了代码复用，Twig提供了include:</p>
+<pre><code class="language-PHP">{% include() %}
+</code></pre>
+<h3>Twig模板继承与重载:</h3>
+<pre><code class="language-PHP">{% extends 'baseTemplateName' %}
+
+{% block XX  %}
+    {{ parent() }}
+    {# overwrite here #}
+{% endblock  %}
+</code></pre>
+<p>一种常用的模板继承是三层方案。</p>
+<ol>
+<li>为整个网站创建基础模板<code>app/Resources/views/base.html.twig</code></li>
+<li>为某一类特定功能创建模板<code>spec/layout.html.twig</code>(继承自第1层模板)</li>
+<li>为每一个单独的页面创建模板 (继承自第2层模板)</li>
+</ol>
+<h3>Twig模板嵌入其他控制器</h3>
+<p>此外，还可以嵌入其他控制器的渲染结果</p>
+<pre><code class="language-PHP">{{ render(Controller(&quot;LogicalContrllerName&quot;,context)) }}
+</code></pre>
+<p>配合hinclude.js，还可以实现异步加载：</p>
+<pre><code class="language-PHP">{{ render_hinclude(controller('...')) }}
+{{ render_hinclude(url('...')) }}
+</code></pre>
+<h3>Twig Template转义</h3>
+<p>twig系统自带转义，如需原始输出，可以利用raw 过滤函数</p>
+<pre><code class="language-PHP">{{ article|raw  }}
+</code></pre>
+<p>PHP模板，可以使用</p>
+<pre><code class="language-PHP">&lt;?php echo $view-&gt;escape($name)?&gt;
+</code></pre>
+<p>进行转义。</p>
+<h3>Twig Macro</h3>
+<p><a href="http://twig.sensiolabs.org/doc/templates.html">Twig Macro</a>是非常强大的HTML代码复用手段，它的功能非常类似于C语言的宏：</p>
+<pre><code class="language-Twig">{% macro input(name, value = &quot;&quot;, type = &quot;text&quot;, size = 20) %}
+    &lt;input type=&quot;{{ type }}&quot; name=&quot;{{ name }}&quot; value=&quot;{{ value|e }}&quot; size=&quot;{{ size }}&quot; /&gt;
+{% endmacro %}
+</code></pre>
+<p>Twig Macro可以在其他单独的文件中定义，然后导入到当前的模板文件中：</p>
+<pre><code class="language-Twig">{# 导入整个宏定义文件 #}
+{% import &quot;forms.html&quot; as forms %}
+{{ forms.input('username') }}
+
+{# 从宏文件中导入某个单独的Macro #}
+{% from 'forms.html' import input as input_field %}
+{{ input_field('username') }}
+
+</code></pre>
+<h3>Twig Use Statement</h3>
+<p>Twig的模板继承只支持单继承，Twig还提供了use以帮助我们实现更大程度的代码复用。</p>
+<p>use语句告诉Twig去把在某个文件中定义的block块导入到当前模板中。</p>
+<pre><code class="language-Twig">{% use &quot;blocks.html&quot; %}
+</code></pre>
+<p>这一功能类似于对于Macro的import语句，但是use只对block块有效，而且，想use的模板必须满足</p>
+<ol>
+<li>不extends其他模板。</li>
+<li>不定义宏</li>
+<li>body为空</li>
+</ol>
+<p>和针对Macros的import类似，use也支持了导入一部分代码段的功能，同时还提供别名机制来避免命名冲突：</p>
+<pre><code class="language-Twig">{% extends &quot;base.html&quot; %}
+
+{% use &quot;blocks.html&quot; with sidebar as base_sidebar, title as base_title %}
+
+{% block sidebar %}{% endblock %}
+{% block title %}{% endblock %}
+{% block content %}{% endblock %}
+</code></pre>
+<h2>Template的全局变量</h2>
+<p>不管是Twig模板，还是纯PHP模板，Symfony都为之提供了一个变量<code>app</code></p>
+<ul>
+<li>app.security  #deprecated since 2.6</li>
+<li>app.user</li>
+<li>app.request</li>
+<li>app.session</li>
+<li>app.environment</li>
+<li>app.debug</li>
+</ul>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/PHP/Symfony/配置Symfony.html">
+                    Symfony配置
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2015-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>运行环境</h2>
+<p>如前所述，Symfony自带三种运行环境，prod、dev、和test。
+AppKernel会根据当前运行环境自动加载位于app/config/下的对应的配置文件,如</p>
+<ul>
+<li>config_dev.yml</li>
+<li>config_prod.yml</li>
+<li>config_test.yml</li>
+</ul>
+<p>这些配置文件的加载规则都非常简单，仅仅只是通过拼凑出<code>config_&lt;environment&gt;.yml</code>这样的配置文件名来实现的：</p>
+<pre><code class="language-PHP">   # app/AppKernel.php 
+
+    public function registerContainerConfiguration(LoaderInterface $loader) {
+        $loader-&gt;load($this-&gt;getRootDir().'/config/config_'.$this-&gt;getEnvironment().'.yml');
+    }
+
+</code></pre>
+<h2>配置文件的格式</h2>
+<p>Symfony支持各类配置格式,默认采用YAML。在YAML中，采用如下约定：</p>
+<ol>
+<li>imports: 类似于PHP的include，确保要导入的配置文件被优先加载。</li>
+<li>顶级entry: 为特定的bundle定义配置。</li>
+</ol>
+<p>借助于<code>imports</code>可以导入基准的config.yml文件，然后对部分需要修改的部分entry进行覆写操作。</p>
+<p>比如：<code>config_dev.yaml</code>结构为：</p>
+<pre><code class="language-YAML">imports:
+    - { resource: config.yml }
+
+framework:
+    router:
+        resource: &quot;%kernel.root_dir%/config/routing_dev.yml&quot;
+        strict_requirements: true
+    profiler: { only_exceptions: false }
+
+web_profiler:
+    # ...
+
+monolog:
+    # ...
+
+assetic:
+    # ...
+
+#swiftmailer:
+#    delivery_address: me@example.com
+</code></pre>
+<p>事实上，Symfony的配置文件都采用了类似的结构。通过这样的导入-覆写操作，可以保持代码独立、避免重复代码（DRY原则）。</p>
+<p>在命令行下可以用</p>
+<pre><code class="language-Bash">app/console config:dump-reference BundleName
+</code></pre>
+<p>导出某一个Bundle默认的配置。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <div class="container has-text-centered">
+        <a href="/posts/page27.html">
+          Previous
+        </a>
+        29 of 32
+        <a href="/posts/page29.html">
+          Next
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,177 @@
+<html>
+  <head>
+
+        <script type="text/javascript">
+          var wsUri = "ws://localhost:8080/websocket";
+      function init()
+      {
+        websocket = new WebSocket(wsUri);
+        websocket.onclose = function(evt) { onClose(evt) };
+      }
+      function onClose(evt)
+      {
+        console.log('closing');
+        websocket.close();
+        document.location.reload();
+      }
+      window.addEventListener("load", init, false);
+      </script>
+            <meta charSet="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>
+      Sample Fornax blog
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+    <link rel="stylesheet" href="https://unpkg.com/bulma@0.8.0/css/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/style/style.css"/>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img src="/images/bulma.png" alt="Logo"/>
+          </a>
+          <span class="navbar-burger burger" data-target="navbarMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+          <a class="navbar-item" href="/">
+            Home
+          </a>
+          <a class="navbar-item" href="/about.html">
+            About
+          </a>
+          <a class="navbar-item" href="/contact.html">
+            Contact
+          </a>
+        </div>
+      </div>
+    </nav>
+    <section class="hero is-info is-medium is-bold">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <h1 class="title">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+          </h1>
+        </div>
+      </div>
+    </section>
+    <div class="container">
+      <section class="articles">
+        <div class="column is-8 is-offset-2">
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="/posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读4.html">
+                    BotBuilder 源码通读4 —— 状态管理之状态属性访问器
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-03-07
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>上文说到，<code>BotState</code>基类提供了几个若干方法来管理缓存和持久层。但是这些方法使用起来并不方便。
+比如调用<code>GetPropertyValueAsync&lt;T&gt;(ctx,prop)</code>方法，用户需要关心缓存是否已经加载到<code>ITurnContext.TurnState[prop]</code>中，同样的情况也会发生于<code>DeletePropertyValueAsync(ctx, prop)</code>、<code>SetPropertyValueAsync(ctx,prop)</code>和<code>ClearStateAsync(ctx)</code>方法上。</p>
+<p>每次都通过<code>BotState</code>来load状态、然后尝试根据一个字符串来读取/删除/设置某个<code>PropertyValue</code>，这种方式对于开发者而言过于啰嗦，于是，<code>BotState</code>还提供了一个方法来简化我们的代码——<code>IStatePropertyAccessor&lt;T&gt;</code>：状态属性访问器——用于对内存中的状态属性进行存取操作。</p>
+<pre><code class="language-csharp">public abstract class BotState : IPropertyManager
+{
+    // ...
+    
+    public IStatePropertyAccessor&lt;T&gt; CreateProperty&lt;T&gt;(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        return new BotStatePropertyAccessor&lt;T&gt;(this, name);
+    }
+}
+</code></pre>
+<p><code>BotState</code>可以通过<code>CreateProperty&lt;T&gt;(string name)</code>方法返回一个<code>IStatePropertyAccessor&lt;T&gt;</code>对象。这里，<code>IStatePropertyAccessor&lt;T&gt;</code>代表了可以对状态属性进行读、写、删的访问器：<!-- more --></p>
+<pre><code class="language-csharp">public interface IStatePropertyAccessor&lt;T&gt; : IStatePropertyInfo
+{
+
+    Task&lt;T&gt; GetAsync(ITurnContext turnContext, Func&lt;T&gt; defaultValueFactory = null, CancellationToken cancellationToken = default(CancellationToken));
+
+    Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken));
+
+    Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken = default(CancellationToken));
+}
+</code></pre>
+<p>其中，<code>BotStatePropertyAccessor&lt;T&gt;</code>存取器代码为：</p>
+<pre><code class="language-csharp">private class BotStatePropertyAccessor&lt;T&gt; : IStatePropertyAccessor&lt;T&gt;
+{
+    private BotState _botState;
+
+    public BotStatePropertyAccessor(BotState botState, string name)
+    {
+        _botState = botState;
+        Name = name;
+    }
+
+    /// &lt;summary&gt;
+    /// Gets name of the property.
+    /// &lt;/summary&gt;
+    public string Name { get; private set; }
+
+
+    public async Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+    {
+        await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+        await _botState.DeletePropertyValueAsync(turnContext, Name, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task&lt;T&gt; GetAsync(ITurnContext turnContext, Func&lt;T&gt; defaultValueFactory, CancellationToken cancellationToken)
+    {
+        await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await _botState.GetPropertyValueAsync&lt;T&gt;(turnContext, Name, cancellationToken).ConfigureAwait(false);
+        }
+        catch (KeyNotFoundException)
+        {
+            // ask for default value from factory
+            if (defaultValueFactory == null)
+            {
+                throw new MissingMemberException(&quot;Property not set and no default provided.&quot;);
+            }
+
+            var result = defaultValueFactory();
+
+            // save default value for any further calls
+            await SetAsync(turnContext, result, cancellationToken).ConfigureAwait(false);
+            return result;
+        }
+    }
+
+    public async Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken)
+    {
+        await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+        await _botState.SetPropertyValueAsync(turnContext, Name, value, cancellationToken).ConfigureAwait(false);
+    }
+}
+
+</code></pre>
+<p>可以看到，用户只要简单的<code>Get()</code>、<code>Set()</code>即可完成数据存取操作，不再劳心当前缓存对象是否存在，也不需要事先手工加载缓存。</p>
+<p>不过，需要注意的是，这个<code>IStatePropertyAccessor&lt;T&gt;</code>的存、取、删操作只是针对缓存而言的，并不会自动持久化。</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
