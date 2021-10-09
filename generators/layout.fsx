@@ -30,13 +30,16 @@ let injectWebsocketCode (webpage:string) =
     let index = webpage.IndexOf head
     webpage.Insert ( (index + head.Length + 1),websocketScript)
 
+let insertDocType (webpage: string) = 
+    "<!DOCTYPE html>" + webpage
+
 let createKatexFormulaScript () = 
   """
  // 处理形如 <code>$E=mc^2$</code> 形式的公式
   var inlineMathNodes=document.querySelectorAll('code');
   var re=/^\$(.*)\$$/;
   for(var j=0;j<inlineMathNodes.length;j++){
-    var result=re.exec(inlineMathNodes.item(j).textContent);
+    var result=re.exec(inlineMathNodes.item(j).innerText);
     if(result!==null){
       katex.render(result[1], inlineMathNodes.item(j));
     }
@@ -48,35 +51,37 @@ let createKatexFormulaScript () =
       return first.parentNode.removeChild(node);
     }
   };
-  // 查找所有 figure pre 节点 以备筛出数据公式
-  var nodes=document.querySelectorAll("figure.plain pre");
+
+  // 查找所有 pre code.language-math 节点 以备筛出数据公式
+  var nodes=document.querySelectorAll("pre code.language-math");
   for(var i=0;i<nodes.length;i++){
     var node=nodes.item(i);
     // 魔术标记所在行 
-    var first=node.children[0];
-    if(first.textContent.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
-      // 移除 <br>
-      var nextSibling=first.nextSibling;
-      if(nextSibling.nodeName.trim().toLowerCase()=='br'){
-        removeNode(nextSibling);
+    try{
+      var lines = node.innerText.split('\n');
+      if((!!lines) && lines.length > 0)
+      {
+        var first = lines[0];
+        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
+          var views = "";
+          // 逐行渲染
+          for(var k=1; k <lines.length; k++){
+              var f=lines[k];
+              views += katex.renderToString(f);
+          }
+          // 消除父级嵌套 
+          try{
+            node.innerHTML=views;
+          }catch(e){
+            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
+            console.log('IE9 sucks',e);
+            $(tr).html(node.innerHTML);
+          }
+        }
       }
-      // 移除魔术标记所在行
-      removeNode(first);
-      // 逐行渲染
-      var lines=node.querySelectorAll(".line");
-      for(var k=0;k<lines.length;k++){
-          var f=lines.item(k).textContent;
-          katex.render(f, lines.item(k));
-      }
-      // 消除父级嵌套 
-      var tr=node.parentNode.parentNode;
-      try{
-        tr.innerHTML=node.innerHTML;
-      }catch(e){
-        // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
-        console.log('IE9 sucks',e);
-        $(tr).html(node.innerHTML);
-      }
+    }
+    catch(err){
+      console.log(err)
     }
   }
     """
@@ -108,6 +113,10 @@ let layout (ctx : SiteContents) active bodyCnt =
             link [Rel "stylesheet"; Href "https://fonts.googleapis.com/css?family=Open+Sans"]
             link [Rel "stylesheet"; Href "https://unpkg.com/bulma@0.8.0/css/bulma.min.css"]
             link [Rel "stylesheet"; Type "text/css"; Href "/style/style.css"]
+            //link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/shades-of-purple.min.css"]
+            //link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/arta.min.css"]
+            link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"]
+            script[ Src "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"] []
 
         ]
         body [] [
@@ -134,6 +143,9 @@ let layout (ctx : SiteContents) active bodyCnt =
           script [] [
             !! katexFormulaScript
           ]
+          script [][
+            !! "hljs.highlightAll();"
+          ]
         ]
     ]
 
@@ -142,6 +154,7 @@ let render (ctx : SiteContents) cnt =
   cnt
   |> HtmlElement.ToString
   |> fun n -> if disableLiveRefresh then n else injectWebsocketCode n
+  |> insertDocType
 
 let published (post: Postloader.Post) =
     post.published
