@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Pimple
 date: 2015-09-19 01:41:08
 tags:

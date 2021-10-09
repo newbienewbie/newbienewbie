@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authentication — (3.2) 认证处理器的实现之JwtBearerHandler
 date: 2019-08-14 21:46:03
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 机器学习 BP神经网络原理
 date: 2018-06-12 10:04:35
 tags:

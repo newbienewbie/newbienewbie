@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authorization — (0) 基础概念 Policy的组合与构建
 date: 2019-08-20 20:14:03
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: nginx极速学习之一
 date: 2016-11-14 23:12:23
 tags:

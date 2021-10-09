@@ -1,4 +1,5 @@
 ---
+layout: post
 title: LDAP、AD、和目录服务
 date: 2016-12-22 22:05:25
 tags:

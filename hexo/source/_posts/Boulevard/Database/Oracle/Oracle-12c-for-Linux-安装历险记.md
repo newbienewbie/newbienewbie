@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Oracle 12c for Linux 安装历险记
 date: 2017-03-22 12:03:14
 tags:

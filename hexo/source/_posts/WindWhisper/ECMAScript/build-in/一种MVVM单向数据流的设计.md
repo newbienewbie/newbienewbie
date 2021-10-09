@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 一种MVVM单向数据流组件的设计
 date: 2018-02-20 15:07:13
 tags:

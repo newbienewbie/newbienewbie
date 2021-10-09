@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 保存插件的数据到数据库
 date: 2015-04-10 09:27:08
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 一种 Admin UI 设计思路——兼谈Admin UI的自动生成
 date: 2017-10-08 19:34:51
 tags:

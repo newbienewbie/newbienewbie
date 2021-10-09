@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 机器学习 KNN算法
 date: 2019-05-29 19:20:01
 tags:

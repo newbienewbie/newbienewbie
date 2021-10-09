@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authentication — (4) Authentication服务的配置与构建
 date: 2019-08-14 23:46:03
 tags:

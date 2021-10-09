@@ -1,4 +1,5 @@
 ---
+layout: post
 title: WebAssembly基本原理3——Memory
 date: 2018-1-19 22:54:45
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: JScript 与自动化
 date: 2017-01-24 21:44:37
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Python 清洗 Excel 数据的一点感想
 date: 2017-08-03 20:03:11
 tags:

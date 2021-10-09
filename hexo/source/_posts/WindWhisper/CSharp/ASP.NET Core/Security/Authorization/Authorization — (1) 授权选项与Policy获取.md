@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authorization — (1) 授权选项与Policy获取
 date: 2019-08-20 21:14:03
 tags:

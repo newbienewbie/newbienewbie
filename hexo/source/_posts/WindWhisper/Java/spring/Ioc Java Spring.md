@@ -1,4 +1,5 @@
 ---
+layout: post
 title: IoC ，以 Spring 为例
 date: 2015-05-31 12:39:54
 tags:

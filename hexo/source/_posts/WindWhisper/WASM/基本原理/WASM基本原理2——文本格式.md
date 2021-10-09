@@ -1,4 +1,5 @@
 ---
+layout: post
 title: WebAssembly基本原理2——文本格式
 date: 2018-1-18 19:08:05
 tags:

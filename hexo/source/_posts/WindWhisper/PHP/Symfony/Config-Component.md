@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 定义和处理配置文件
 date: 2015-04-10 09:27:08
 tags:

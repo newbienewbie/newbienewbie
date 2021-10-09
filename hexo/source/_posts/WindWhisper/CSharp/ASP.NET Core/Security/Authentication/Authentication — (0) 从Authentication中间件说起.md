@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authentication — (0) 从Authentication中间件说起
 date: 2019-08-14 21:10:03
 tags:

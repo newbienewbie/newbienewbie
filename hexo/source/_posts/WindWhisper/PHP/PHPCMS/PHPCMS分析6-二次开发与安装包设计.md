@@ -1,4 +1,5 @@
 ---
+layout: post
 title: PHPCMS分析6-后台二次开发与安装包设计
 date: 2015-04-15 02:29:08
 tags:

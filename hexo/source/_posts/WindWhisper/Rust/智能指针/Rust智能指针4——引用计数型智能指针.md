@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Rust智能指针4——引用计数型智能指针
 date: 2018-02-28 09:25:28
 tags:

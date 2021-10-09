@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Spring WebMvc流程分析综述2：基于JavaConfig的配置方式
 date: 2016-10-19 00:56:29
 tags:

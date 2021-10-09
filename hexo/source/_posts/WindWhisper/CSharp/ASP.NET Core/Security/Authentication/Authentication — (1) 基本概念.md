@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authentication — (1) 基本概念
 date: 2019-08-14 21:20:03
 tags:

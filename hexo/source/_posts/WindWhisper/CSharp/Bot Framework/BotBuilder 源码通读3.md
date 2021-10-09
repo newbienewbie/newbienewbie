@@ -1,4 +1,5 @@
 ---
+layout: post
 title: BotBuilder 源码通读3 —— 状态管理之 BotState
 date: 2019-03-06 20:00:00
 tags:

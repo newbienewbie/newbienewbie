@@ -1,4 +1,5 @@
 ---
+layout: post
 title: JScript 与对象遍历
 date: 2017-01-24 23:26:10
 tags:

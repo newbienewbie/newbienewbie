@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 数据库笔记 存在量词、全称量词与SQL转换
 date: 2017-10-29 08:38:27
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Rust与WebAssembly 2——stdweb
 date: 2018-03-02 14:32:50
 tags:

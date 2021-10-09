@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Python 类与三个内置装饰器
 date: 2017-03-12 17:12:50
 tags:

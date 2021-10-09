@@ -1,5 +1,5 @@
-
 ---
+layout: post
 title: WordPress Widget 
 date: 2015-04-10 09:27:08
 tags:

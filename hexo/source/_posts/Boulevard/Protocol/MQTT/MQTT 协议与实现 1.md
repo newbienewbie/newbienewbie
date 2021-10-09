@@ -1,4 +1,5 @@
 ---
+layout: post
 title: MQTT 协议与实现 1  —— 协议概要
 date: 2019-02-09 20:27:30
 tags:

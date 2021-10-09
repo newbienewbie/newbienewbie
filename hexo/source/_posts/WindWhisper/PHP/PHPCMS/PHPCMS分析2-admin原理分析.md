@@ -1,4 +1,5 @@
 ---
+layout: post
 title: PHPCMS分析2-admin原理分析
 date: 2015-04-13 11:57:08
 tags:

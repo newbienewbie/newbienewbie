@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authorization — (4) 自定义授权机制
 date: 2019-08-20 22:55:03
 tags:

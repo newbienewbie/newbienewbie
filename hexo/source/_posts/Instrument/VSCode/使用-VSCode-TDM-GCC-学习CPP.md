@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 笔记：使用 VSCode + TDM-GCC 学习CPP
 date: 2017-08-02 21:56:27
 tags:

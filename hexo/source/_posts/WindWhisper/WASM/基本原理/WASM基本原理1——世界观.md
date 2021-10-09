@@ -1,4 +1,5 @@
 ---
+layout: post
 title: WebAssembly基本原理1——世界观
 date: 2018-1-17 20:17:50
 tags:

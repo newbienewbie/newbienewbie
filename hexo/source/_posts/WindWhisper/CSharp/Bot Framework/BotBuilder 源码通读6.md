@@ -1,4 +1,5 @@
 ---
+layout: post
 title: BotBuilder 源码通读6 —— 对话建模与实现2
 date: 2019-05-30 20:38:50
 tags:

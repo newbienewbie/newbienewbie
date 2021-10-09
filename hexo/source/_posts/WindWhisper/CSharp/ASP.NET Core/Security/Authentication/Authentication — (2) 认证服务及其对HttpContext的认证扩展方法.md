@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authentication — (2) 认证服务及其对HttpContext的认证扩展方法
 date: 2019-08-14 21:30:03
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 开发微信接口时遇到的HTTP_RAW_POST_DATA
 date: 2015-09-24 01:55:38
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Java的代理模式
 date: 2016-10-23 22:32:48
 tags:

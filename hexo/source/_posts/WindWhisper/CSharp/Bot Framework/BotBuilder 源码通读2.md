@@ -1,4 +1,5 @@
 ---
+layout: post
 title: BotBuilder 源码通读2 —— 中间件的实现
 date: 2019-01-30 22:00:00
 tags:

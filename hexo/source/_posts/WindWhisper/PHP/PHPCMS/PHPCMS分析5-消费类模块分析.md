@@ -1,4 +1,5 @@
 ---
+layout: post
 title: PHPCMS分析5-消费类模块分析
 date: 2015-04-16 01:10:08
 tags:

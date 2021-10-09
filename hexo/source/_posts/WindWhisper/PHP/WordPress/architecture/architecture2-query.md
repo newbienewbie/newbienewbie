@@ -1,4 +1,5 @@
 ---
+layout: post
 title: WordPress 前台基础架构分析之二：查询篇
 date: 2015-04-10 09:27:08
 tags:

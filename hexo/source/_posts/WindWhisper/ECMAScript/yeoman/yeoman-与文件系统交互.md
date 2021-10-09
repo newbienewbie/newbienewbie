@@ -1,4 +1,5 @@
 ---
+layout: post
 title: yeoman 与文件系统交互
 date: 2016-12-19 10:56:42
 tags:

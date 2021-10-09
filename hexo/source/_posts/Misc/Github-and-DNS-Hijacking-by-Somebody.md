@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Github and DNS Hijacking by Somebody
 date: 2015-08-14 11:57:29
 tags: 

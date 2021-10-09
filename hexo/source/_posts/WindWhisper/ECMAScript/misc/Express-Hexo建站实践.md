@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Express-Hexo建站实践
 date: 2016-10-14 21:24:47
 tags:

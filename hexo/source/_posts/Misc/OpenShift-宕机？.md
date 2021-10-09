@@ -1,4 +1,5 @@
 ---
+layout: post
 title: OpenShift 宕机？
 date: 2016-10-22 13:26:36
 tags:

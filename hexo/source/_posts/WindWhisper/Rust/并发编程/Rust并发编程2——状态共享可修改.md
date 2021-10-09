@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Rust并发编程2——状态共享可修改
 date: 2018-03-11 10:09:12
 tags:

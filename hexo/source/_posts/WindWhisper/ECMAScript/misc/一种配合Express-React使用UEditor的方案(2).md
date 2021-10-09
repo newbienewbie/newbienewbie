@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 一种配合Express+React使用UEditor的方案(2)
 date: 2017-10-17 11:21:01
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Activiti 极速入门3——User Task 和 Activiti Form
 date: 2017-01-14 06:19:48
 tags:

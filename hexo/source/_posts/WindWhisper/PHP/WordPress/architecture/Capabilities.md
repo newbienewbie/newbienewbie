@@ -1,4 +1,5 @@
 ---
+layout: post
 title: WordPress Capabilities
 date: 2015-04-10 09:27:08
 tags:

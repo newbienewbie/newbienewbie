@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Python 迭代器、生成器、生成器表达式
 date: 2015-04-10 09:27:08
 tags:

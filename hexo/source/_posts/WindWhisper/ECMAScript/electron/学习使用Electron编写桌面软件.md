@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 学习使用Electron编写桌面软件
 date: 2016-11-01 09:35:36
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Spring WebMvc流程分析综述1：基于XML的配置方式
 date: 2016-10-18 10:03:33
 tags:

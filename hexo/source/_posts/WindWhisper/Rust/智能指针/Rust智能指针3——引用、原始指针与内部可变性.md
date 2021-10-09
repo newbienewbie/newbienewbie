@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Rust智能指针3——引用、原始指针与内部可变性
 date: 2018-02-28 09:25:28
 tags:

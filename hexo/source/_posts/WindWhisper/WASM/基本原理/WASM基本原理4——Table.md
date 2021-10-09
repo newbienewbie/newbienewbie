@@ -1,4 +1,5 @@
 ---
+layout: post
 title: WebAssembly基本原理4——Table
 date: 2018-1-20 19:48:53
 tags:

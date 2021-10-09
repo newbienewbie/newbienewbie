@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Rust与WebAssembly 1——编译
 date: 2018-03-02 09:12:43
 tags:

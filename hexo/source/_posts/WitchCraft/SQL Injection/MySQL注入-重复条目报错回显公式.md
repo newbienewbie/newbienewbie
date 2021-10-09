@@ -1,4 +1,5 @@
 ---
+layout: post
 title: MySQL注入-重复条目报错回显公式
 date: 2015-04-16 02:56:56
 tags:

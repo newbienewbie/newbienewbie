@@ -1,4 +1,5 @@
 ---
+layout: post
 title: yeoman 与用户交互
 date: 2016-12-18 23:42:13
 tags:

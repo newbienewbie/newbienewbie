@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Rust并发编程1——消息传递
 date: 2018-03-10 08:07:45
 tags:

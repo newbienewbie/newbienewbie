@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 也说Python对象、函数参数的传递方式与闭包
 date: 2015-04-10 09:27:08
 tags:

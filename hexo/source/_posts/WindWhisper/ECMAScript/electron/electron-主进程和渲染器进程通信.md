@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Electron 主进程和渲染器进程通信
 date: 2016-12-27 23:47:16
 tags:

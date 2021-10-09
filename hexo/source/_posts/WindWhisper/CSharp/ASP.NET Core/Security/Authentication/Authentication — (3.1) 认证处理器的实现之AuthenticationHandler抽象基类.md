@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authentication — (3.1) 认证处理器的实现之AuthenticationHandler抽象基类
 date: 2019-08-14 21:40:03
 tags:

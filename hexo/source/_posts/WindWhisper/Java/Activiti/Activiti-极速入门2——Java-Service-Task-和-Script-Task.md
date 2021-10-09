@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Activiti 极速入门2——Java Service Task 和 Script Task
 date: 2017-01-14 05:03:29
 tags:

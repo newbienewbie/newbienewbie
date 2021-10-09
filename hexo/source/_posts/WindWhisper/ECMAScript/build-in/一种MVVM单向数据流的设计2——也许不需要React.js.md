@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 一种MVVM单向数据流的设计2:—也许不需要React.js
 date: 2018-02-23 08:45:02
 tags:

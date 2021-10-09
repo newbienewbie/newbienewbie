@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Symfony架构分析
 date: 2015-04-10 09:27:08
 tags:

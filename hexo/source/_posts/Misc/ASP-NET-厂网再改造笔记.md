@@ -1,4 +1,5 @@
 ---
+layout: post
 title: ASP.NET 厂网再改造笔记
 date: 2017-03-11 22:16:59
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authentication — (3.3) 认证处理器的实现之RemoteAuthenticationHandler
 date: 2019-08-14 22:46:03
 tags:

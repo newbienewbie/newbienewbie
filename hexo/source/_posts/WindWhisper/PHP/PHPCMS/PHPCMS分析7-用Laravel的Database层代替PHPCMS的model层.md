@@ -1,4 +1,5 @@
 ---
+layout: post
 title: PHPCMS分析7-用Laravel的Database层代替PHPCMS的model层
 date: 2015-04-14 12:16:08
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: PLC基本原理——世界观 
 date: 2018-1-16 21:41:30
 tags:

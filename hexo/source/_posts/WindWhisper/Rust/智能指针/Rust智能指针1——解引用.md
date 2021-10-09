@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Rust智能指针1——解引用
 date: 2018-02-27 12:42:23
 tags:

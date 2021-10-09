@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authorization — (2) 授权处理器、授权服务、和Policy Evaluator
 date: 2019-08-20 22:14:03
 tags:

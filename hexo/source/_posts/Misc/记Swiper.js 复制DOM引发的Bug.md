@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 记 Swiper.js 复制DOM引发的Bug
 date: 2018-4-27 23:52:34
 tags:

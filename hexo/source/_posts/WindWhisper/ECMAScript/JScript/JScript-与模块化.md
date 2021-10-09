@@ -1,4 +1,5 @@
 ---
+layout: post
 title: JScript 与模块化
 date: 2017-01-24 22:31:32
 tags:

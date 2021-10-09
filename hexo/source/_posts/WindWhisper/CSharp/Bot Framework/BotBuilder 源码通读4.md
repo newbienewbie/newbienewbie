@@ -1,4 +1,5 @@
 ---
+layout: post
 title: BotBuilder 源码通读4 —— 状态管理之状态属性访问器
 date: 2019-03-07 22:10:00
 tags:

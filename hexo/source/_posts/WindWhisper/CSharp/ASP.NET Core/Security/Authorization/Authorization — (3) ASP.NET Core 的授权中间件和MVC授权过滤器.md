@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authorization — (3) ASP.NET Core 的授权中间件和MVC授权过滤器
 date: 2019-08-20 22:35:03
 tags:

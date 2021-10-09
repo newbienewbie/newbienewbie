@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Symfony配置 
 date: 2015-04-10 09:27:08
 tags:

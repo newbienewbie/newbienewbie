@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 百度地图 BMap 的 React 封装
 date: 2017-02-15 17:50:04
 tags:

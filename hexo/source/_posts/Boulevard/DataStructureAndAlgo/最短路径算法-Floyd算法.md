@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 数据结构与算法笔记 最短路径算法——Floyd算法
 date: 2017-11-2 08:51:10
 tags:

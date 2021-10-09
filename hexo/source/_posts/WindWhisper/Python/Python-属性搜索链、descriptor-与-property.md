@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Python 属性搜索链、descriptor 与@property
 date: 2017-04-20 09:54:12
 tags:

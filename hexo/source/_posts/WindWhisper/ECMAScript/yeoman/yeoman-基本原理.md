@@ -1,4 +1,5 @@
 ---
+layout: post
 title: yeoman 基本原理
 date: 2016-11-22 20:43:32
 tags:

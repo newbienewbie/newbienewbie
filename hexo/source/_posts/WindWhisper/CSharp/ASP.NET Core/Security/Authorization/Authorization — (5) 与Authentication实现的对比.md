@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authorization — (5) 授权与认证的实现对比
 date: 2019-12-12 00:46:00
 tags:

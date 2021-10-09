@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Rust智能指针2——析构
 date: 2018-02-27 18:27:38
 tags:

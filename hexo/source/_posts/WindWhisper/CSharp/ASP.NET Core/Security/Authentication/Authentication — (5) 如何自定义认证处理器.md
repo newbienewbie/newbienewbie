@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Authentication — (5) 如何自定义认证处理器
 date: 2019-08-15 01:26:03
 tags:

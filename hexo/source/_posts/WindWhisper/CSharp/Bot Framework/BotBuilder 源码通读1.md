@@ -1,4 +1,5 @@
 ---
+layout: post
 title: BotBuilder 源码通读1 —— A Big Picture
 date: 2019-01-17 21:12:03
 tags:

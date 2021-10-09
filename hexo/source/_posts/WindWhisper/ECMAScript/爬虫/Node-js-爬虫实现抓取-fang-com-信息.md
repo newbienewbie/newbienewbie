@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 使用 Node.js 编写房价爬虫
 date: 2016-10-20 20:25:15
 tags:

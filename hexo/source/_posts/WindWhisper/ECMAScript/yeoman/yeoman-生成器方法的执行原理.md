@@ -1,4 +1,5 @@
 ---
+layout: post
 title: yeoman 生成器方法的执行原理
 date: 2016-11-22 21:50:18
 tags:

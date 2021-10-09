@@ -1,4 +1,5 @@
 ---
+layout: post
 title: ASP.NET 与  Node.js 的协作实践
 date: 2016-11-29 16:57:47
 tags:

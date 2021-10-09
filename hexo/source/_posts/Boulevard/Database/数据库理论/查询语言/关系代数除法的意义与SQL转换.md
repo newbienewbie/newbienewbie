@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 数据库笔记 关系代数除法运算的意义与SQL转换
 date: 2017-10-29 15:26:07
 tags:

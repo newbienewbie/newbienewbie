@@ -1,4 +1,5 @@
 ---
+layout: post
 title: crowbar源码阅读笔记(2):变量管理
 date: 2017-08-19 20:17:01
 tags:

@@ -1,4 +1,5 @@
 ---
+layout: post
 title: Redux 30分钟极速入门
 date: 2017-05-10 13:09:06
 tags: 

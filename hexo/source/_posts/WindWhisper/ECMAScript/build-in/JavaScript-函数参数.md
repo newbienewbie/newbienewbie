@@ -1,4 +1,5 @@
 ---
+layout: post
 title: JavaScript 函数参数
 date: 2016-11-04 09:56:04
 tags:

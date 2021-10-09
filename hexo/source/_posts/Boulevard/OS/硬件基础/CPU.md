@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 操作系统笔记 硬件基础——CPU
 date: 2017-10-26 13:25:23
 tags:

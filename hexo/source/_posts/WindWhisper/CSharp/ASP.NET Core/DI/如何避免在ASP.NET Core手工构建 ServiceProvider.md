@@ -1,4 +1,5 @@
 ---
+layout: post
 title: ASP.NET Core 依赖注入 — 如何避免手工构建 Service Provider 实例
 date: 2019-12-31 14:47:03
 tags:
