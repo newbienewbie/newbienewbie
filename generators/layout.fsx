@@ -8,7 +8,7 @@
 open Html
 
 let baseUrl () =
-    "/newbienewbie"
+    "/newbienewbie/"
 
 let injectWebsocketCode (webpage:string) =
     let websocketScript =
