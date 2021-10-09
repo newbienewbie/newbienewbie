@@ -9,3 +9,4 @@ npm-debug.log
 lib/config/config.dev.js
 app/bin/
 app/obj/
+_public/
