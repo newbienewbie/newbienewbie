@@ -36,60 +36,9 @@ let injectWebsocketCode (webpage:string) =
 let insertDocType (webpage: string) = 
     "<!DOCTYPE html>" + webpage
 
-let createKatexFormulaScript () = 
-  """
- // 处理形如 <code>$E=mc^2$</code> 形式的公式
-  var inlineMathNodes=document.querySelectorAll('code');
-  var re=/^\$(.*)\$$/;
-  for(var j=0;j<inlineMathNodes.length;j++){
-    var result=re.exec(inlineMathNodes.item(j).innerText);
-    if(result!==null){
-      katex.render(result[1], inlineMathNodes.item(j));
-    }
-  }
-  function removeNode(node){
-    if(node.remove){
-      node.remove();
-    }else{
-      return first.parentNode.removeChild(node);
-    }
-  };
+let injectScript jsfilename = 
+    System.IO.File.ReadAllText jsfilename
 
-  // 查找所有 pre code.language-math 节点 以备筛出数据公式
-  var nodes=document.querySelectorAll("pre code.language-math");
-  for(var i=0;i<nodes.length;i++){
-    var node=nodes.item(i);
-    // 魔术标记所在行 
-    try{
-      var lines = node.innerText.split('\n');
-      if((!!lines) && lines.length > 0)
-      {
-        var first = lines[0];
-        if(first.trim().match(/%%(\s?)*KaTeX(\s?)*/i)){
-          var views = "";
-          // 逐行渲染
-          for(var k=1; k <lines.length; k++){
-              var f=lines[k];
-              views += katex.renderToString(f);
-          }
-          // 消除父级嵌套 
-          try{
-            node.innerHTML=views;
-          }catch(e){
-            // IE9 don't support the method of assignning value to tr.innerHTML. Maybe the code below will be removed in the future
-            console.log('IE9 sucks',e);
-            $(tr).html(node.innerHTML);
-          }
-        }
-      }
-    }
-    catch(err){
-      console.log(err)
-    }
-  }
-    """
-
-let katexFormulaScript = createKatexFormulaScript ()
 
 let layout (ctx : SiteContents) active bodyCnt =
     let pages = ctx.TryGetValues<Pageloader.Page> () |> Option.defaultValue Seq.empty
@@ -112,7 +61,8 @@ let layout (ctx : SiteContents) active bodyCnt =
             meta [Name "viewport"; Content "width=device-width, initial-scale=1"]
             title [] [!! ttl]
             ``base`` [baseUrl () |> Href ]
-            link [Rel "icon"; Type "image/png"; Sizes "32x32"; Href "/images/favicon.png"]
+            script [] [ !! (injectScript "js/site.js") ]
+            link [Rel "icon"; Type "image/png"; Sizes "32x32"; Href "images/favicon.png"]
             link [Rel "stylesheet"; Href "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
             link [Rel "stylesheet"; Href "https://fonts.googleapis.com/css?family=Open+Sans"]
             link [Rel "stylesheet"; Href "https://unpkg.com/bulma@0.8.0/css/bulma.min.css"]
@@ -121,7 +71,6 @@ let layout (ctx : SiteContents) active bodyCnt =
             //link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/arta.min.css"]
             link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"]
             script[ Src "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"] []
-
         ]
         body [] [
           nav [Class "navbar"] [
@@ -144,9 +93,7 @@ let layout (ctx : SiteContents) active bodyCnt =
           link [Href "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.css";  Rel "stylesheet"] 
           script [Src "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"] []
           script [Src "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.1/katex.min.js"] []
-          script [] [
-            !! katexFormulaScript
-          ]
+          script [] [ !! (injectScript "js/process-katex.js") ]
           script [][
             !! "hljs.highlightAll();"
           ]
