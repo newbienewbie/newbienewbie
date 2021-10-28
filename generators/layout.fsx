@@ -7,8 +7,12 @@
 
 open Html
 
-let baseUrl () =
-    "/newbienewbie/"
+let baseUrl (ctx: SiteContents) =
+    // "/newbienewbie/"
+    let si = ctx.TryGetValue<Globalloader.SiteInfo>()
+    match si with
+    | None -> "/"
+    | Some info -> info.baseUrl
 
 let injectWebsocketCode (webpage:string) =
     let websocketScript =
@@ -60,7 +64,7 @@ let layout (ctx : SiteContents) active bodyCnt =
             meta [CharSet "utf-8"]
             meta [Name "viewport"; Content "width=device-width, initial-scale=1"]
             title [] [!! ttl]
-            ``base`` [baseUrl () |> Href ]
+            ``base`` [(baseUrl ctx) |> Href ]
             script [] [ !! (injectScript "js/site.js") ]
             link [Rel "icon"; Type "image/png"; Sizes "32x32"; Href "images/favicon.png"]
             link [Rel "stylesheet"; Href "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
