@@ -82,260 +82,52 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
-                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (2) 认证服务及其对HttpContext的认证扩展方法.html">
-                    Authentication — (2) 认证服务及其对HttpContext的认证扩展方法
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2019-08-14
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>此部分代码位于<code>aspnet/HttpAbstractions</code>项目中，命名空间为 <code>Microsoft.AspNetCore.Authentication</code> 。</p>
-<p>认证服务及以其为基础对<code>HttpContext</code>的扩展方法是所有认证过程的核心：</p>
-<ul>
-<li>对于默认的认证模式，是直接转发调用<code>HttpContext.Authenticate()</code>扩展方法</li>
-<li>对于自定义的认证请求处理，需要手工在<code>HandleRequestAsync()</code>函数中，自行使用<code>Context.SignInSync(signInScheme,principal,properties)</code>进行登入</li>
-</ul>
-<h2>认证服务接口</h2>
-<p><code>IAuthentictionService</code>接口规定认证、质询、禁止、登入、登出共五个功能：</p>
-<pre><code class="language-csharp">public interface IAuthenticationService
-{
-    Task&lt;AuthenticateResult&gt; AuthenticateAsync(HttpContext context, string scheme);
-
-    Task ChallengeAsync(HttpContext context, string scheme, AuthenticationProperties properties);
-
-    Task ForbidAsync(HttpContext context, string scheme, AuthenticationProperties properties);
-
-    Task SignInAsync(HttpContext context, string scheme, ClaimsPrincipal principal, AuthenticationProperties properties);
-
-    Task SignOutAsync(HttpContext context, string scheme, AuthenticationProperties properties);
-}
-</code></pre>
-<p>而其默认实现<code>AuthenticationService</code>中包含了两个重要字段，即当前的认证模式集<code>Schemes</code>和认证处理器集<code>Handlers</code>(后面会单独讲解<code>IClaimsTransformation Transform</code>)： <!-- more --></p>
-<pre><code class="language-csharp">public class AuthenticationService : IAuthenticationService
-{
-    public AuthenticationService(IAuthenticationSchemeProvider schemes, IAuthenticationHandlerProvider handlers, IClaimsTransformation transform)
-    {
-        Schemes = schemes;
-        Handlers = handlers;
-        Transform = transform;
-    }
-
-    public IAuthenticationSchemeProvider Schemes { get; }
-    public IAuthenticationHandlerProvider Handlers { get; }
-    public IClaimsTransformation Transform { get; }
-    // ...
-}
-</code></pre>
-<p>这些认证服务接口相关方法的实现比较类似，基本都是转发调用相应认证处理器的相应方法。</p>
-<h4>AuthenticateAsync</h4>
-<p>比如，<code>AuthenticationAsync(context,scheme)</code>方法会选择合适的认证处理器进行认证：</p>
-<pre><code class="language-csharp">public virtual async Task&lt;AuthenticateResult&gt; AuthenticateAsync(HttpContext context, string scheme)
-{
-    if (scheme == null)
-    {
-        var defaultScheme = await Schemes.GetDefaultAuthenticateSchemeAsync();
-        scheme = defaultScheme?.Name;
-        if (scheme == null) { /* throw */ }
-    }
-
-    var handler = await Handlers.GetHandlerAsync(context, scheme);
-    if (handler == null) { /* throw */ }
-
-    var result = await handler.AuthenticateAsync();
-    if (result != null &amp;&amp; result.Succeeded)
-    {
-        var transformed = await Transform.TransformAsync(result.Principal);
-        return AuthenticateResult.Success(new AuthenticationTicket(transformed, result.Properties, result.Ticket.AuthenticationScheme));
-    }
-    return result;
-}
-</code></pre>
-<p>这里<code>AuthenticationAsync(context,scheme)</code>的处理步骤为：</p>
-<ol>
-<li>如果<code>scheme</code>未指定，就选择默认的认证模式</li>
-<li>根据<code>scheme</code>获取相对应的认证处理器<code>handler</code></li>
-<li>调用<code>handler</code>进行认证</li>
-</ol>
-<p>值得注意的是，如果认证成功，还会通过所注入的<code>IClaimsTransformation</code>服务对结果的<code>Principal</code>进行转换。这里有一个有意思的使用场景：第三方生成的<code>JWT</code>令牌格式并不一定满足<code>ASP.NET Core</code>默认的格式（参见<a href="https://stackoverflow.com/questions/56352055/cant-get-asp-net-core-2-2-to-validate-my-jwt/56354885#56354885">SO回答</a>）。</p>
-<p>比如，根据<a href="https://github.com/dotnet/corefx/blob/a10890f4ffe0fadf090c922578ba0e606ebdd16c/src/System.Security.Claims/src/System/Security/Claims/ClaimTypes.cs#L27">dotnet/corefx</a>,<code>ClaimTypes.Role</code>的字符串键名为<code>http://schemas.microsoft.com/ws/2008/06/identity/claims/role</code>,这要求我们传入JWT 以之来配置<code>Role</code>:</p>
-<pre><code class="language-json">{
-  &quot;nbf&quot;: ...,
-  &quot;exp&quot;: ...,
-  &quot;iss&quot;: ...,
-  &quot;aud&quot;: ...,
-   ...,
-  &quot;http://schemas.microsoft.com/ws/2008/06/identity/claims/role&quot;: [
-    &quot;offline_access&quot;,
-    &quot;...other roles&quot;
-  ],
-}
-</code></pre>
-<p>但是有时候第三方可能用以下方式配置JWT的Role：</p>
-<pre><code class="language-json">&quot;realm_access&quot;:{  
-  &quot;roles&quot;:[  
-     &quot;offline_access&quot;,
-     &quot;uma_authorization&quot;
-  ]
-},
-</code></pre>
-<p>这时候我们就可以注入一个自定义的<code>IClaimsTransformation</code>，实现<code>Principal</code>的转换：</p>
-<pre><code>services.AddTransient&lt;IClaimsTransformation, ClaimsTransformer&gt;();
-</code></pre>
-<h4>SignInAsync</h4>
-<p>登入与认证类似：也是先检测指定的模式，如果为空则选择默认的登入模式；随后，利用<code>scheme</code>获取相应的认证处理器，转换为<code>IAuthenticationSignInHandler</code>接口对象，最后再用转换出的<code>IAuthenticationSignInHandler</code>对象对<code>principal</code>进行登入。</p>
-<pre><code class="language-csharp">public virtual async Task SignInAsync(HttpContext context, string scheme, ClaimsPrincipal principal, AuthenticationProperties properties)
-{
-    if (principal == null) { /* throw */ }
-
-    if (scheme == null)
-    {
-        var defaultScheme = await Schemes.GetDefaultSignInSchemeAsync();
-        scheme = defaultScheme?.Name;
-        if (scheme == null) { /* throw */ }
-    }
-
-    var handler = await Handlers.GetHandlerAsync(context, scheme);
-    if (handler == null) { /* throw */ }
-
-    var signInHandler = handler as IAuthenticationSignInHandler;
-    if (signInHandler == null) { /* throw */ }
-
-    await signInHandler.SignInAsync(principal, properties);
-}
-</code></pre>
-<h2><code>HttpContext</code>的认证扩展方法</h2>
-<p>以认证服务为基础，<code>ASP.NET Core</code>为<code>HttpContext</code>添加了一系列扩展方法：</p>
-<pre><code class="language-csharp">public static class AuthenticationHttpContextExtensions
-{
-    public static Task&lt;AuthenticateResult&gt; AuthenticateAsync(this HttpContext context, string scheme) =&gt;
-        context.RequestServices.GetRequiredService&lt;IAuthenticationService&gt;().AuthenticateAsync(context, scheme);
-
-    public static Task ChallengeAsync(this HttpContext context, string scheme, AuthenticationProperties properties) =&gt;
-        context.RequestServices.GetRequiredService&lt;IAuthenticationService&gt;().ChallengeAsync(context, scheme, properties);
-
-    public static Task ForbidAsync(this HttpContext context, string scheme, AuthenticationProperties properties) =&gt;
-        context.RequestServices.GetRequiredService&lt;IAuthenticationService&gt;().ForbidAsync(context, scheme, properties);
-
-    public static Task SignInAsync(this HttpContext context, string scheme, ClaimsPrincipal principal, AuthenticationProperties properties) =&gt;
-        context.RequestServices.GetRequiredService&lt;IAuthenticationService&gt;().SignInAsync(context, scheme, principal, properties);
-
-    public static Task SignOutAsync(this HttpContext context, string scheme, AuthenticationProperties properties) =&gt;
-        context.RequestServices.GetRequiredService&lt;IAuthenticationService&gt;().SignOutAsync(context, scheme, properties);
-
-
-    public static Task&lt;string&gt; GetTokenAsync(this HttpContext context, string scheme, string tokenName) =&gt;
-        context.RequestServices.GetRequiredService&lt;IAuthenticationService&gt;().GetTokenAsync(context, scheme, tokenName);
-
-    public static Task&lt;string&gt; GetTokenAsync(this HttpContext context, string tokenName) =&gt;
-        context.RequestServices.GetRequiredService&lt;IAuthenticationService&gt;().GetTokenAsync(context, tokenName);
-}
-</code></pre>
-<p>这些方法都是简单地转而调用认证服务的相关方法。至此，我们可以通过<code>HttpContext</code>自动调用当前认证服务的相关方法。</p>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (0) 从Authentication中间件说起.html">
-                    Authentication — (0) 从Authentication中间件说起
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2019-08-14
-                </p>
-              </div>
-              <div class="content article-body">
-                <p><code>ASP.NET Core</code>认证相关的代码比较分散，主要涉及三个项目仓库：</p>
-<ol>
-<li><a href="https://github.com/aspnet/AspNetCore/tree/master/src/Http/Http.Abstractions">HTTP Abstractions</a>项目，即以前的<a href="https://github.com/aspnet/HttpAbstractions">aspnet/HttpAbstractions</a>仓库。在这个仓库中，包含了一些与认证相关的高层接口和与框架安全相关的核心概念。</li>
-<li><a href="https://github.com/aspnet/AspNetCore/tree/master/src/Security">Security</a>项目，即之前的<a href="https://github.com/aspnet/Security">aspnet/Security</a>仓库。这个仓库中定义了与认证相关的一些基本实现，并内置了一些常见的认证模式、认证处理器。</li>
-<li><a href="https://github.com/aspnet/AspNetCore/tree/master/src/Identity">Identity</a>项目，即之前的<a href="https://github.com/aspnet/Identity">aspnet/Identity</a>。这个仓库是<code>ASP.NET Core Identity</code>框架的实现。本系列的笔记不会对其做过多的源码分析，这里只作为一种认证模式介绍。</li>
-</ol>
-<p>去年8月份，我在阅读<code>ASP.NET Core</code>认证相关的源码后，陆陆续续在有道云笔记中记录了8篇笔记(系列)：</p>
-<ol start="0">
-<li>Authentication — (0) 从Authentication中间件说起</li>
-<li>Authentication — (1) 基本概念.md</li>
-<li>Authentication — (2) 认证服务及其对HttpContext的认证扩展方法</li>
-<li>Authentication — (3.1) 认证处理器的实现之AuthenticationHandler抽象基类</li>
-<li>Authentication — (3.2) 认证处理器的实现之JwtBearerHandler</li>
-<li>Authentication — (3.3) 认证处理器的实现之RemoteAuthenticationHandler</li>
-<li>Authentication — (4) Authentication服务的配置与构建</li>
-<li>Authentication — (5) 如何自定义认证处理器</li>
-</ol>
-<p>（一点题外话：<em>最近这大半年，我几乎都只在有道云上记录笔记(PC端+App+网页版)。不过最近我在修改笔记的过程中发现，有道云笔记网页版经常会发生笔记相互覆盖的情况。最恼火的是，一旦修改了标题，连历史记录也一并丢失了！这种情况已经出现我身上数次了。基于此，我以后记笔记的策略是：有道云做初稿，随时记录想法；整理完成后提交公众号发布，由于公众号有良好的CDN网络，供平时阅读和温习；最后使用个人网站作为终极备份</em>）</p>
-<p>随着<code>ASP.NET Core</code>的发展，之前的三个仓库在去年已经被存档，目前新的项目都位于<code>ASP.NET Core</code>中心仓库下。为了表述方便，这个系列的源码分析文章对老仓库和新项目位置不做过多区分。</p>
-<p>中间件<code>AuthenticationMiddleware</code>是理解<code>ASP.NET Core</code>认证的入口，尽管搞懂这块需要很多基本知识，作为总纲式的知识，我还是选择把它作为第一篇讲述。<!-- more -->
-随后的两篇笔记分别讲述了一些与认证相关的基础类与接口，以及在其基础之上形成的认证服务类。这两篇笔记只是讲述各个类在认证过程中扮演的角色，内容枯燥乏味，犹如流水账一般。但是这块知识是阅读后续第三部分实现的基本前提。
-这个系列笔记的第三部分主要讲述各种认证处理器的实现。这部分是与认证相关的源码分析的核心。
-第四部分则记录<code>Authentication</code>服务配置与构建的背后原理。
-作为收尾，最后一篇笔记以如何自定义一个认证处理器结束这个系列的源码分析。</p>
-<p>我会在下一篇笔记讲述认证处理器的基本概念，并在后续的数篇笔记中解释认证处理器是如何工作的。这篇源码笔记的目的是分析<strong>认证过程是如何和一个HTTP请求联系起来的</strong>。</p>
-<h2>认证中间件</h2>
-<p>要想得到正确的<code>Context.User</code>，必须先注册相关认证服务，然后在合适的位置启用认证中间件：</p>
-<pre><code>app.UseAuthentication();  // 必须启用于相关中间件之前
-// ...
-app.UseMvc(routes =&gt;{
-    ...
-});
-</code></pre>
-<p>对于每一个请求, <code>AuthenticationMiddleware</code>中间件都会尝试对当前用户进行认证，这里的认证工作主要通过认证处理器（<code>AuthenticationHandler</code>)来进行。</p>
-<p>中间件<a href="https://github.com/aspnet/Security/blob/26d27d871b7992022c082dc207e3d126e1d9d278/src/Microsoft.AspNetCore.Authentication/AuthenticationMiddleware.cs#L11-L63"><code>AuthenticationMiddleware</code></a> 的核心源码为：</p>
-<pre><code class="language-csharp">public async Task Invoke(HttpContext context)
-{
-    context.Features.Set&lt;IAuthenticationFeature&gt;(new AuthenticationFeature
-    {
-        OriginalPath = context.Request.Path,
-        OriginalPathBase = context.Request.PathBase
-    });
-
-    // Give any IAuthenticationRequestHandler schemes a chance to handle the request
-    var handlers = context.RequestServices.GetRequiredService&lt;IAuthenticationHandlerProvider&gt;();
-    foreach (var scheme in await Schemes.GetRequestHandlerSchemesAsync())
-    {
-        var handler = await handlers.GetHandlerAsync(context, scheme.Name) as IAuthenticationRequestHandler;
-        if (handler != null &amp;&amp; await handler.HandleRequestAsync())
-        {
-            return;
-        }
-    }
-
-    var defaultAuthenticate = await Schemes.GetDefaultAuthenticateSchemeAsync();
-    if (defaultAuthenticate != null)
-    {
-        var result = await context.AuthenticateAsync(defaultAuthenticate.Name);
-        if (result?.Principal != null)
-        {
-            context.User = result.Principal;
-        }
-    }
-
-    await _next(context);
-}
-</code></pre>
-<p>这段中间件源码的基本逻辑非常简单：首先遍历所有中间件级别的认证模式，并逐一尝试把相应的认证处理器转换成<code>IAuthenticationRequestHandler</code>接口，然后调用其<code>HandleRequestAsync()</code>方法(如果返回<code>true</code>，则表示当前需要中断后续所有中间件的请求处理)。如果之前的中间件级别的处理并未截断后续处理，则尝试使用默认的认证模式对用户进行认证。</p>
-<p>所谓中间件级别的认证，是指可以中断后续请求处理过程的认证。比如对于一些<code>OAuth2.0</code>的认证模式，需要根据当前是否是远程授权成功后的回调请求来中断后续的中间件处理。这些细节都会在后续几篇源码分析笔记中详细阐述，下一篇主要介绍与认证处理器相关的几个基础类。</p>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
                   <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (3.2) 认证处理器的实现之JwtBearerHandler.html">
                     Authentication — (3.2) 认证处理器的实现之JwtBearerHandler
                   </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        CSharp
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        ASP.NET Core
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Security
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Authentication
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    ASP.NET Core
+                  </span>
+                  <span class="tag is-info">
+                    CSharp
+                  </span>
+                  <span class="tag is-info">
+                    Authentication
+                  </span>
+                  <span class="tag is-info">
+                    源码分析
+                  </span>
                 </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
@@ -497,9 +289,601 @@ app.UseMvc(routes =&gt;{
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (3.1) 认证处理器的实现之AuthenticationHandler抽象基类.html">
+                    Authentication — (3.1) 认证处理器的实现之AuthenticationHandler抽象基类
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        CSharp
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        ASP.NET Core
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Security
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Authentication
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    ASP.NET Core
+                  </span>
+                  <span class="tag is-info">
+                    CSharp
+                  </span>
+                  <span class="tag is-info">
+                    Authentication
+                  </span>
+                  <span class="tag is-info">
+                    源码分析
+                  </span>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>前文说到，<code>AspNet/HttpAbstractions</code>项目中定义了<code>IAuthenticationHandler</code>接口，负责针对每个请求进行认证处理，包含了初始化、认证、质询、和禁止访问4个功能：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandler
+{
+    Task InitializeAsync(AuthenticationScheme scheme, HttpContext context);
+    Task&lt;AuthenticateResult&gt; AuthenticateAsync();
+    Task ChallengeAsync(AuthenticationProperties properties);
+    Task ForbidAsync(AuthenticationProperties properties);
+}
+</code></pre>
+<p>在<code>AspNet/Security</code>项目中，提供了一个抽象类<code>AuthenticationHandler&lt;TOptions&gt;</code>作为<code> IAuthenticationHandler</code>的基础实现：</p>
+<pre><code class="language-csharp">public abstract class AuthenticationHandler&lt;TOptions&gt; : IAuthenticationHandler 
+    where TOptions : AuthenticationSchemeOptions, new()
+{
+     // ...
+}
+</code></pre>
+<p>其中，初始化只是简单地设置模式、<code>HttpContext</code>，创建事件处理器等：<!-- more --></p>
+<pre><code class="language-csharp">    // 初始化，设置scheme，context ，事件等
+    public async Task InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+    {
+        // ...
+        
+        Scheme = scheme;
+        Context = context;
+
+        Options = OptionsMonitor.Get(Scheme.Name) ?? new TOptions();
+        Options.Validate(Scheme.Name);
+
+        await InitializeEventsAsync();
+        await InitializeHandlerAsync();
+    }
+</code></pre>
+<p>而其余三个关键的接口方法分别负责认证、质询、和禁止，三者的处理逻辑都是先进行<strong>转发检测</strong>，判断是否要转发给其他认证模式。如果需要转发，则转而调用<code>HttpContext</code>上的认证服务处理；否则，就会调用自身的处理认证、处理质询、和处理禁止方法。</p>
+<p>转发检测是通过<code>ResolveTarget(scheme)</code>这个函数完成的，该函数非常简单，只是根据当前认证处理器的配置选项，解析需要转发给哪个目标认证模式：</p>
+<pre><code class="language-csharp">    protected virtual string ResolveTarget(string scheme)
+    {
+        var target = scheme ?? Options.ForwardDefaultSelector?.Invoke(Context) ?? Options.ForwardDefault;
+
+        // Prevent self targetting
+        return string.Equals(target, Scheme.Name, StringComparison.Ordinal)
+            ? null
+            : target;
+    }
+</code></pre>
+<p>可以看到获取目标模式的优先级为：</p>
+<ol>
+<li>如果配置了<code>ForwardDefaultSelector</code>函数，则调用此函数来获取转发模式，</li>
+<li>如果结果为空，则尝试用<code>ForwardDefault</code>选项来设置</li>
+</ol>
+<h3>认证</h3>
+<p>如果想把认证过程转发给其他认证模式，则转而调用<code>HttpContext</code>的认证服务进行处理；否则，则使用自己的逻辑进行处理，并返回认证结果。当然，为了避免同一次请求过程中反复计算<code>AuthenticationResult</code>，需要把结果缓存下来，也即调用<code>await HandleAuthenticateOnceAsync();</code>来避免反复计算:</p>
+<pre><code class="language-csharp">    public async Task&lt;AuthenticateResult&gt; AuthenticateAsync()
+    {
+        // target scheme string
+        var target = ResolveTarget(Options.ForwardAuthenticate);
+        if (target != null)
+        {
+            return await Context.AuthenticateAsync(target);
+        }
+
+        // Calling Authenticate more than once should always return the original value.
+        var result = await HandleAuthenticateOnceAsync();
+        // ... log
+        return result;
+    }
+</code></pre>
+<p><code> HandleAuthenticateOnceAsync()</code>函数只是简单的调用自身的<code>HandleAuthenticateAsync()</code>进行处理，这里的<code>HandleAuthenticateAsync()</code>是一个抽象方法，留待子类实现；在当次请求过程中，第一次认证结束后的认证结果会缓存下来，当次请求过程中如果还有后续认证需求的话，直接从当前缓存中返回认证结果：</p>
+<pre><code class="language-csharp">    protected Task&lt;AuthenticateResult&gt; HandleAuthenticateOnceAsync()
+    {
+        if (_authenticateTask == null)
+        {
+            _authenticateTask = HandleAuthenticateAsync();
+        }
+
+        return _authenticateTask;
+    }
+    
+    protected abstract Task&lt;AuthenticateResult&gt; HandleAuthenticateAsync();
+</code></pre>
+<h3>质询</h3>
+<p>和认证方法类似，质询也是优先判断是否要转发给其他模式质询，如果没有的话，再调用自身的抽象方法<code>HandleChallengeAsync</code>处理质询过程：</p>
+<pre><code class="language-csharp">    public async Task ChallengeAsync(AuthenticationProperties properties)
+    {
+        var target = ResolveTarget(Options.ForwardChallenge);
+        if (target != null)
+        {
+            await Context.ChallengeAsync(target, properties);
+            return;
+        }
+
+        properties = properties ?? new AuthenticationProperties();
+        await HandleChallengeAsync(properties);
+        Logger.AuthenticationSchemeChallenged(Scheme.Name);
+    }
+</code></pre>
+<p>这里默认的处理质询过程只是返回一个<code>401</code></p>
+<pre><code class="language-csharp">    protected virtual Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 401;
+        return Task.CompletedTask;
+    }
+</code></pre>
+<h3>禁止</h3>
+<p>至于禁止方法，同样还是优先判断是否要转发给其他模式禁止。如果不需要，则由<code>HandleForbiddenAsync()</code>方法自身处理禁止过程：</p>
+<pre><code class="language-csharp">    public async Task ForbidAsync(AuthenticationProperties properties)
+    {
+        var target = ResolveTarget(Options.ForwardForbid);
+        if (target != null)
+        {
+            await Context.ForbidAsync(target, properties);
+            return;
+        }
+
+        properties = properties ?? new AuthenticationProperties();
+        await HandleForbiddenAsync(properties);
+        Logger.AuthenticationSchemeForbidden(Scheme.Name);
+    }
+</code></pre>
+<p>默认禁止只是返回一个<code>403</code> :</p>
+<pre><code class="language-csharp">    protected virtual Task HandleForbiddenAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 403;
+        return Task.CompletedTask;
+    }
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authentication/Authentication — (1) 基本概念.html">
+                    Authentication — (1) 基本概念
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        CSharp
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        ASP.NET Core
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Security
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Authentication
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    ASP.NET Core
+                  </span>
+                  <span class="tag is-info">
+                    CSharp
+                  </span>
+                  <span class="tag is-info">
+                    Authentication
+                  </span>
+                  <span class="tag is-info">
+                    源码分析
+                  </span>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>这部分代码在<code>HttpAbstractions</code>项目中定义，定义在<code>Microsoft.AspNetCore.Authentication</code>命名空间下。</p>
+<p>本篇笔记分为两大部分：</p>
+<ol>
+<li>第一部分主要讲述<strong>认证模式</strong>、<strong>认证处理器</strong>及相应的<strong>认证模式Provider</strong>和<strong>认证处理器Provider</strong></li>
+<li>第二部分主要对认证过程中涉及的相关类型进行描述，主要包括<strong>认证属性</strong>、<strong>认证票据</strong>、<strong>认证结果</strong></li>
+</ol>
+<h3>认证模式</h3>
+<p>认证模式类<code>AuthenticationScheme</code>非常简单，顾名思义，它代表了某一种特定的认证模式，其中还包含了对应的认证处理器的类型信息：</p>
+<pre><code class="language-csharp">public class AuthenticationScheme
+{
+    public AuthenticationScheme(string name, string displayName, Type handlerType)
+    {
+        if (name == null) { /* throw */ }
+        if (handlerType == null) { /* throw */ }
+        if (!typeof(IAuthenticationHandler).IsAssignableFrom(handlerType)) { /* throw */ }
+
+        Name = name;
+        HandlerType = handlerType;
+        DisplayName = displayName;
+    }
+
+    public string Name { get; }
+    public string DisplayName { get; }
+
+    public Type HandlerType { get; }
+}
+</code></pre>
+<p>常见的认证模式有 <code>Cookies</code>、<code>Bearer</code>、<code>OAuth</code>、<code>OpenIdConnect</code>、<code>Google</code>、<code>Microsoft</code>、<code>Facebook</code>等。每种 认证模式都有各自的处理器负责处理用户认证事宜。注意，<strong><code>Scheme</code>中存储的并非是<code>Handler</code>实例，而是<code>Handler</code>的类型！</strong> <!-- more --></p>
+<h3>认证处理器相关接口</h3>
+<p><code>IAuthenticationHandler</code>接口负责针对每个请求进行认证处理，包含了<strong>初始化</strong>、<strong>认证</strong>、<strong>质询</strong>、和<strong>禁止</strong>访问几个功能：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandler
+{
+    Task InitializeAsync(AuthenticationScheme scheme, HttpContext context); // 初始化
+    Task&lt;AuthenticateResult&gt; AuthenticateAsync();                           // 认证
+    Task ChallengeAsync(AuthenticationProperties properties);               // 质询
+    Task ForbidAsync(AuthenticationProperties properties);                  // 禁止
+}
+</code></pre>
+<p>除了以上几个通用的功能，还有两个特化的认证处理器接口用于<strong>登入</strong>和<strong>登出</strong>：</p>
+<pre><code class="language-csharp">public interface IAuthenticationSignOutHandler : IAuthenticationHandler
+{
+    Task SignOutAsync(AuthenticationProperties properties);
+}
+
+public interface IAuthenticationSignInHandler : IAuthenticationSignOutHandler
+{
+    Task SignInAsync(ClaimsPrincipal user, AuthenticationProperties properties);
+}
+</code></pre>
+<p>最后，还有一个特化的接口<code>IAuthenticationRequestHandler</code> 用于<strong>中间件级别的请求处理</strong>：</p>
+<pre><code class="language-csharp">public interface IAuthenticationRequestHandler : IAuthenticationHandler
+{
+    Task&lt;bool&gt; HandleRequestAsync();
+}
+</code></pre>
+<p>如果一个<code>IAuthenticationHanlder</code>接口对象可以转换为<code>IAuthenticationRequestHandler</code>接口，则说明该 接口对象否想参与中间件级别的请求处理，其<code>HandlerRequestAsync()</code>方法将用于对请求进行处理；当该方法完成后，如果希望系统停止后续中间件的处理，则返回<code>true</code>，否则返回<code>false</code>。</p>
+<h3><code>AuthenticationSchemeProvider</code></h3>
+<p><code>IAuthenticationSchemeProvider</code>接口用于</p>
+<ul>
+<li>枚举当前认证模式</li>
+<li>增、删某种认证模式</li>
+<li>查找某种认证模式</li>
+</ul>
+<pre><code class="language-csharp">public interface IAuthenticationSchemeProvider
+{
+    Task&lt;IEnumerable&lt;AuthenticationScheme&gt;&gt; GetAllSchemesAsync();
+    Task&lt;AuthenticationScheme&gt; GetSchemeAsync(string name);
+   
+    Task&lt;AuthenticationScheme&gt; GetDefaultAuthenticateSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultChallengeSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultForbidSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultSignInSchemeAsync();
+    Task&lt;AuthenticationScheme&gt; GetDefaultSignOutSchemeAsync();
+
+    void AddScheme(AuthenticationScheme scheme);
+    void RemoveScheme(string name);
+
+    Task&lt;IEnumerable&lt;AuthenticationScheme&gt;&gt; GetRequestHandlerSchemesAsync();
+}
+</code></pre>
+<p>其默认实现为<code>AuthenticationSchemeProvider</code>，由于源码较为简单，此处不再赘述。</p>
+<h3><code>AuthenticationHandlerProvider</code></h3>
+<p><code>IAuthenticationHandlerProvider</code>用于提供与指定模式名相匹配的认证处理器的实例，其接口定义为：</p>
+<pre><code class="language-csharp">public interface IAuthenticationHandlerProvider
+{
+    Task&lt;IAuthenticationHandler&gt; GetHandlerAsync(HttpContext context, string authenticationScheme);
+}
+</code></pre>
+<p>作为<code>IAuthenticationHandlerProvider</code>接口的默认实现，<code>AuthenticationHandlerProvider</code>包含了一个<code>IAuthenticatioSchemProvider</code>属性，获取相应认证模式处理器的类型，然后根据类型信息创建一个实例并存入缓存：</p>
+<pre><code class="language-csharp">namespace Microsoft.AspNetCore.Authentication
+{
+    public class AuthenticationHandlerProvider : IAuthenticationHandlerProvider
+    {
+        public AuthenticationHandlerProvider(IAuthenticationSchemeProvider schemes)
+        {
+            Schemes = schemes;
+        }
+
+        public IAuthenticationSchemeProvider Schemes { get; }
+        // 创建一个字典作为缓存
+        private Dictionary&lt;string, IAuthenticationHandler&gt; _handlerMap = new Dictionary&lt;string, IAuthenticationHandler&gt;(StringComparer.Ordinal);
+
+        public async Task&lt;IAuthenticationHandler&gt; GetHandlerAsync(HttpContext context, string authenticationScheme){
+            // 优先从缓存中查询
+            if (_handlerMap.ContainsKey(authenticationScheme)){ return _handlerMap[authenticationScheme]; }
+
+            var scheme = await Schemes.GetSchemeAsync(authenticationScheme);
+            if (scheme == null){ return null; }
+            
+            // 创建实例、初始化、存入缓存
+            var handler = (context.RequestServices.GetService(scheme.HandlerType) ??
+                ActivatorUtilities.CreateInstance(context.RequestServices, scheme.HandlerType))
+                as IAuthenticationHandler;
+            if (handler != null){
+                await handler.InitializeAsync(scheme, context);
+                _handlerMap[authenticationScheme] = handler;
+            }
+            return handler;
+        }
+    }
+}
+</code></pre>
+<h3>认证属性、认证票据和认证结果</h3>
+<h4><code>AuthenticationProperties</code></h4>
+<p>认证属性是一个简单的类似于字典一样的对象，用于存取关于认证会话的各项属性。其中，最核心的是两个字典属性：</p>
+<ul>
+<li><code>Items</code> ： <code>Dictionary&lt;string,string&gt;</code>型字典</li>
+<li><code>Parameters</code>：<code>Dictionary&lt;string,object&gt;</code>型字典，用于在handler之间共享对象，不可序列化或者持久化</li>
+</ul>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+
+    public IDictionary&lt;string, string&gt; Items { get; }
+
+    public IDictionary&lt;string, object&gt; Parameters { get; }
+}
+</code></pre>
+<p>为了方便起见，<code>AuthenticationProperties</code>针对<code>Parameters</code>字典和<code>Items</code>提供了如下的取、存方法</p>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+    
+    public T GetParameter&lt;T&gt;(string key) =&gt; Parameters.TryGetValue(key, out var obj) &amp;&amp; obj is T value ? value : default;
+
+    public void SetParameter&lt;T&gt;(string key, T value) =&gt; Parameters[key] = value;
+        
+    public string GetString(string key)
+    {
+        return Items.TryGetValue(key, out string value) ? value : null;
+    }
+
+    public void SetString(string key, string value)
+    {
+        if (value != null) {
+            Items[key] = value;
+        } else if (Items.ContainsKey(key)) {
+            Items.Remove(key);
+        }
+    }
+}       
+</code></pre>
+<p>而<code>Items</code>虽然只能存储<code>string</code>型值，但是配合<code>ToString()</code>和从字符串解析的功能，还可以对<code>bool</code>、<code>DateTime</code>型数据类型进行存取：</p>
+<pre><code class="language-csharp">public class AuthenticationProperties
+{
+    // ...
+    
+    protected bool? GetBool(string key) { /* ...*/ }
+
+    protected void SetBool(string key, bool? value) { /* ...*/ }
+    
+    protected DateTimeOffset? GetDateTimeOffset(string key) { /* ...*/ }
+
+    protected void SetDateTimeOffset(string key, DateTimeOffset? value) { /* ...*/ }
+}
+</code></pre>
+<p>在此基础之上，对一些常用属性及值提供了便利方法：</p>
+<pre><code class="language-csharp">{
+    internal const string IssuedUtcKey = &quot;.issued&quot;;
+    internal const string ExpiresUtcKey = &quot;.expires&quot;;
+    internal const string IsPersistentKey = &quot;.persistent&quot;;
+    internal const string RedirectUriKey = &quot;.redirect&quot;;
+    internal const string RefreshKey = &quot;.refresh&quot;;
+    internal const string UtcDateTimeFormat = &quot;r&quot;;
+
+    public bool IsPersistent
+    {
+        get =&gt; GetString(IsPersistentKey) != null;
+        set =&gt; SetString(IsPersistentKey, value ? string.Empty : null);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the full path or absolute URI to be used as an http redirect response value.
+    /// &lt;/summary&gt;
+    public string RedirectUri
+    {
+        get =&gt; GetString(RedirectUriKey);
+        set =&gt; SetString(RedirectUriKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the time at which the authentication ticket was issued.
+    /// &lt;/summary&gt;
+    public DateTimeOffset? IssuedUtc
+    {
+        get =&gt; GetDateTimeOffset(IssuedUtcKey);
+        set =&gt; SetDateTimeOffset(IssuedUtcKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets the time at which the authentication ticket expires.
+    /// &lt;/summary&gt;
+    public DateTimeOffset? ExpiresUtc
+    {
+        get =&gt; GetDateTimeOffset(ExpiresUtcKey);
+        set =&gt; SetDateTimeOffset(ExpiresUtcKey, value);
+    }
+
+    /// &lt;summary&gt;
+    /// Gets or sets if refreshing the authentication session should be allowed.
+    /// &lt;/summary&gt;
+    public bool? AllowRefresh
+    {
+        get =&gt; GetBool(RefreshKey);
+        set =&gt; SetBool(RefreshKey, value);
+    }
+}
+</code></pre>
+<h4><code>AuthenticationTicket</code></h4>
+<p>认证票据封装了用户身份信息和一些配套的认证属性，如过期信息、是否允许刷新等。</p>
+<pre><code class="language-csharp">public class AuthenticationTicket
+{
+
+    public AuthenticationTicket(ClaimsPrincipal principal, AuthenticationProperties properties, string authenticationScheme)
+    {
+        if (principal == null) { /* throw */ }
+
+        AuthenticationScheme = authenticationScheme;
+        Principal = principal;
+        Properties = properties ?? new AuthenticationProperties();
+    }
+
+    public AuthenticationTicket(ClaimsPrincipal principal, string authenticationScheme) 
+        : this(principal, properties: null, authenticationScheme: authenticationScheme)
+    { }
+
+
+    public string AuthenticationScheme { get; private set; }
+
+    public ClaimsPrincipal Principal { get; private set; }
+
+    public AuthenticationProperties Properties { get; private set; }
+}
+</code></pre>
+<h4><code>AuthenticationResult</code></h4>
+<p>认证结果有三种，分别是：</p>
+<ul>
+<li>没有结果：暂时无法确定最终认证结果，留待其他认证处理程序处理。</li>
+<li>认证成功：需要提供认证票据</li>
+<li>认证失败：需要指定失败消息</li>
+</ul>
+<p><code>AuthenticationResult</code>提供了一个类来封装了以上所有信息：</p>
+<pre><code class="language-csharp">public class AuthenticateResult
+{
+    public AuthenticationTicket Ticket { get; protected set; }    // 认证成功时的票据
+
+    public ClaimsPrincipal Principal =&gt; Ticket?.Principal;        // 认证成功时票据中的主体
+
+    public AuthenticationProperties Properties { get; protected set; } // 认证属性
+
+    public Exception Failure { get; protected set; }               // 认证失败时的失败异常
+
+    public bool None { get; protected set; }                       // 认证是否没有结果
+     
+    public bool Succeeded =&gt; Ticket != null;                       // 认证是否已经成功
+}
+</code></pre>
+<p><code>AuthenticationResult</code>还提供了三类静态方法来创建认证结果</p>
+<pre><code class="language-csharp">public class AuthenticateResult
+{
+    // ...
+    
+    
+    public static AuthenticateResult NoResult()
+    {
+        return new AuthenticateResult() { None = true };
+    }
+    
+    public static AuthenticateResult Success(AuthenticationTicket ticket)
+    {
+        if (ticket == null)
+        {
+            throw new ArgumentNullException(nameof(ticket));
+        }
+        return new AuthenticateResult() { Ticket = ticket, Properties = ticket.Properties };
+    }
+
+    public static AuthenticateResult Fail(Exception failure)
+    {
+        return new AuthenticateResult() { Failure = failure };
+    }
+
+    public static AuthenticateResult Fail(Exception failure, AuthenticationProperties properties)
+    {
+        return new AuthenticateResult() { Failure = failure, Properties = properties };
+    }
+
+    public static AuthenticateResult Fail(string failureMessage)
+        =&gt; Fail(new Exception(failureMessage));
+
+    public static AuthenticateResult Fail(string failureMessage, AuthenticationProperties properties)
+        =&gt; Fail(new Exception(failureMessage), properties);
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读6.html">
                     BotBuilder 源码通读6 —— 对话建模与实现2
                   </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        CSharp
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Bot Framework
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    Bot Framework
+                  </span>
+                  <span class="tag is-info">
+                    CSharp
+                  </span>
                 </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
@@ -605,6 +989,42 @@ public override async Task&lt;DialogTurnResult&gt; ResumeDialogAsync(DialogConte
                   <a href="posts/Boulevard/Alchemy/machine-learning/机器学习 - 分类技术/KNN.html">
                     机器学习 KNN算法
                   </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        大道
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        炼丹
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        机器学习
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    炼丹
+                  </span>
+                  <span class="tag is-info">
+                    机器学习
+                  </span>
+                  <span class="tag is-info">
+                    分类技术
+                  </span>
+                  <span class="tag is-info">
+                    KNN
+                  </span>
+                  <span class="tag is-info">
+                    FSharp
+                  </span>
                 </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">

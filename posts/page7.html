@@ -86,6 +86,36 @@
                     popmotion 设计篇3 ：返回值
                   </a>
                 </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        ECMAScript
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        popmotion
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    ECMAScript
+                  </span>
+                  <span class="tag is-info">
+                    Node.js
+                  </span>
+                  <span class="tag is-info">
+                    popmotion
+                  </span>
+                </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
                     
@@ -164,6 +194,36 @@
                     popmotion 设计篇2 ：中间件与扩展
                   </a>
                 </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        ECMAScript
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        popmotion
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    ECMAScript
+                  </span>
+                  <span class="tag is-info">
+                    Node.js
+                  </span>
+                  <span class="tag is-info">
+                    popmotion
+                  </span>
+                </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
                     
@@ -208,6 +268,36 @@ function action(do){
                     popmotion 设计篇1 ：动作与执行
                   </a>
                 </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        ECMAScript
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        popmotion
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    ECMAScript
+                  </span>
+                  <span class="tag is-info">
+                    Node.js
+                  </span>
+                  <span class="tag is-info">
+                    popmotion
+                  </span>
+                </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
                     
@@ -243,6 +333,23 @@ actionInstance.start();
                     记 Swiper.js 复制DOM引发的Bug
                   </a>
                 </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        Misc
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    Swiper.js
+                  </span>
+                  <span class="tag is-info">
+                    ECMAScript
+                  </span>
+                </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
                     
@@ -267,9 +374,39 @@ actionInstance.start();
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
-                  <a href="posts/Boulevard/Alchemy/machine-learning/机器学习 - 世界观/机器学习 世界观 3.html">
-                    机器学习 世界观 成本函数与另一种有监督的学习算法
+                  <a href="posts/Boulevard/Alchemy/machine-learning/机器学习 - 世界观/机器学习 世界观 2.html">
+                    机器学习 世界观 一种有监督学习的算法
                   </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        大道
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        炼丹
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        机器学习
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    炼丹
+                  </span>
+                  <span class="tag is-info">
+                    机器学习
+                  </span>
+                  <span class="tag is-info">
+                    神经网络
+                  </span>
                 </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
@@ -279,17 +416,14 @@ actionInstance.start();
                 </p>
               </div>
               <div class="content article-body">
-                <p>对于训练集<code>$\bold X$</code>中第<code>$i$</code>个<code>Sample</code> <code>$\bold x^{(i)}$</code>，记其目标值为<code>$y^{(i)}$</code>，预测值为<code>$\hat y^{(i)}$</code>。对于训练集中的样品，训练后的最好效果是，各预测值与相应的实际值完全相同，但实际情况必然是互有大小。为了衡量这组值的误差大小，可以用 <em>平方和</em> (<code>SSE</code>) 来表示这种误差：</p>
-<pre><code class="language-math">%% KaTex
-J(w) = \frac{1}{2} \displaystyle \sum_i{\Big(y^{(i)} -\hat y^{(i)} \Big)}^{2}
-</code></pre>
-<p>要让训练的效果最好，其实就是要让此<code>SSE</code>取得最小值。故而，我们将这个<code>$J(w)$</code>称之为 <em>目标函数</em> (<code>objective function</code>)，目标函数通常是 <em>成本函数</em> (<code>cost function</code>)，正如这里的<code>SSE</code>，训练就是要让成本函数取得最低值。</p>
-<h2>梯度下降法的朴素思想</h2>
-<p>那么，如何才让成本函数取得最低值呢？</p>
-<p>根据泰勒公式，一个函数<code>$f(x)$</code>可以利用在<code>$x=x_0$</code>展开近似：</p>
-<pre><code class="language-math">%% KaTex
-f(x) = f(x_0)+f'(x_0)*(x-x_0)
-</code></pre>
+                <p>训练集可以视作一个矩阵<code>$\bold X$</code>，其中每一行都代表一条训练数据向量<code>$\bold x$</code>。我们的目标就是要通过训练集反复调整权重向量，得到能够刻画数据内在规律的数学方程。</p>
+<h2>朴素思想</h2>
+<p>不妨先只考虑单个神经元的情况。对于训练集中的每一组训练数据<code>$\bold x$</code>，都通过<code>$\phi(\bold w \cdot \bold x +b)$</code>计算出一个预测值<code>$\hat y$</code>。 并和真实值<code>$y$</code>相比较得到误差<code>$e=y - \hat y$</code> 。由于<code>$\phi(\bold w \cdot \bold x +b)$</code>是对<code>$\bold w \cdot \bold x$</code>简单变换，为了简单起见，我们假设<code>$\phi$</code>是正相关函数，这样只需考虑<code>$\bold w \cdot \bold x$</code>即可推知<code>$\phi(z)$</code>的变化趋势：</p>
+<ol>
+<li>如果误差<code>$e = 0$</code>，则说明预测值与真实值相同，不需要调整权重向量<code>$\bold w$</code>。</li>
+<li>如果误差<code>$e &gt; 0$</code>，则说明预测值与真实值相比偏小，需要修正<code>$\bold w$</code>。我们可以通过调整<code>$\bold w$</code>，使之与输入向量<code>$\bold x$</code>之间的夹角更小一点，这样计算出来的<code>$\bold w \cdot \bold x$</code>值会更大，从而导致预测值<code>$\phi(z)$</code>会增大一点。</li>
+<li>如果误差<code>$e &lt; 0$</code>，则说明预测值与真实值相比偏大，需要修正<code>$\bold w$</code>。我们可以通过调整<code>$\bold w$</code>，使之与输入向量<code>$\bold x$</code>之间的夹角更大一点，这样计算出来的<code>$\bold w \cdot \bold x$</code>值会更小，从而导致预测值<code>$\phi(z)$</code>会减小一点。</li>
+</ol>
 
               </div>
             </div>

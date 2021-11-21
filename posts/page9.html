@@ -86,6 +86,42 @@
                     Rust与WebAssembly 2——stdweb
                   </a>
                 </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust和WASM
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    WASM
+                  </span>
+                  <span class="tag is-info">
+                    WebAssembly
+                  </span>
+                  <span class="tag is-info">
+                    JavaScript
+                  </span>
+                  <span class="tag is-info">
+                    Rust
+                  </span>
+                  <span class="tag is-info">
+                    stdweb
+                  </span>
+                </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
                     
@@ -114,6 +150,39 @@ stdweb =&quot;0.4&quot;
                   <a href="posts/WindWhisper/Rust/Rust-WASM/Rust与WebAssembly 1——编译.html">
                     Rust与WebAssembly 1——编译
                   </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust和WASM
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    WASM
+                  </span>
+                  <span class="tag is-info">
+                    WebAssembly
+                  </span>
+                  <span class="tag is-info">
+                    JavaScript
+                  </span>
+                  <span class="tag is-info">
+                    Rust
+                  </span>
                 </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
@@ -147,9 +216,119 @@ stdweb =&quot;0.4&quot;
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/Rust/智能指针/Rust智能指针3——引用、原始指针与内部可变性.html">
+                    Rust智能指针3——引用、原始指针与内部可变性
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        智能指针
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    Rust
+                  </span>
+                  <span class="tag is-info">
+                    智能指针
+                  </span>
+                  <span class="tag is-info">
+                    引用计数
+                  </span>
+                  <span class="tag is-info">
+                    Cell<T>
+                  </span>
+                  <span class="tag is-info">
+                    RefCell<T>
+                  </span>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-28
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>本文是正式开始智能指针之前的基础知识之三：引用、原始指针、与内部可变性。</p>
+<h2>引用和原始指针</h2>
+<p><code>Rust</code>中的引用在本质上就是指针，并没有什么黑魔法。对于原始指针和普通引用，在运行时，二者所指的内容完全一致。事实上，普通引用(<code>&amp;T</code>、<code>&amp;mut T</code>)都会被编译器隐式转化为原始指针(<code>*const T</code>、<code>*mut T</code>)，只不过这个转化是安全的。在<code>Rust</code>中，有两类原始指针：</p>
+<ol>
+<li><code>*const T</code> : 类似于 <code>&amp;T</code>引用，不可变</li>
+<li><code>*mut T</code>   : 类似于 <code>&amp;mut T</code>，可变</li>
+</ol>
+<p>以<code>*const T</code>为例，可以把<code>&amp;T</code>进行显式转换：</p>
+<pre><code class="language-Rust">let x = 42;
+let raw_pointer = &amp;x as *const i32;
+</code></pre>
+<p>或者可以写成这样：</p>
+<pre><code class="language-Rust">let x: i32 = 10;
+let raw_pointer: *const i32 = &amp;x;
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/Rust/智能指针/Rust智能指针4——引用计数型智能指针.html">
                     Rust智能指针4——引用计数型智能指针
                   </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        智能指针
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    Rust
+                  </span>
+                  <span class="tag is-info">
+                    智能指针
+                  </span>
+                  <span class="tag is-info">
+                    引用计数
+                  </span>
+                  <span class="tag is-info">
+                    Rc
+                  </span>
+                  <span class="tag is-info">
+                    Arc
+                  </span>
+                  <span class="tag is-info">
+                    RefCell
+                  </span>
                 </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
@@ -183,44 +362,42 @@ stdweb =&quot;0.4&quot;
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
-                  <a href="posts/WindWhisper/Rust/智能指针/Rust智能指针3——引用、原始指针与内部可变性.html">
-                    Rust智能指针3——引用、原始指针与内部可变性
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2018-02-28
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>本文是正式开始智能指针之前的基础知识之三：引用、原始指针、与内部可变性。</p>
-<h2>引用和原始指针</h2>
-<p><code>Rust</code>中的引用在本质上就是指针，并没有什么黑魔法。对于原始指针和普通引用，在运行时，二者所指的内容完全一致。事实上，普通引用(<code>&amp;T</code>、<code>&amp;mut T</code>)都会被编译器隐式转化为原始指针(<code>*const T</code>、<code>*mut T</code>)，只不过这个转化是安全的。在<code>Rust</code>中，有两类原始指针：</p>
-<ol>
-<li><code>*const T</code> : 类似于 <code>&amp;T</code>引用，不可变</li>
-<li><code>*mut T</code>   : 类似于 <code>&amp;mut T</code>，可变</li>
-</ol>
-<p>以<code>*const T</code>为例，可以把<code>&amp;T</code>进行显式转换：</p>
-<pre><code class="language-Rust">let x = 42;
-let raw_pointer = &amp;x as *const i32;
-</code></pre>
-<p>或者可以写成这样：</p>
-<pre><code class="language-Rust">let x: i32 = 10;
-let raw_pointer: *const i32 = &amp;x;
-</code></pre>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
                   <a href="posts/WindWhisper/Rust/智能指针/Rust智能指针1——解引用.html">
                     Rust智能指针1——解引用
                   </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        智能指针
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <span class="tag is-info">
+                    Rust
+                  </span>
+                  <span class="tag is-info">
+                    智能指针
+                  </span>
+                  <span class="tag is-info">
+                    Deref
+                  </span>
+                  <span class="tag is-info">
+                    DerefMut
+                  </span>
                 </p>
                 <p class="subtitle is-6 article-subtitle">
                   <a href="#">
