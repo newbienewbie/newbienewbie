@@ -74,7 +74,7 @@ let layout (ctx : SiteContents) active bodyCnt =
             //link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/shades-of-purple.min.css"]
             //link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/arta.min.css"]
             link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"]
-            script[ Src "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"] []
+            script [ Src "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js" ] []
         ]
         body [] [
           nav [Class "navbar"] [
@@ -116,11 +116,25 @@ let published (post: Postloader.Post) =
     |> Option.defaultValue System.DateTime.Now
     |> fun n -> n.ToString("yyyy-MM-dd")
 
+let postTags (post:Postloader.Post) = 
+  p [Class "post-tags"] ( post.tags |> List.map (fun t -> span [Class "tag is-info"] [!! t]) )
+
+let postCategories (post:Postloader.Post) = 
+  nav [Class "breadcrumb"] [
+    ul [] ( post.categories |> List.map (fun t -> 
+        li [] [
+          a [Href ""] [!! t]
+        ]))
+  ]
+
 let postLayout (useSummary: bool) (post: Postloader.Post) =
     div [Class "card article"] [
         div [Class "card-content"] [
             div [Class "media-content has-text-centered"] [
                 p [Class "title article-title"; ] [ a [Href post.link] [!! post.title]]
+                postCategories post
+                postTags post
+                 
                 p [Class "subtitle is-6 article-subtitle"] [
                 a [Href "#"] [!! (defaultArg post.author "")]
                 !! (sprintf "on %s" (published post))
