@@ -20,7 +20,7 @@ let viewPostListItem (post: Postloader.Post) =
   ]
 
 let viewPostList (tag: string) (posts: Postloader.Post list) = 
-    div [Class "panel"] [
+    div [Class "panel"; Id tag] [
       div [Class "panel-heading"] [
         div [Class "tag is-info"] [ !! tag ]
       ]

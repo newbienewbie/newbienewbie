@@ -117,7 +117,14 @@ let published (post: Postloader.Post) =
     |> fun n -> n.ToString("yyyy-MM-dd")
 
 let postTags (post:Postloader.Post) = 
-  p [Class "post-tags"] ( post.tags |> List.map (fun t -> span [Class "tag is-info"] [!! t]) )
+  p [Class "post-tags"] ( 
+    post.tags 
+    |> List.map (fun t -> 
+      a [Href $"/tags.html#{t}"] [
+        span [Class "tag is-info"] [!! t]
+      ]
+    )
+  )
 
 let postCategories (post:Postloader.Post) = 
   nav [Class "breadcrumb"] [
