@@ -38,6 +38,7 @@ let config = {
         {Script = "staticfile.fsx"; Trigger = OnFilePredicate staticPredicate; OutputFile = SameFileName }
         {Script = "index.fsx"; Trigger = Once; OutputFile = MultipleFiles id }
         {Script = "about.fsx"; Trigger = Once; OutputFile = NewFileName "about.html" }
+        {Script = "tags.fsx"; Trigger = Once; OutputFile = NewFileName "tags.html" }
         {Script = "contact.fsx"; Trigger = Once; OutputFile = NewFileName "contact.html" }
     ]
 }
