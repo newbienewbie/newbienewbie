@@ -120,7 +120,7 @@ let postTags (post:Postloader.Post) =
   p [Class "post-tags"] ( 
     post.tags 
     |> List.map (fun t -> 
-      a [Href $"/tags.html#{t}"] [
+      a [Href $"tags.html#{t}"] [
         span [Class "tag is-info"] [!! t]
       ]
     )

@@ -6,6 +6,7 @@ open System.Reflection.Metadata.Ecma335
 
 let tagsURL = "tags"
 let tagUrl tag = $"{tagsURL}/{tag}"
+let getUrlForTag tag = $"tags/{tag}.html"
 
 let viewPostListItem (post: Postloader.Post) = 
   div [Class "block"] [
@@ -49,7 +50,7 @@ let generate' (ctx : SiteContents) (_: string) =
     |> Option.map (fun si -> si.description, si.postPageSize)
     |> Option.defaultValue ("", 10)
 
-  let getFilenameForTag tag = $"tags/{tag}.html"
+
 
   let layoutForTag tag = 
       posts 
@@ -61,7 +62,6 @@ let generate' (ctx : SiteContents) (_: string) =
     tagNames 
     |> List.sortBy id
     |> List.map (fun tag -> 
-        let filename = getFilenameForTag tag 
         layoutForTag tag 
         )
 
