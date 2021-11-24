@@ -74,7 +74,8 @@ let layout (ctx : SiteContents) active bodyCnt =
             //link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/shades-of-purple.min.css"]
             //link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/arta.min.css"]
             link [Rel "stylesheet"; Href "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/atom-one-dark-reasonable.min.css"]
-            script [ Src "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js" ] []
+            script [ Src "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js" ] []
+            script [ Src "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/languages/fsharp.min.js" ] []
         ]
         body [] [
           nav [Class "navbar"] [

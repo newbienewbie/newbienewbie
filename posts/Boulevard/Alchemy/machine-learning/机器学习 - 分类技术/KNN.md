@@ -67,7 +67,7 @@ let KNN (k: int) (entries: Entry list) (entry: Entry)  =
 ### 测试
 
 考虑有一个`wdbc.data`文件，第一列是人员编号，第二列是当前分类，后面各列是相应的特性分量，则可以通过以下函数加载成一个`List<Entry>`:
-```csharp
+```fsharp
 /// 加载数据集文件，生成 Entry List
 let loadValues (fileName: string) : Entry list =
     File.ReadAllLines fileName
