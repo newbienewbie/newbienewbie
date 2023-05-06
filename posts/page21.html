@@ -86,6 +86,120 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/ECMAScript/yeoman/yeoman-与文件系统交互.html">
+                    yeoman 与文件系统交互
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        ECMAScript
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        yeoman
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#ECMAScript">
+                    <span class="tag is-info">
+                      ECMAScript
+                    </span>
+                  </a>
+                  <a href="tags.html#Node.js">
+                    <span class="tag is-info">
+                      Node.js
+                    </span>
+                  </a>
+                  <a href="tags.html#yeoman">
+                    <span class="tag is-info">
+                      yeoman
+                    </span>
+                  </a>
+                  <a href="tags.html#项目生成">
+                    <span class="tag is-info">
+                      项目生成
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2016-12-19
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>.yo-rc.json</code>文件定义了一个<code>yeoman</code>项目的根目录（<code>root</code>）。 这个文件允许用户运行在子目录里运行命令。</p>
+<h2>两个 context</h2>
+<p><code>yeoman</code>文件功能都是基于这样一个简单设想：在磁盘上，你总是有两个 <code>location contexts</code>。大部分情况下是从一个地方读，然后向另一个地方写。</p>
+<h3>destination context</h3>
+<p><code>destination context</code>被定义为当前工作目录或者最近一级包含<code>.yo-rc.json</code>文件的父目录。</p>
+<ul>
+<li>使用<code>destinationRoot()</code>方法获取<code>destination path</code></li>
+<li>使用<code>.destinationPath('sub/path')</code>方法来连接一个<code>path</code></li>
+</ul>
+<h3>template context</h3>
+<p><code>template context</code>是存放模板文件的地方。<code>template context</code>默认定义为<code>./templates/</code>。可以通过使用调用<code>sourceRoot('new/template/path')</code>方法覆盖这个默认值。</p>
+<ul>
+<li>使用<code>sourceRoot()</code>方法获取<code>path</code>值。</li>
+<li>使用<code>.templatePath('app/index.js')</code>连接一个<code>path</code></li>
+</ul>
+<h2>in-memory file System 和 文件功能</h2>
+<p>由于异步<code>API</code>难以使用, <code>yeoman</code>提供了同步的<code>file-system API</code>，将所有的文件都写到<code>in-memory</code>文件系统，当<code>yeoman</code>完成运行后，再写到磁盘。<code>in-memory</code>文件系统在所有的<code>composed generators</code>之间共享.
+<code>Generator</code>通过<code>this.fs</code>暴露所有的文件方法，<code>this.fs</code>是<code>mem-fs editor</code>的一个实例。</p>
+<h3>拷贝模板文件</h3>
+<p>使用<code>copyTpl()</code>方法来拷贝模板，此方法使用<code>ejs</code>模板语法：</p>
+<pre><code class="language-HTML">&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+  &lt;/head&gt;
+&lt;/html&gt;
+</code></pre>
+<p>调用的时候只要像渲染视图文件那样进行就可以了：</p>
+<pre><code class="language-JavaScript">class extends Generator {
+  writing() {
+    this.fs.copyTpl(
+      this.templatePath('index.html'),
+      this.destinationPath('public/index.html'),
+      { title: 'Templating with Yeoman' }
+    );
+  }
+}
+</code></pre>
+<h3>更新已经存在的文件内容</h3>
+<p>更新已经存在的文件内容是很复杂的工作，最可靠的方法是把文件解析为<code>AST</code>，然后编辑之。一些流行的<code>AST parser</code>包括：</p>
+<ul>
+<li><code>Cheerio</code>：解析<code>HTML</code>。</li>
+<li><code>Esprima</code>：解析<code>JavaScript</code>。</li>
+<li>对于<code>JSON</code>文件，使用原生的<code>JSON</code>对象方法。</li>
+<li>对于<code>Gruntfile</code>，使用<code>Gruntfile Editor</code>。</li>
+</ul>
+<p>使用<code>Regex</code>解析一个代码文件是邪道。</p>
+<h2>通过流转换输出文件</h2>
+<p><code>Generator</code>系统允许对每一个文件使用定制的<code>filter</code>,比如美化文件等。一旦<code>yeoman</code>通过<a href="https://github.com/gulpjs/vinyl">vinyl</a>处理完，再把每一个修改过的文件写入磁盘。</p>
+<p>通过调用<code>registerTransformStream()</code>方法即可注册一个新的修改器：</p>
+<pre><code class="language-JavaScript">var beautify = require('gulp-beautify');
+this.registerTransformStream(beautify({indentSize: 2 }));
+</code></pre>
+<p>需要注意的是，每一个文件都会被这个<code>stream</code>处理。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/ECMAScript/yeoman/yeoman-与用户交互.html">
                     yeoman 与用户交互
                   </a>
@@ -889,142 +1003,6 @@ holy shit
   });
 }
 </code></pre>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/ECMAScript/yeoman/yeoman-基本原理.html">
-                    yeoman 基本原理
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        ECMAScript
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        yeoman
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#ECMAScript">
-                    <span class="tag is-info">
-                      ECMAScript
-                    </span>
-                  </a>
-                  <a href="tags.html#Node.js">
-                    <span class="tag is-info">
-                      Node.js
-                    </span>
-                  </a>
-                  <a href="tags.html#yeoman">
-                    <span class="tag is-info">
-                      yeoman
-                    </span>
-                  </a>
-                  <a href="tags.html#项目生成">
-                    <span class="tag is-info">
-                      项目生成
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2016-11-22
-                </p>
-              </div>
-              <div class="content article-body">
-                <p><code>yeoman</code> 是与编程语言无关的通用脚手架系统。通过使用自己编写的或者别人编写的<code>yeoman</code>的生成器，我们可以很方便地生成任意编程语言的项目。
-与通过<code>mocha</code>、<code>Jest</code>来执行测试文件一样，我们所写的<code>generator</code>脚本都要基于<code>yo</code>来执行的，所以我们得先安装好这个全局依赖。</p>
-<pre><code>npm install -g yo
-</code></pre>
-<p>在接下来的行文中，我们要编写自己的<code>generator</code>脚本，最后通过<code>yo</code>来执行。</p>
-<h2>约定</h2>
-<p><code>yeoman</code> 有许多约定，诸如：</p>
-<ul>
-<li><code>package.json</code>的<code>name</code>必须以<code>generator-</code>为前缀（强制要求）</li>
-<li><code>package.json</code>的<code>keywords</code>字段必须包含<code>yeoman-generator</code>（本地安装可以忽略此字段）</li>
-<li><code>package.json</code>的<code>files</code>字段必须为由<code>generator</code>使用的文件或者路径名所组成的数组（本地安装可以忽略此字段）</li>
-</ul>
-<p>此外，<code>yeoman</code>对文件结构也有自己的约定。默认的文件夹结构为：</p>
-<pre><code>package.json
-app/          # 默认模块
-    index.js
-其他子模块1/
-    index.js
-其他子模块2/
-    index.js
-</code></pre>
-<p>如果不喜欢这种默认约定的文件结构，可以在<code>package.json</code>的<code>files</code>字段另行<a href="http://yeoman.io/authoring/">配置</a>。</p>
-<h2>命令执行</h2>
-<p>通过<code>yo</code>执行生成器文件，基本的命令格式为：</p>
-<pre><code>&gt; yo xxx:subcommnad
-&gt; # `xxx` 为生成器名(不包含`generartor-`前缀)
-&gt; # `subcommand` 为子命令
-</code></pre>
-<p>按照约定，此命令会执行的生成器文件为<code>subcommand/index.js</code>。</p>
-<p>如果省略<code>:subcommand</code>，则默认为<code>app</code></p>
-<pre><code>&gt; yo xxx
-</code></pre>
-<p>此命令会执行<code>app/index.js</code>。</p>
-<h2>编写生成器</h2>
-<p>借助于官方提供的<code>yeoman-generator</code>模块，我们可以很方便地创建自己的生成器，官方提供 demo 代码书写方式类似于：</p>
-<pre><code class="language-JavaScript">// app/index.js 
-const Generator=require('yeoman-generator');
-
-const proj=Generator.extend({
-    info:function(){
-        console.log('hello,world');
-    },
-    shutup:function(){
-        console.log('fuck,world');
-    }
-});
-
-module.exports=proj;
-</code></pre>
-<p>当然，这种写法相当守旧，既然<code>ES6</code>已经普及，我们可以直接这样写：</p>
-<pre><code class="language-JavaScript">const Generator = require('yeoman-generator');
-
-class MyGenerator extends Generator{
-  constructor( ...args ) {
-    super(...args);
-  }
-  method1() {
-    console.log(`The name is: ${ this.appname }`);
-  }
-} 
-
-module.exports = MyGenerator;
-</code></pre>
-<p>在版本<code>1.0.0</code>之后，官方已经推荐使用<code>ES6</code>的写法。</p>
-<p>ok，如果安装了这个生成器，搭配高版本<code>Node.js</code>，无需<code>babel</code>转换，即可完美运行。比如在一个叫<code>test-redis</code>的<code>npm</code>包下执行这个生成器，则会输出：</p>
-<pre><code>The name is: test redis
-</code></pre>
-<h2>安装与执行生成器</h2>
-<p>我们当然可以把生成器传到官方的仓库里供其他人使用，但是这并不是必须的。我们可以添加当前模块的软连接到全局：</p>
-<pre><code>npm link 
-</code></pre>
-<p>这样就可以在本地进行调用：</p>
-<pre><code>yo xxx
-</code></pre>
-<p>文件<code>app/index.js</code> 会被执行。</p>
 
               </div>
             </div>

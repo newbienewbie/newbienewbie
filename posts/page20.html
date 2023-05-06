@@ -86,6 +86,132 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/Java/Activiti/Activiti-极速入门2——Java-Service-Task-和-Script-Task.html">
+                    Activiti 极速入门2——Java Service Task 和 Script Task
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Java
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Activiti
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#Java">
+                    <span class="tag is-info">
+                      Java
+                    </span>
+                  </a>
+                  <a href="tags.html#Activiti">
+                    <span class="tag is-info">
+                      Activiti
+                    </span>
+                  </a>
+                  <a href="tags.html#BPMN2">
+                    <span class="tag is-info">
+                      BPMN2
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-01-14
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>我们知道，在<code>Activiti</code>支持的<code>BPMN2.0</code>流程定义中，可以使用</p>
+<ul>
+<li><code>userTask</code>元素</li>
+<li><code>scriptTask</code>元素</li>
+<li><code>serviceTask</code>元素
+来处理相关任务。</li>
+</ul>
+<p>和使用<code>userTask</code>元素定义用户任务一样，我们也可以通过<code>serviceTask</code>元素来调用<code>Java Service</code>处理流程：</p>
+<pre><code class="language-XML">&lt;serviceTask id=&quot;serviceTask1&quot; name=&quot;a java service to validate sth&quot; 
+    activiti:class=&quot;a-fully-qualified-class-name&quot;
+/&gt;
+</code></pre>
+<p>除此之外，还可以利用<code>scriptTask</code>元素调用诸如<code>JavaScript</code>、<code>Groovy</code>之类的脚本来执行任务:</p>
+<pre><code class="language-XML">&lt;scriptTask id=&quot;automatedIntro&quot; name=&quot;Generic and Automated Data Entry&quot; 
+    scriptFormat=&quot;javascript&quot; activiti:autoStoreVariables=&quot;false&quot; &gt;
+    &lt;script&gt;
+        &lt;![CDATA[
+            var dateAsString = new Date().toString();
+            execution.setVariable(&quot;autoWelcomeTime&quot;, dateAsString);
+        ]]&gt;
+    &lt;/script&gt;
+&lt;/scriptTask&gt;
+</code></pre>
+<h2>Java Service Task</h2>
+<p>一个 <code>Java Service Task</code> 可以有4种用法：</p>
+<ul>
+<li>Java service task class</li>
+<li>Java service task class with field extensions</li>
+<li>Java service task with method or value expressions</li>
+<li>A delegate expression that defines a variable that is resolved to a Java bean at
+runtime</li>
+</ul>
+<h3>Java Service Task class</h3>
+<p>一个典型的<code>Java Service Task</code>必须实现<code>JavaDelegate</code>接口，</p>
+<pre><code class="language-Java">public class ValidateService implements JavaDelegate {
+    @Override
+    public void execute(DelegateExecution execution) {
+        System.out.println(&quot;execution id &quot; + execution.getId());
+        Long isbn = (Long) execution.getVariable(&quot;isbn&quot;);
+        System.out.println(&quot;received isbn &quot; + isbn);
+        execution.setVariable(&quot;validatetime&quot;, new Date());
+    }
+}
+</code></pre>
+<p><code>DelegateExecution</code>实例提供了一个可以获取、设置流程变量的接口。一旦<code>Java Service Task</code>被执行，其<code>execute(DelegateExecution execution)</code>方法将会被流程引擎调用。</p>
+<p>然而这种方式是一种同步方式，意味着进程实例必须等待<code>automatic task</code>完成才能继续处理。要解决这个问题，从<code>BPMN2.0</code> XML的角度来说，很简单，只要声明任务为异步即可：</p>
+<pre><code class="language-XML">&lt;serviceTask id=&quot;serviceTask1&quot; name=&quot;a java service to validate sth&quot;
+    activiti:async=&quot;true&quot;
+    activiti:class=&quot;a-fully-qualified-class-name&quot;
+/&gt;
+</code></pre>
+<p>一旦把<code>activiti:async</code>设置为<code>true</code>，相关任务会在单独的事务和线程中执行。</p>
+<h3>Script Task</h3>
+<p>对于<code>Activiti Engine</code>执行的<code>scriptTask</code>，<code>scriptFormat</code>属性值必须兼容于<code>JSR-223</code>(“Scripting for the Java Platform”)。支持的语言包括：<code>Groovy</code>, <code>Clojure</code>, <code>JRuby</code>, <code>Jython</code>, 还有<code>JavaScript</code>。</p>
+<p>在<code>Java Service Task</code>中，可以通过<code>DelegateExecution</code>实例来读取、设置流程变量，在<code>Script Task</code>中也可以显式通过<code>execution</code>变量来读取、设置流程变量。
+比如，一段<code>Groovy</code>脚本为：</p>
+<pre><code class="language-XML">&lt;script&gt;
+    def bookVar = &quot;BPMN 2.0 with Activiti&quot;
+    execution.setVariable(&quot;bookName&quot;, bookVar);
+&lt;/script&gt;
+</code></pre>
+<p>当然，还可以通过隐式修改的方式（自动保存变量）进行:</p>
+<pre><code class="language-XML">&lt;script&gt;
+    sum = 0;
+    for ( i in inputArray ) {
+        sum += i
+    }
+&lt;/script&gt;
+</code></pre>
+<p>这里<code>sum</code>会被自动保存到流程变量中，如果要避免这种行为，应该使用<code>script-local variables</code>的方式——即使用<code>def</code>进行声明。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/Java/Activiti/Activiti-极速入门1——基本概念与用法.html">
                     Activiti 极速入门1——基本概念与用法
                   </a>
@@ -560,120 +686,6 @@ keyid=foo
 <li><code>Active Directory</code>是一个 Windows 环境下的数据库系统，提供<code>authentication</code>, <code>directory</code>, <code>policy</code>和其他服务。</li>
 </ul>
 <p>简单的说，<code>AD</code>是一个<code>directory services</code>数据库, and <code>LDAP</code> 是其中一种可以用于与之对话的协议。</p>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/ECMAScript/yeoman/yeoman-与文件系统交互.html">
-                    yeoman 与文件系统交互
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        ECMAScript
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        yeoman
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#ECMAScript">
-                    <span class="tag is-info">
-                      ECMAScript
-                    </span>
-                  </a>
-                  <a href="tags.html#Node.js">
-                    <span class="tag is-info">
-                      Node.js
-                    </span>
-                  </a>
-                  <a href="tags.html#yeoman">
-                    <span class="tag is-info">
-                      yeoman
-                    </span>
-                  </a>
-                  <a href="tags.html#项目生成">
-                    <span class="tag is-info">
-                      项目生成
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2016-12-19
-                </p>
-              </div>
-              <div class="content article-body">
-                <p><code>.yo-rc.json</code>文件定义了一个<code>yeoman</code>项目的根目录（<code>root</code>）。 这个文件允许用户运行在子目录里运行命令。</p>
-<h2>两个 context</h2>
-<p><code>yeoman</code>文件功能都是基于这样一个简单设想：在磁盘上，你总是有两个 <code>location contexts</code>。大部分情况下是从一个地方读，然后向另一个地方写。</p>
-<h3>destination context</h3>
-<p><code>destination context</code>被定义为当前工作目录或者最近一级包含<code>.yo-rc.json</code>文件的父目录。</p>
-<ul>
-<li>使用<code>destinationRoot()</code>方法获取<code>destination path</code></li>
-<li>使用<code>.destinationPath('sub/path')</code>方法来连接一个<code>path</code></li>
-</ul>
-<h3>template context</h3>
-<p><code>template context</code>是存放模板文件的地方。<code>template context</code>默认定义为<code>./templates/</code>。可以通过使用调用<code>sourceRoot('new/template/path')</code>方法覆盖这个默认值。</p>
-<ul>
-<li>使用<code>sourceRoot()</code>方法获取<code>path</code>值。</li>
-<li>使用<code>.templatePath('app/index.js')</code>连接一个<code>path</code></li>
-</ul>
-<h2>in-memory file System 和 文件功能</h2>
-<p>由于异步<code>API</code>难以使用, <code>yeoman</code>提供了同步的<code>file-system API</code>，将所有的文件都写到<code>in-memory</code>文件系统，当<code>yeoman</code>完成运行后，再写到磁盘。<code>in-memory</code>文件系统在所有的<code>composed generators</code>之间共享.
-<code>Generator</code>通过<code>this.fs</code>暴露所有的文件方法，<code>this.fs</code>是<code>mem-fs editor</code>的一个实例。</p>
-<h3>拷贝模板文件</h3>
-<p>使用<code>copyTpl()</code>方法来拷贝模板，此方法使用<code>ejs</code>模板语法：</p>
-<pre><code class="language-HTML">&lt;html&gt;
-  &lt;head&gt;
-    &lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
-  &lt;/head&gt;
-&lt;/html&gt;
-</code></pre>
-<p>调用的时候只要像渲染视图文件那样进行就可以了：</p>
-<pre><code class="language-JavaScript">class extends Generator {
-  writing() {
-    this.fs.copyTpl(
-      this.templatePath('index.html'),
-      this.destinationPath('public/index.html'),
-      { title: 'Templating with Yeoman' }
-    );
-  }
-}
-</code></pre>
-<h3>更新已经存在的文件内容</h3>
-<p>更新已经存在的文件内容是很复杂的工作，最可靠的方法是把文件解析为<code>AST</code>，然后编辑之。一些流行的<code>AST parser</code>包括：</p>
-<ul>
-<li><code>Cheerio</code>：解析<code>HTML</code>。</li>
-<li><code>Esprima</code>：解析<code>JavaScript</code>。</li>
-<li>对于<code>JSON</code>文件，使用原生的<code>JSON</code>对象方法。</li>
-<li>对于<code>Gruntfile</code>，使用<code>Gruntfile Editor</code>。</li>
-</ul>
-<p>使用<code>Regex</code>解析一个代码文件是邪道。</p>
-<h2>通过流转换输出文件</h2>
-<p><code>Generator</code>系统允许对每一个文件使用定制的<code>filter</code>,比如美化文件等。一旦<code>yeoman</code>通过<a href="https://github.com/gulpjs/vinyl">vinyl</a>处理完，再把每一个修改过的文件写入磁盘。</p>
-<p>通过调用<code>registerTransformStream()</code>方法即可注册一个新的修改器：</p>
-<pre><code class="language-JavaScript">var beautify = require('gulp-beautify');
-this.registerTransformStream(beautify({indentSize: 2 }));
-</code></pre>
-<p>需要注意的是，每一个文件都会被这个<code>stream</code>处理。</p>
 
               </div>
             </div>

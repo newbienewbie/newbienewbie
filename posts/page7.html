@@ -86,6 +86,84 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/Boulevard/Alchemy/machine-learning/机器学习 - BP网络/BP神经网络的原理.html">
+                    机器学习 BP神经网络原理
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        大道
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        炼丹
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        机器学习
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#炼丹">
+                    <span class="tag is-info">
+                      炼丹
+                    </span>
+                  </a>
+                  <a href="tags.html#机器学习">
+                    <span class="tag is-info">
+                      机器学习
+                    </span>
+                  </a>
+                  <a href="tags.html#神经网络">
+                    <span class="tag is-info">
+                      神经网络
+                    </span>
+                  </a>
+                  <a href="tags.html#反向传播算法">
+                    <span class="tag is-info">
+                      反向传播算法
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-06-12
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在<a href="/blog/2018/06/12/Boulevard/Alchemy/machine-learning/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%20-%20%20%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95/%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95/">关于梯度下降法的机器学习笔记中</a>，我们给出了一个通用的理论，也即每次沿着梯度的反方向进行迭代搜素最小值。</p>
+<h2>使用最速下降法进行BP网络求解</h2>
+<p>考虑有一个多层神经网络，我们可以迭代调节各层的权重<code>$w^{m}_{i,j}$</code>，来令性能函数<code>$F$</code>取得更小的值。这里采用最速下降法，为了计算其梯度，不妨先考察其通用形式：<code>$\frac {\partial F}{ \partial w^{m}_{i,j}}$</code>。又由于<code>$n^{m}_{i}$</code>和<code>$w^{m}_{i,j}$</code>存在函数关系:</p>
+<pre><code class="language-math">%% KaTex
+n^{m}_{i}=\displaystyle\sum_{j}{ w^{m}_{i,j}a^{m-1}_{j}}+ b^{m}_{i}
+</code></pre>
+<p>根据链式法则，有：</p>
+<pre><code class="language-math">%% KaTex
+\frac {\partial F}{ \partial w^{m}_{i,j}} = \underbrace{\frac{\partial F}{\partial n^{m}_{i} }} _{\text{记作} s^{m}_{i}} \cdot \frac{\partial n^{m}_{i}}{\partial w^{m}_{i,j}} = s^{m}_{i} \cdot a^{m-1}_{j}
+</code></pre>
+<p>其中，<code>$s^{m}_{i}$</code>表达了性能函数<code>$F$</code>对第<code>$m$</code>层的第<code>$i$</code>个的元素发生变化的敏感程度。</p>
+<p>显然，根据最速下降法，迭代式为：</p>
+<pre><code class="language-math">%% KaTex
+w^{m}_{i,j}(k+1) = w^{m}_{i,j}(k) - \alpha s^{m}_{i} a^{m}_{j}
+
+b^{m}_{i}(k+1) = b^{m}_{i}(k) - \alpha s^{m}_{i} 
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/ECMAScript/popmotion/设计篇3 返回值.html">
                     popmotion 设计篇3 ：返回值
                   </a>
@@ -392,70 +470,6 @@ actionInstance.start();
 <p>在我之前已经有个前端做好的各屏样式、动效。但是他写的在线可编辑功能是用纯手工的<code>input name=&quot;&quot;</code>做的，这导致在线编辑基本是废的——因为每个模板都有很多不同的可编辑部分，不可能全靠手工完成；而且一到渲染环节就抓瞎。</p>
 <h2>解决方案</h2>
 <p>本想用<code>HTML5</code>的<code>content-editable</code>做，不过这货在移动端的监听内容改变比较操蛋；而且对于图片无能为力。</p>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/Boulevard/Alchemy/machine-learning/机器学习 - 世界观/机器学习 世界观 2.html">
-                    机器学习 世界观 一种有监督学习的算法
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        大道
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        炼丹
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        机器学习
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#炼丹">
-                    <span class="tag is-info">
-                      炼丹
-                    </span>
-                  </a>
-                  <a href="tags.html#机器学习">
-                    <span class="tag is-info">
-                      机器学习
-                    </span>
-                  </a>
-                  <a href="tags.html#神经网络">
-                    <span class="tag is-info">
-                      神经网络
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2018-04-10
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>训练集可以视作一个矩阵<code>$\bold X$</code>，其中每一行都代表一条训练数据向量<code>$\bold x$</code>。我们的目标就是要通过训练集反复调整权重向量，得到能够刻画数据内在规律的数学方程。</p>
-<h2>朴素思想</h2>
-<p>不妨先只考虑单个神经元的情况。对于训练集中的每一组训练数据<code>$\bold x$</code>，都通过<code>$\phi(\bold w \cdot \bold x +b)$</code>计算出一个预测值<code>$\hat y$</code>。 并和真实值<code>$y$</code>相比较得到误差<code>$e=y - \hat y$</code> 。由于<code>$\phi(\bold w \cdot \bold x +b)$</code>是对<code>$\bold w \cdot \bold x$</code>简单变换，为了简单起见，我们假设<code>$\phi$</code>是正相关函数，这样只需考虑<code>$\bold w \cdot \bold x$</code>即可推知<code>$\phi(z)$</code>的变化趋势：</p>
-<ol>
-<li>如果误差<code>$e = 0$</code>，则说明预测值与真实值相同，不需要调整权重向量<code>$\bold w$</code>。</li>
-<li>如果误差<code>$e &gt; 0$</code>，则说明预测值与真实值相比偏小，需要修正<code>$\bold w$</code>。我们可以通过调整<code>$\bold w$</code>，使之与输入向量<code>$\bold x$</code>之间的夹角更小一点，这样计算出来的<code>$\bold w \cdot \bold x$</code>值会更大，从而导致预测值<code>$\phi(z)$</code>会增大一点。</li>
-<li>如果误差<code>$e &lt; 0$</code>，则说明预测值与真实值相比偏大，需要修正<code>$\bold w$</code>。我们可以通过调整<code>$\bold w$</code>，使之与输入向量<code>$\bold x$</code>之间的夹角更大一点，这样计算出来的<code>$\bold w \cdot \bold x$</code>值会更小，从而导致预测值<code>$\phi(z)$</code>会减小一点。</li>
-</ol>
 
               </div>
             </div>

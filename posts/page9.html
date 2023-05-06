@@ -86,6 +86,93 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/Rust/并发编程/Rust并发编程1——消息传递.html">
+                    Rust并发编程1——消息传递
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        并发编程
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#Rust">
+                    <span class="tag is-info">
+                      Rust
+                    </span>
+                  </a>
+                  <a href="tags.html#并发编程">
+                    <span class="tag is-info">
+                      并发编程
+                    </span>
+                  </a>
+                  <a href="tags.html#mpsc">
+                    <span class="tag is-info">
+                      mpsc
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-03-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>传统的并发编程在共享数据时，往往选择的是共享且可变的多所有权的方式。如今，<code>message passing</code> 是一种越来越流行的应对安全并发的手法，在这种机制下，线程或者<code>actor</code>通过发送包含数据的消息来通讯。<code>Rust</code>提供了<code>channel</code>的机制来实现消息传递，在绝大多数编程语言里，一旦发送端利用<code>channel</code>将数据发出，就再也不能使用该数据，这十分类似于<code>Rust</code>中所有权的世界观设定，因而采用这种方式的并发编程，可以确保并发的安全可控。</p>
+<h3>通道与消息传递</h3>
+<p><code>std::sync::mpsc</code>模块提供了<code>channel()</code>方法，可以生成一对<code>transmitter</code>和<code>receiver</code>，前者是消息的发送端，提供了<code>send()</code>方法，返回一个<code>Result&lt;T,E&gt;</code>对象。后者是消息的接收端，提供<code>recv()</code>、<code>try_recv()</code>方法，用以接收消息，以<code>recv()</code>方法为例：</p>
+<ol>
+<li><code>recv()</code>方法会阻塞当前线程，直到收到消息为止。</li>
+<li>当收到消息，<code>recv()</code>方法便会返回一个<code>Result&lt;T,E&gt;</code>类型</li>
+<li>一旦发送端和接收端的通道(<code>channel</code>)关闭，<code>recv()</code>方法便会返回一个<code>error</code>，以通知以后不会再有新的值被发送。</li>
+</ol>
+<p>举一个例子，子线程每隔一秒产生一个数，主线程负责对子线程生成的数进行处理。</p>
+<pre><code class="language-Rust">use std::thread;
+use std::sync::mpsc;
+
+fn main() {
+    let (tx,rx)=mpsc::channel();
+
+    let _handle= thread::spawn(move||{
+        for x in 0 .. 100 {
+            tx.send(x).unwrap();
+            println!(&quot;sub thread send a : {}&quot;,x);
+            thread::sleep(std::time::Duration::from_secs(1));
+        }
+    });
+
+    while let Ok(received)=rx.recv(){
+        println!(&quot;main thread received a : {}&quot;,received);
+    }
+    println!(&quot;done&quot;);
+}
+</code></pre>
+<h3>迭代器模式</h3>
+<p>这种不停地循环调用<code>rx.recv()</code>直至通道关闭，十分类似于迭代器模式。为此，<code>Rust</code>提供了<code>recv.iter()</code>方法，返回一个迭代器<code>std::sync::mpsc::Iter</code>结构体，每次迭代取值，都会调用<code>rx.recv().ok()</code>：</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/Rust/Rust-WASM/Rust与WebAssembly 2——stdweb.html">
                     Rust与WebAssembly 2——stdweb
                   </a>
@@ -398,81 +485,6 @@ let raw_pointer: *const i32 = &amp;x;
 <li>一旦到了作用域(<code>scope</code>)之外，与<code>owner</code>相应的值就会被丢弃(<code>drop</code>)。</li>
 </ol>
 </blockquote>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/Rust/智能指针/Rust智能指针1——解引用.html">
-                    Rust智能指针1——解引用
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        Rust
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        智能指针
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#Rust">
-                    <span class="tag is-info">
-                      Rust
-                    </span>
-                  </a>
-                  <a href="tags.html#智能指针">
-                    <span class="tag is-info">
-                      智能指针
-                    </span>
-                  </a>
-                  <a href="tags.html#Deref">
-                    <span class="tag is-info">
-                      Deref
-                    </span>
-                  </a>
-                  <a href="tags.html#DerefMut">
-                    <span class="tag is-info">
-                      DerefMut
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2018-02-27
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>本文是正式开始智能指针学习之前的基础知识之一：解引用。</p>
-<p><code>Deref</code>这个<code>trait</code>允许我们在一定形式上重载<code>*</code>操作符。换言之，通过智能指针实现<code>Deref</code>的方式，就能让智能指针被当作一个普通引用来使用：在那些需要操作引用的地方，我们也可以直接使用智能指针。</p>
-<h2><code>*</code>操作符的工作机制</h2>
-<p>在本质上，<code>Rust</code>中的常规引用是与<code>C</code>语言中的指针相等价的，而<code>*</code>操作符所做的就是解引用。以下这段<code>Rust</code>代码和<code>C</code>的指针用法完全一致：</p>
-<pre><code class="language-Rust">fn main() {
-    let x = 42;
-    let y = &amp;x;
-
-    assert_eq!(42, x);
-    assert_eq!(42, *y);
-}
-</code></pre>
-<p>在上述例子中，<code>y</code>是个常规引用，<code>*</code>操作符会顺着指针进行取值。事实上，如果一个任意类型实现了<code>Deref</code>，<code>Rust</code>编译器就会自动对<code>*</code>解引用操作进行替换：先进行<code>Deref</code>的<code>deref()</code>方法调用，然后再对返回值进行一个普通的解引用。</p>
-<p>举个例子，为了获取宇宙的终极奥秘，我们写一个任意类型：</p>
 
               </div>
             </div>

@@ -158,6 +158,70 @@ f(x) = f(x_0)+f'(x_0)*(x-x_0)
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/Boulevard/Alchemy/machine-learning/机器学习 - 世界观/机器学习 世界观 2.html">
+                    机器学习 世界观 一种有监督学习的算法
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        大道
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        炼丹
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        机器学习
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#炼丹">
+                    <span class="tag is-info">
+                      炼丹
+                    </span>
+                  </a>
+                  <a href="tags.html#机器学习">
+                    <span class="tag is-info">
+                      机器学习
+                    </span>
+                  </a>
+                  <a href="tags.html#神经网络">
+                    <span class="tag is-info">
+                      神经网络
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-04-10
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>训练集可以视作一个矩阵<code>$\bold X$</code>，其中每一行都代表一条训练数据向量<code>$\bold x$</code>。我们的目标就是要通过训练集反复调整权重向量，得到能够刻画数据内在规律的数学方程。</p>
+<h2>朴素思想</h2>
+<p>不妨先只考虑单个神经元的情况。对于训练集中的每一组训练数据<code>$\bold x$</code>，都通过<code>$\phi(\bold w \cdot \bold x +b)$</code>计算出一个预测值<code>$\hat y$</code>。 并和真实值<code>$y$</code>相比较得到误差<code>$e=y - \hat y$</code> 。由于<code>$\phi(\bold w \cdot \bold x +b)$</code>是对<code>$\bold w \cdot \bold x$</code>简单变换，为了简单起见，我们假设<code>$\phi$</code>是正相关函数，这样只需考虑<code>$\bold w \cdot \bold x$</code>即可推知<code>$\phi(z)$</code>的变化趋势：</p>
+<ol>
+<li>如果误差<code>$e = 0$</code>，则说明预测值与真实值相同，不需要调整权重向量<code>$\bold w$</code>。</li>
+<li>如果误差<code>$e &gt; 0$</code>，则说明预测值与真实值相比偏小，需要修正<code>$\bold w$</code>。我们可以通过调整<code>$\bold w$</code>，使之与输入向量<code>$\bold x$</code>之间的夹角更小一点，这样计算出来的<code>$\bold w \cdot \bold x$</code>值会更大，从而导致预测值<code>$\phi(z)$</code>会增大一点。</li>
+<li>如果误差<code>$e &lt; 0$</code>，则说明预测值与真实值相比偏大，需要修正<code>$\bold w$</code>。我们可以通过调整<code>$\bold w$</code>，使之与输入向量<code>$\bold x$</code>之间的夹角更大一点，这样计算出来的<code>$\bold w \cdot \bold x$</code>值会更小，从而导致预测值<code>$\phi(z)$</code>会减小一点。</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/Boulevard/Alchemy/Math/牛顿下山法.html">
                     牛顿下山法
                   </a>
@@ -357,93 +421,6 @@ fn main(){
     println!(&quot;{:?}&quot;, m)
 }
 </code></pre>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/Rust/并发编程/Rust并发编程1——消息传递.html">
-                    Rust并发编程1——消息传递
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        Rust
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        并发编程
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#Rust">
-                    <span class="tag is-info">
-                      Rust
-                    </span>
-                  </a>
-                  <a href="tags.html#并发编程">
-                    <span class="tag is-info">
-                      并发编程
-                    </span>
-                  </a>
-                  <a href="tags.html#mpsc">
-                    <span class="tag is-info">
-                      mpsc
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2018-03-10
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>传统的并发编程在共享数据时，往往选择的是共享且可变的多所有权的方式。如今，<code>message passing</code> 是一种越来越流行的应对安全并发的手法，在这种机制下，线程或者<code>actor</code>通过发送包含数据的消息来通讯。<code>Rust</code>提供了<code>channel</code>的机制来实现消息传递，在绝大多数编程语言里，一旦发送端利用<code>channel</code>将数据发出，就再也不能使用该数据，这十分类似于<code>Rust</code>中所有权的世界观设定，因而采用这种方式的并发编程，可以确保并发的安全可控。</p>
-<h3>通道与消息传递</h3>
-<p><code>std::sync::mpsc</code>模块提供了<code>channel()</code>方法，可以生成一对<code>transmitter</code>和<code>receiver</code>，前者是消息的发送端，提供了<code>send()</code>方法，返回一个<code>Result&lt;T,E&gt;</code>对象。后者是消息的接收端，提供<code>recv()</code>、<code>try_recv()</code>方法，用以接收消息，以<code>recv()</code>方法为例：</p>
-<ol>
-<li><code>recv()</code>方法会阻塞当前线程，直到收到消息为止。</li>
-<li>当收到消息，<code>recv()</code>方法便会返回一个<code>Result&lt;T,E&gt;</code>类型</li>
-<li>一旦发送端和接收端的通道(<code>channel</code>)关闭，<code>recv()</code>方法便会返回一个<code>error</code>，以通知以后不会再有新的值被发送。</li>
-</ol>
-<p>举一个例子，子线程每隔一秒产生一个数，主线程负责对子线程生成的数进行处理。</p>
-<pre><code class="language-Rust">use std::thread;
-use std::sync::mpsc;
-
-fn main() {
-    let (tx,rx)=mpsc::channel();
-
-    let _handle= thread::spawn(move||{
-        for x in 0 .. 100 {
-            tx.send(x).unwrap();
-            println!(&quot;sub thread send a : {}&quot;,x);
-            thread::sleep(std::time::Duration::from_secs(1));
-        }
-    });
-
-    while let Ok(received)=rx.recv(){
-        println!(&quot;main thread received a : {}&quot;,received);
-    }
-    println!(&quot;done&quot;);
-}
-</code></pre>
-<h3>迭代器模式</h3>
-<p>这种不停地循环调用<code>rx.recv()</code>直至通道关闭，十分类似于迭代器模式。为此，<code>Rust</code>提供了<code>recv.iter()</code>方法，返回一个迭代器<code>std::sync::mpsc::Iter</code>结构体，每次迭代取值，都会调用<code>rx.recv().ok()</code>：</p>
 
               </div>
             </div>

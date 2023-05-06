@@ -86,8 +86,8 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
-                  <a href="posts/Boulevard/OS/硬件基础/总线结构.html">
-                    操作系统笔记 硬件基础——总线结构
+                  <a href="posts/Boulevard/OS/存储管理/虚拟内存与分页管理.html">
+                    操作系统笔记 存储管理—虚拟内存与分页管理
                   </a>
                 </p>
                 <nav class="breadcrumb">
@@ -104,7 +104,7 @@
                     </li>
                     <li>
                       <a href="">
-                        硬件基础
+                        存储管理
                       </a>
                     </li>
                   </ul>
@@ -120,9 +120,19 @@
                       硬件基础
                     </span>
                   </a>
-                  <a href="tags.html#总线结构">
+                  <a href="tags.html#虚拟内存">
                     <span class="tag is-info">
-                      总线结构
+                      虚拟内存
+                    </span>
+                  </a>
+                  <a href="tags.html#地址空间">
+                    <span class="tag is-info">
+                      地址空间
+                    </span>
+                  </a>
+                  <a href="tags.html#分页管理">
+                    <span class="tag is-info">
+                      分页管理
                     </span>
                   </a>
                 </p>
@@ -130,214 +140,13 @@
                   <a href="#">
                     
                   </a>
-                  on 2017-10-26
+                  on 2017-10-27
                 </p>
               </div>
               <div class="content article-body">
-                <p>计算机系统的硬件部分以总线方式进行互联，以实现部件和设备的扩充。</p>
-<p>一种多总线结构示意图：</p>
-<pre><code>// 总线结构
-                  高速缓存总线           局部总线                          内存总线
-                       |                   |                                |
-                       |                   |                                |
-    +---------------+  | +-----------+     |    +------------+              |             +----------------+
-    |     二   级   +--+--&gt;           +-----+----&gt;           +--------------+-------------&gt;                 |
-    |高 速  缓  存  |     |    CPU    |          |   PCI桥    |                            |  主  存  储  器 |
-    |              &lt;-----+           &lt;----------+            &lt;----------------------------+                 |
-    +--------------+     +-----------+          +------^-----+                            +----------------+
-                                                      |-|
-                                                      |-|
-                                                      |-|
-                                                      |-|
-                                                      |-|
-                                                      |-|                        PCI 总 线
-    +----------------------------------------------------------------------------------------------------+
-    +----------------------------------------------------------------------------------------------------+
-      | |                | |                          |-|                                  ||
-      | |                | |                          |-|                                  ||
-      | |                | |                          |-|                                  ||
-  +---+-+---+        +---+-+---+                      |-|                             +---------------+
-  |  SCSI   |        |   USB   |                      |-|                             |图 形 适 配 器  |
-  +----+----+        +----+----+                      |-|                             +---------------+
-       |                  |                           |-|
-       v  SCSI总线        v       USB总线        +------------+ IDE总线+------------+
-+------------+     &lt;--+---+------+--&gt;           |            +--------+            |
-+------------+        |          |              |    ISA桥   &lt;--------&gt;   IDE硬盘  |
-                      |          |              |            +--------+            |
-                      |          |              +------------+        +------------+
-                  +---+---+  +---+-----+              |-|
-                  | mouse |  |keyboard |              |-|
-                  +-------+  +---------+              |-|
-                                                      |-|
-                                                      |-|
-                                                      |-|                        ISA 总 线
-+----------------------------------------------------------------------------------------------------------+
-+----------------------------------------------------------------------------------------------------------+
-     | |                     | |                               | |
-     | |                     | |                               | |
-  +--+-+--+             +----+-+-----+                    +----+-+------+
-  | 声卡  |             |   打 印 机  |                    |调 制 解 调 器|
-  +-------+             +------------+                    +-------------+
-</code></pre>
-<p>在这种总线结构中，CPU内部有个一级高速缓存；CPU之外有个二级缓存通过高速缓存总线与CPU相连。CPU通过局部总线与PCI桥芯片对话，PCI桥芯片通过专门的存储总线与存储器对话。</p>
-<!-- more -->
-<p>总线分类：</p>
-<ol>
-<li>内部总线：用于芯片一级的互联，分为芯片内总线和元件级总线。</li>
-<li>系统总线：又称为内部总线，用于插件板一级的互联。</li>
-<li>外部总线：又称为通信总线，用于设备一级的互联。</li>
-</ol>
-<p>系统总线：典型的有ISA总线（工业标准总线，Industry Standard Architecture）、PCI总线（外网组件互联总线，Peripheral Component Interconnect）。</p>
-<p>外部总线有很多：</p>
-<ol>
-<li>RS232C：串行，在工控行业应用较多。</li>
-<li>SCSI : 小型计算机接口，一种高速的并行外总线。用于扫描仪、高速影盘等需要高带宽的设备上。</li>
-<li>USB：通用串行总线。将慢速I/O设备与计算机相连。</li>
-<li>其他</li>
-</ol>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/Boulevard/OS/硬件基础/CPU.html">
-                    操作系统笔记 硬件基础——CPU
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        大道
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        操作系统
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        硬件基础
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#操作系统">
-                    <span class="tag is-info">
-                      操作系统
-                    </span>
-                  </a>
-                  <a href="tags.html#硬件基础">
-                    <span class="tag is-info">
-                      硬件基础
-                    </span>
-                  </a>
-                  <a href="tags.html#CPU结构">
-                    <span class="tag is-info">
-                      CPU结构
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2017-10-26
-                </p>
-              </div>
-              <div class="content article-body">
-                <h2>CPU结构</h2>
-<p>CPU 主要有运算器、控制器、寄存器组、和内部总线组成。</p>
-<pre><code>                                                 执行指令控制
-                                                  ^^^^^^^^^
-                   +---+                          |-------|
-                   |PSW&lt;---+---------+        +---------------+
-                   +---+   |         |        | 操 作 控 制 器 |      +-------+
-                       +---+   ALU   |        |               &lt;------+ 时 钟 |
-      +------+         | +-+         |        | 时 序 产 生 器 &lt;------+ 状 态 |
-+-----+      +---+     | | +-+-+--^^-+        +-----+-+-+------      +-------+
-| ----+ RAM  +---+     | |   ^ ^  | |               ^ ^ ^ ^
-| |   +------+ | |     | |   | |  | |               | | | |
-| |            | |    +v-v---+-+  | |             +--+-+-+-+---+
-| |            | |    |  AC    &lt;--- |             |    ID      |
-| |            | |    +------^^+  | |             +---^-^------+
-| |            | |           ||   | |               | |
-| ----+-----+----+         +---------+             +-+-+------+
-| ----+ I/O +----+         |   DR    +-------------&gt;   IR     |
-| |   +-----+  | |         +---^-^---+             -+-+-------+
-| |            | |  DBus       | |                  | |
-| |            | +------------------------------------+
-| |            +--------------------------------------+
-| |                                                 | |    +------+
-| |                                                 | +----+  PC  |
-| |                                                 +-------------+
-| |                                                 | |    +------+
-| |                                                 | +----+  AR  |
-| |                                                 +---------+-+-+
-| |  ABus                                                     | |
-| ------------------------------------------------------------+ |
-+---------------------------------------------------------------+
-</code></pre>
-<!-- more -->
-<h3>运算器</h3>
-<ul>
-<li>算术逻辑单元（<code>Arithmetic and Logic Unit</code>, <code>ALU</code>）:负责对数据进行算术运算和逻辑运算。</li>
-<li>累加寄存器（<code>AC</code>）：累加器，通用寄存器，为<code>ALU</code>提供了一个工作区。</li>
-<li>数据缓冲寄存器（<code>DR</code>）:为CPU和内存、外围设备之间数据传送的中转站、缓冲。</li>
-<li>状态条件寄存器（<code>PSW</code>）:包括状态标准和控制标志，例如进位(C)、溢出(V)、运算结果为0（Z）、运算结果为负值（N）、中断（I）等。</li>
-</ul>
-<h3>控制器</h3>
-<p>控制器用于控制整个CPU的工作。一般包括：</p>
-<ul>
-<li>指令寄存器（<code>IR</code>）:当CPU执行一条指令时，先把它从内存中取到<code>DR</code>，然后送入<code>IR</code>暂存。指令译码器根据<code>IR</code>的内容产生各种微操作指令，控制其他部件完成工作。</li>
-<li>程序计数器（<code>PC</code>）: 又称之为指令计数器，<code>PC</code>有寄存信息和计数两个功能。执行指令时，CPU将自动修改<code>PC</code>内容，使其保持的总是将要执行的下一条指令的地址。</li>
-<li>地址寄存器（<code>AR</code>）: 保存了当前CPU所访问内容单元的地址，直到对内存的读写操作完成。</li>
-<li>指令译码器（<code>ID</code>）: 指令分为操作码和地址码两部分。<code>ID</code>是对指令中的操作码字段进行分析解释，识别指令规定的操作，向操作控制器发出具体的控制信号，控制各部件完成工作。</li>
-</ul>
-<p>其他还包括：</p>
-<ul>
-<li>时序控制器：为每条指令按时间顺序提供有效的控制信号。</li>
-<li>总线逻辑：信息通路的控制电路。</li>
-<li>中断控制器：用于控制各种中断请求，并根据优先级进行排队，逐个交给CPU处理。</li>
-<li>e.t.c</li>
-</ul>
-<h3>寄存器组</h3>
-<p>分为通用寄存器和专用寄存器。专用寄存器作用是固定的，如控制器和运算器中的寄存器。而通用寄存器可以由程序员指定用途。</p>
-<h2>指令执行过程</h2>
-<ol>
-<li>取指：从内存中读取一条指令到<code>DR</code>，然后送入<code>IR</code></li>
-<li>解码: <code>ID</code>对指令进行分析解码，识别规定的动作</li>
-<li>执行</li>
-</ol>
-<h3>流水线技术</h3>
-<p>CPU可以有分开的取值单元、解码单元、和执行单元。也就是说，不必等到一条指令从头到尾执行完毕后再开始处理下一条指令。三级流水线其示意图为：</p>
-<pre><code>// 流水线技术
-          ^
-          |                                           X : 取指流水线
-          |                                           Y : 解码流水线
-          |                                           Z : 执行流水线
-          |
-          |
-+-------+ +------+------+-----------------+-----+
-   X      |  1   |  2   |       ...       |  n  |
-+-------+ +----------+------+-------------+----------+
-   Y      |      | 1 |  | 2 |      ...          | n  |
-+-------+ |      +------+---------+-----+-----+-+---------+
-   Z      |          |  1   |  2  |  3  | ... |      | n  |   时间
-+-------+ +-----------------+-----+-----+-----+------------------&gt;
-          |XXXXXX|YYY|                               |ZZZZ|
-          |XXXXXX|YYY|                               |ZZZZ|
-          +----------+                               +----+
-</code></pre>
-<p>在某个时刻，第一条指令取指完成（对应图中XXXXXX标注区域），解码流水线立即开始第一条指令的解码，同时取指流水线开始对第二条指令的取指；第一条指令的解码操作完成之后（对应图中YYYY标注区域），执行流水线开始对第一条指令的执行操作，同时解码流水线等待第二条指令送达。</p>
-<p>假设每条指令的取指操作需要<code>$\Delta t_1 $</code>时间，解码需要<code>$\Delta t_2$</code>时间，执行需要消耗<code>$\Delta t_3$</code>时间，则最终执行N条指令，则完成上图N条指令共需要时间为：</p>
-<pre><code class="language-math">%% KaTex
-(\sum\limits_{i=1}^3 \Delta t_i) + (n-1)*\Delta t_3
+                <h2>虚拟内存与虚拟内存空间</h2>
+<p>在任何一台计算机上，程序引用一组内存地址，当程序执行指令：</p>
+<pre><code class="language-asm">mov reg , 1000
 </code></pre>
 
               </div>
@@ -621,6 +430,267 @@ X =2-2^{-(n-1)}+ X    \qquad(\color{white} -1&lt;X \le 0)
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/Boulevard/OS/硬件基础/CPU.html">
+                    操作系统笔记 硬件基础——CPU
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        大道
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        操作系统
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        硬件基础
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#操作系统">
+                    <span class="tag is-info">
+                      操作系统
+                    </span>
+                  </a>
+                  <a href="tags.html#硬件基础">
+                    <span class="tag is-info">
+                      硬件基础
+                    </span>
+                  </a>
+                  <a href="tags.html#CPU结构">
+                    <span class="tag is-info">
+                      CPU结构
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <h2>CPU结构</h2>
+<p>CPU 主要有运算器、控制器、寄存器组、和内部总线组成。</p>
+<pre><code>                                                 执行指令控制
+                                                  ^^^^^^^^^
+                   +---+                          |-------|
+                   |PSW&lt;---+---------+        +---------------+
+                   +---+   |         |        | 操 作 控 制 器 |      +-------+
+                       +---+   ALU   |        |               &lt;------+ 时 钟 |
+      +------+         | +-+         |        | 时 序 产 生 器 &lt;------+ 状 态 |
++-----+      +---+     | | +-+-+--^^-+        +-----+-+-+------      +-------+
+| ----+ RAM  +---+     | |   ^ ^  | |               ^ ^ ^ ^
+| |   +------+ | |     | |   | |  | |               | | | |
+| |            | |    +v-v---+-+  | |             +--+-+-+-+---+
+| |            | |    |  AC    &lt;--- |             |    ID      |
+| |            | |    +------^^+  | |             +---^-^------+
+| |            | |           ||   | |               | |
+| ----+-----+----+         +---------+             +-+-+------+
+| ----+ I/O +----+         |   DR    +-------------&gt;   IR     |
+| |   +-----+  | |         +---^-^---+             -+-+-------+
+| |            | |  DBus       | |                  | |
+| |            | +------------------------------------+
+| |            +--------------------------------------+
+| |                                                 | |    +------+
+| |                                                 | +----+  PC  |
+| |                                                 +-------------+
+| |                                                 | |    +------+
+| |                                                 | +----+  AR  |
+| |                                                 +---------+-+-+
+| |  ABus                                                     | |
+| ------------------------------------------------------------+ |
++---------------------------------------------------------------+
+</code></pre>
+<!-- more -->
+<h3>运算器</h3>
+<ul>
+<li>算术逻辑单元（<code>Arithmetic and Logic Unit</code>, <code>ALU</code>）:负责对数据进行算术运算和逻辑运算。</li>
+<li>累加寄存器（<code>AC</code>）：累加器，通用寄存器，为<code>ALU</code>提供了一个工作区。</li>
+<li>数据缓冲寄存器（<code>DR</code>）:为CPU和内存、外围设备之间数据传送的中转站、缓冲。</li>
+<li>状态条件寄存器（<code>PSW</code>）:包括状态标准和控制标志，例如进位(C)、溢出(V)、运算结果为0（Z）、运算结果为负值（N）、中断（I）等。</li>
+</ul>
+<h3>控制器</h3>
+<p>控制器用于控制整个CPU的工作。一般包括：</p>
+<ul>
+<li>指令寄存器（<code>IR</code>）:当CPU执行一条指令时，先把它从内存中取到<code>DR</code>，然后送入<code>IR</code>暂存。指令译码器根据<code>IR</code>的内容产生各种微操作指令，控制其他部件完成工作。</li>
+<li>程序计数器（<code>PC</code>）: 又称之为指令计数器，<code>PC</code>有寄存信息和计数两个功能。执行指令时，CPU将自动修改<code>PC</code>内容，使其保持的总是将要执行的下一条指令的地址。</li>
+<li>地址寄存器（<code>AR</code>）: 保存了当前CPU所访问内容单元的地址，直到对内存的读写操作完成。</li>
+<li>指令译码器（<code>ID</code>）: 指令分为操作码和地址码两部分。<code>ID</code>是对指令中的操作码字段进行分析解释，识别指令规定的操作，向操作控制器发出具体的控制信号，控制各部件完成工作。</li>
+</ul>
+<p>其他还包括：</p>
+<ul>
+<li>时序控制器：为每条指令按时间顺序提供有效的控制信号。</li>
+<li>总线逻辑：信息通路的控制电路。</li>
+<li>中断控制器：用于控制各种中断请求，并根据优先级进行排队，逐个交给CPU处理。</li>
+<li>e.t.c</li>
+</ul>
+<h3>寄存器组</h3>
+<p>分为通用寄存器和专用寄存器。专用寄存器作用是固定的，如控制器和运算器中的寄存器。而通用寄存器可以由程序员指定用途。</p>
+<h2>指令执行过程</h2>
+<ol>
+<li>取指：从内存中读取一条指令到<code>DR</code>，然后送入<code>IR</code></li>
+<li>解码: <code>ID</code>对指令进行分析解码，识别规定的动作</li>
+<li>执行</li>
+</ol>
+<h3>流水线技术</h3>
+<p>CPU可以有分开的取值单元、解码单元、和执行单元。也就是说，不必等到一条指令从头到尾执行完毕后再开始处理下一条指令。三级流水线其示意图为：</p>
+<pre><code>// 流水线技术
+          ^
+          |                                           X : 取指流水线
+          |                                           Y : 解码流水线
+          |                                           Z : 执行流水线
+          |
+          |
++-------+ +------+------+-----------------+-----+
+   X      |  1   |  2   |       ...       |  n  |
++-------+ +----------+------+-------------+----------+
+   Y      |      | 1 |  | 2 |      ...          | n  |
++-------+ |      +------+---------+-----+-----+-+---------+
+   Z      |          |  1   |  2  |  3  | ... |      | n  |   时间
++-------+ +-----------------+-----+-----+-----+------------------&gt;
+          |XXXXXX|YYY|                               |ZZZZ|
+          |XXXXXX|YYY|                               |ZZZZ|
+          +----------+                               +----+
+</code></pre>
+<p>在某个时刻，第一条指令取指完成（对应图中XXXXXX标注区域），解码流水线立即开始第一条指令的解码，同时取指流水线开始对第二条指令的取指；第一条指令的解码操作完成之后（对应图中YYYY标注区域），执行流水线开始对第一条指令的执行操作，同时解码流水线等待第二条指令送达。</p>
+<p>假设每条指令的取指操作需要<code>$\Delta t_1 $</code>时间，解码需要<code>$\Delta t_2$</code>时间，执行需要消耗<code>$\Delta t_3$</code>时间，则最终执行N条指令，则完成上图N条指令共需要时间为：</p>
+<pre><code class="language-math">%% KaTex
+(\sum\limits_{i=1}^3 \Delta t_i) + (n-1)*\Delta t_3
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="posts/Boulevard/OS/硬件基础/总线结构.html">
+                    操作系统笔记 硬件基础——总线结构
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        大道
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        操作系统
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        硬件基础
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#操作系统">
+                    <span class="tag is-info">
+                      操作系统
+                    </span>
+                  </a>
+                  <a href="tags.html#硬件基础">
+                    <span class="tag is-info">
+                      硬件基础
+                    </span>
+                  </a>
+                  <a href="tags.html#总线结构">
+                    <span class="tag is-info">
+                      总线结构
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-26
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>计算机系统的硬件部分以总线方式进行互联，以实现部件和设备的扩充。</p>
+<p>一种多总线结构示意图：</p>
+<pre><code>// 总线结构
+                  高速缓存总线           局部总线                          内存总线
+                       |                   |                                |
+                       |                   |                                |
+    +---------------+  | +-----------+     |    +------------+              |             +----------------+
+    |     二   级   +--+--&gt;           +-----+----&gt;           +--------------+-------------&gt;                 |
+    |高 速  缓  存  |     |    CPU    |          |   PCI桥    |                            |  主  存  储  器 |
+    |              &lt;-----+           &lt;----------+            &lt;----------------------------+                 |
+    +--------------+     +-----------+          +------^-----+                            +----------------+
+                                                      |-|
+                                                      |-|
+                                                      |-|
+                                                      |-|
+                                                      |-|
+                                                      |-|                        PCI 总 线
+    +----------------------------------------------------------------------------------------------------+
+    +----------------------------------------------------------------------------------------------------+
+      | |                | |                          |-|                                  ||
+      | |                | |                          |-|                                  ||
+      | |                | |                          |-|                                  ||
+  +---+-+---+        +---+-+---+                      |-|                             +---------------+
+  |  SCSI   |        |   USB   |                      |-|                             |图 形 适 配 器  |
+  +----+----+        +----+----+                      |-|                             +---------------+
+       |                  |                           |-|
+       v  SCSI总线        v       USB总线        +------------+ IDE总线+------------+
++------------+     &lt;--+---+------+--&gt;           |            +--------+            |
++------------+        |          |              |    ISA桥   &lt;--------&gt;   IDE硬盘  |
+                      |          |              |            +--------+            |
+                      |          |              +------------+        +------------+
+                  +---+---+  +---+-----+              |-|
+                  | mouse |  |keyboard |              |-|
+                  +-------+  +---------+              |-|
+                                                      |-|
+                                                      |-|
+                                                      |-|                        ISA 总 线
++----------------------------------------------------------------------------------------------------------+
++----------------------------------------------------------------------------------------------------------+
+     | |                     | |                               | |
+     | |                     | |                               | |
+  +--+-+--+             +----+-+-----+                    +----+-+------+
+  | 声卡  |             |   打 印 机  |                    |调 制 解 调 器|
+  +-------+             +------------+                    +-------------+
+</code></pre>
+<p>在这种总线结构中，CPU内部有个一级高速缓存；CPU之外有个二级缓存通过高速缓存总线与CPU相连。CPU通过局部总线与PCI桥芯片对话，PCI桥芯片通过专门的存储总线与存储器对话。</p>
+<!-- more -->
+<p>总线分类：</p>
+<ol>
+<li>内部总线：用于芯片一级的互联，分为芯片内总线和元件级总线。</li>
+<li>系统总线：又称为内部总线，用于插件板一级的互联。</li>
+<li>外部总线：又称为通信总线，用于设备一级的互联。</li>
+</ol>
+<p>系统总线：典型的有ISA总线（工业标准总线，Industry Standard Architecture）、PCI总线（外网组件互联总线，Peripheral Component Interconnect）。</p>
+<p>外部总线有很多：</p>
+<ol>
+<li>RS232C：串行，在工控行业应用较多。</li>
+<li>SCSI : 小型计算机接口，一种高速的并行外总线。用于扫描仪、高速影盘等需要高带宽的设备上。</li>
+<li>USB：通用串行总线。将慢速I/O设备与计算机相连。</li>
+<li>其他</li>
+</ol>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/ECMAScript/misc/一种配合Express-React使用UEditor的方案(2).html">
                     一种配合Express+React使用UEditor的方案(2)
                   </a>
@@ -821,401 +891,6 @@ X =2-2^{-(n-1)}+ X    \qquad(\color{white} -1&lt;X \le 0)
 
 export default Form.create()(PlainAddOrEditForm);
 </code></pre>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/ECMAScript/misc/一种-Admin-UI-设计思路——兼谈Admin-UI的自动生成.html">
-                    一种 Admin UI 设计思路——兼谈Admin UI的自动生成
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        Misc
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#ECMAScript">
-                    <span class="tag is-info">
-                      ECMAScript
-                    </span>
-                  </a>
-                  <a href="tags.html#Node.js">
-                    <span class="tag is-info">
-                      Node.js
-                    </span>
-                  </a>
-                  <a href="tags.html#React">
-                    <span class="tag is-info">
-                      React
-                    </span>
-                  </a>
-                  <a href="tags.html#AdminUI">
-                    <span class="tag is-info">
-                      AdminUI
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2017-10-08
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>后台管理很多都是在简单的增删改查，本文讨论的就是如何自动生成增删改查的界面。</p>
-<p>对于创建、修改工作，大部分时候我们都需要使用表单。一个普通的表单负责前端验证、简单错误提示，并将数据发送到后端。但是编写这样的代码并不愉快。
-首先，创建表单和编辑表单在很大概率上是一样的，或者差异比较小的，起码验证逻辑、错误提示的规则配置是几乎一致的。其次，为每个模型都去编写创建界面/编辑界面/删除界面/查询界面，非常琐碎、耗时。
-我们的目标就是要尽可能地少些代码，尽可能地多自动生成增删改查的管理界面。</p>
-<h2>从普通的视图组件说起</h2>
-<h3>PlainForm</h3>
-<p>必须只包含视图内容，不得含有任何远程交互代码，甚至不得含有任何远程交互的意图。必须提供 <code>initialValues</code> 属性，来设置初始值。</p>
-<pre><code class="language-js">// 一个纯粹的视图组件，将来可以用于新增或者编辑角色模型
-class PlainAddOrEditForm extends React.Component{
-    constructor(props){
-        super(props);
-    }
-
-    render(){
-        const {getFieldDecorator,getFieldsError, getFieldError, isFieldTouched,validateFields}=this.props.form;
-        const hasFieldError=(fieldname)=&gt;isFieldTouched(fieldname) &amp;&amp; getFieldError(fieldname);
-        const hasErrors=(fieldsError)=&gt;Object.keys(fieldsError).some(field =&gt; fieldsError[field]);
-        const FormItem=Form.Item;
-        return (
-        &lt;Form &gt;
-            &lt;FormItem label='角色名' validateStatus={hasFieldError('name')} help={hasFieldError('name')||''} &gt;
-            {
-                getFieldDecorator('name',{
-                    rules:[{required:true,message:'角色名必填'}],
-                    initialValue:this.props.initialValues.name,
-                })(
-                    &lt;Input placeholder='角色名' /&gt;
-                )
-            }
-            &lt;/FormItem&gt;
-        
-            &lt;FormItem label='描述' validateStatus={hasFieldError('description')} help={hasFieldError('description')||''} &gt;
-            {
-                getFieldDecorator('description',{
-                    rules:[{required:true,message:'角色描述必填'}],
-                    initialValue:this.props.initialValues.description,
-                })(
-                    &lt;Input placeholder='description' /&gt;
-                )
-            }
-            &lt;/FormItem&gt;
-        
-        &lt;/Form&gt;);
-        
-    }
-}
-</code></pre>
-<!-- more -->
-<h3>PlainViewComponent</h3>
-<p><code>PlainForm</code>可以不经过嵌套直接使用(为了方便，将之表示为 <code>PlainForm组件</code> )。
-我们大可以在其中加入<code>button</code>控制其提交，但是这会带来代码复用的问题。因为这相当于假定这个表单已经有了一个我们定义的提交按钮了。如果我们需要在对话框中显示这个表单，当点击对话框右下侧的取消按钮，我们希望什么也不做，关闭对话框；当我们单机对话框右下侧的确定按钮，表单会进行提交。这样我们就有了两个提交按钮，这无疑很扯蛋。</p>
-<p>为了更好的代码复用，一个更好的办法是让<code>PlainForm</code>本身不包含提交或者取消这类控制指令的视图元素，而是<code>PlainForm</code>嵌套在其他组件中 (表示为<code>聚合PlainForm的纯视图组件</code>)。
-一个最简单的例子是：</p>
-<pre><code class="language-js">class PlainAddOrEditFormWithSubmitButton extends React.Component{
-    constructor(props){
-        super(props);
-    }
-    render(){
-        return &lt;div&gt;
-            &lt;PlainAddOrEditForm form={this.props.form} initialValues={this.props.initialValues}/&gt;
-            &lt;Button htmlType=&quot;submit&quot; type=&quot;primary&quot; onClick={this.props.onOk}&gt; 提交 &lt;/Button&gt;
-        &lt;/div&gt;;
-    }
-}
-</code></pre>
-<p>在这里我们组合了一个新的组件，注意作为<code>PlainForm</code>的<code>PlainAddOrEditForm</code>组件并不含<code>button</code>元素。为了设置对用户点击提交按钮时的响应，我们添加了一个<code>Button</code>组件，然后将其<code>onClick</code>属性设置为由父组件传递的<code>props.onOk</code>。</p>
-<p>为了表示方便，把<code>PlainForm</code>组件或者<code>聚合PlainForm的纯视图组件</code>统称为<code>PlainViewComponent</code>。</p>
-<p>无论如何，<code>PlainViewComponent</code>都不应该包含任何的服务端交互意图；作为补偿，必须对外暴露这样几个<code>props</code>：</p>
-<ul>
-<li>initialValues : 设置初始值</li>
-<li>onOk : 钩子函数，作为提交表单时触发的 callback</li>
-<li>onCancel : 钩子函数，作为取消表单时触发的 callback</li>
-</ul>
-<h3>表单验证、错误提示</h3>
-<p>既然<code>PlainViewComponent</code>只负责显示，那么如何控制其表单验证逻辑、错误提示呢？
-这块工作可以剥离出来，我们可以根据<code>PlainViewComponent</code>和相应的字段验证规则、错误提示等配置信息，自动生成一个包装组件。最后利用包装组件对表单进行验证、错误提示、提取当前值。</p>
-<p>所幸这块工作已经有人替我们想到了，由 <code>antd.Form.create()(PlainViewComponent)</code>可以完成这种工作。包装生成的新组件，会被注入<code>form</code>属性。从而可以控制表单的验证、错误显示和提取当前值操作。</p>
-<p>为了方便，把表示为这种经过包装的组件称之为<code>DecoratedFormComponent</code></p>
-<h2>用于创建模型的表单</h2>
-<p>既然已经有了以上<code>PlainViewComponent</code>机制，让我们先来编写一个用于创建模型的表单来热热身：</p>
-<p>假设我们有:</p>
-<ul>
-<li>一个<code>model</code>定义，其中<code>model.methods.create()</code>方法定义了如何与服务器交互创建一个新的模型对象。</li>
-<li>一个经过包装的<code>DecoratedFormComponent</code>表单组件<code>AddOrEditForm</code>。</li>
-</ul>
-<p>则一个跟远程服务器通讯的的用于添加模型的表单，可以写成这种形式：</p>
-<pre><code class="language-js">class AddForm extends React.Component{
-    constructor(props){
-        super(props);
-        this.formRef=null;
-    }
-
-    onOk(){
-        return this.formRef.validateFields((err,value)=&gt;{
-            if(!err){
-                model.methods.create(value)
-                    .then(resp=&gt;{
-                        message.success(`创建成功`);
-                        this.formRef.resetFields();
-                    })
-                    .catch(e=&gt;{
-                        message.error(`失败`+e);
-                    });
-            }
-        });
-    }
-
-    render() {
-        return &lt;AddOrEditForm ref={form=&gt;this.formRef=form} onOk={this.onOk} /&gt; ;
-    }
-}
-</code></pre>
-<p>看起来很傻对不对？绕了一大圈，却只是为了一个用于创建模型的表单，为什么要这么麻烦？</p>
-<p>但是仔细观察上面这段代码，我们会发现，我们编写的这个组件除了依赖<code>model</code>和<code>DecoratedFormComponent</code>，其他完全都是样板代码！所以，根据<code>DRY</code>原则，我们可以编写这样一个函数：</p>
-<pre><code class="language-js">(model,AddOrEditForm)=&gt;AddComponent
-</code></pre>
-<p>以后只要针对具体的模型提供<code>model</code>定义、和<code>AddOrEditForm</code>即可动态生成表单。为了方便，我们还可以编写一个用于创建默认的<code>AddOrEditForm</code>的函数：</p>
-<pre><code class="language-js">createDecoratedAddOrEditForm(PlainAddOrEditForm) =&gt; DecoratedFormComponent
-</code></pre>
-<p>这样，就可以利用<code>PlainAddOrEditForm</code>创建一个<code>DecoratedFormComponent</code>，再加上一个<code>model</code>定义，我们就可以自动生成最终的添加模型的表单。</p>
-<h2>Datagrid</h2>
-<p>有了上面的思路，我们可以轻而易举封装出一个通用的<code>Datagrid</code>组件，其基本功能包括：</p>
-<ul>
-<li>列表显示</li>
-<li>每行最后一列可以针对当前行执行相应操作
-<ul>
-<li>删除当前行记录 ：有对话框确认</li>
-<li>修改当前行记录 ：保持页面不跳转，弹出对话框，编辑当前行记录</li>
-</ul>
-</li>
-<li>带分页功能</li>
-</ul>
-<p>此外，还可以添加排序、筛选功能。</p>
-<pre><code class="language-js">class List extends React.Component{
-
-    constructor(props){
-        super(props);
-        this.state={
-            data:[],                   // 当前数据源
-            pagination:{},             // 当前分页
-            loading:true,              // 表格是否正在加载，用于控制动画
-            currentRecord:{},          // 执行操作时的当前行记录
-            editModalVisible:false,    // 编辑表单是否可见
-        };
-        // 对 编辑表单组件 的引用
-        this.editForm=null;
-        // bind `this`
-        this.onTableChange=this.onTableChange.bind(this);
-        this.onRemove=this.onRemove.bind(this);
-        this.onEditFormSubmit=this.onEditFormSubmit.bind(this);
-        this.onEditFormCancel=this.onEditFormCancel.bind(this);
-    }
-
-    /**
-     * 当表单发生分页变化、过滤器变化、或者排序器变化时，应该从服务器重新加载数据
-     * @param {*} pagination 
-     * @param {*} filters 
-     * @param {*} sorter 
-     */
-    onTableChange(pagination, filters={}, sorter={}) {
-        const {pageSize,current}=pagination;
-        return model.methods.list(current,pageSize /* ,condition */)
-            .then(result=&gt;{
-                const {count,rows}=result;
-                const pagination = Object.assign({}, this.state.pagination );
-                pagination.total = count;
-                this.setState({ loading: false, data: rows, pagination, });
-            });
-    }
-
-    onRemove(record){
-        return model.methods.remove(record.id)
-            .then(resp=&gt;{
-                console.log(resp);
-                message.warning('删除成功');
-            })
-            // 刷新数据源
-            .then(_=&gt;{
-                return this.onTableChange(this.state.pagination);
-            });
-    }
-
-    onEditFormSubmit(){
-        return this.editForm.validateFields((err,values)=&gt;{
-            if(!err){
-                const {id}=this.state.currentRecord;
-                model.methods.update(id,values)
-                    .then(resp=&gt;{
-                        message.success(`修改成功`);
-                        console.log(resp);
-                        this.setState({editModalVisible:false},()=&gt;{
-                            // 刷新数据源
-                            this.onTableChange(this.state.pagination);
-                        });
-                    })
-            }
-        });
-        
-    }
-
-    onEditFormCancel(){
-        this.setState({editModalVisible:false});
-    }
-
-    componentDidMount(){
-        this.setState({loading:true},()=&gt;{
-            return this.onTableChange(this.state.pagination);
-        });
-    }
-    render() {
-        const {Column,ColumnGroup}=Table;
-        const fields=model.fields;
-        return (&lt;div&gt;
-        &lt;Table dataSource={this.state.data} pagination={this.state.pagination} loading={this.state.loading} onChange={this.onTableChange} &gt;
-            { Object.keys(fields).map(k=&gt;{
-                const field=fields[k];
-                return &lt;Column title={field.title} key={k} dataIndex={k} /&gt;;
-            }) }
-            &lt;Column title='操作' key='action' render={(text, record) =&gt; (
-                &lt;span&gt;
-                    &lt;a onClick={()=&gt;{this.setState({editModalVisible:true,currentRecord:record});return false; }} &gt;修改&lt;/a&gt;
-                    &lt;span className='ant-divider' /&gt;
-                    &lt;Popconfirm title='确认要删除吗' okText='是' cancelText='否' onConfirm={() =&gt; { this.onRemove(record); }} &gt;
-                        &lt;a href='#'&gt;删除&lt;/a&gt;
-                    &lt;/Popconfirm&gt;
-                    &lt;span className='ant-divider' /&gt;
-                &lt;/span&gt;)} /&gt;
-        &lt;/Table&gt;
-
-        &lt;AddOrEditFormModal ref={form=&gt;this.editForm=form} visible={this.state.editModalVisible}
-            initialValues={this.state.currentRecord}
-            onOk={this.onEditFormSubmit}
-            onCancel={this.onEditFormCancel}
-        /&gt;
-
-    &lt;/div&gt;);
-    }
-}
-</code></pre>
-<p>在这里，基于和上面同样的设想，我们把变化的部分提取到了<code>model</code>和<code>AddOrEditFormModal</code>这个<code>DecoratedFormComponent</code>中，从而可以创建这样形式的<code>API</code>：</p>
-<pre><code class="language-js">(model,AddOrEditFormModal)=&gt; DatagridComponent;
-</code></pre>
-<p>为各种模型自动生成一个<code>Datagrid</code>组件。为了方便，我们还可以编写一个用于创建默认的<code>AddOrEditForm</code>的函数：</p>
-<pre><code class="language-js">createDecoratedAddOrEditForm(PlainAddOrEditForm) =&gt; DecoratedFormComponent
-</code></pre>
-<p>这样，就可以利用<code>PlainAddOrEditForm</code>创建一个<code>DecoratedFormComponent</code>，再加上一个<code>model</code>定义，我们就可以自动生成最终的模型<code>Datagrid</code>组件。</p>
-<h2>Admin UI 的自动生成</h2>
-<p>为了方便，我们可以设计一个通用的<code>tiny-admin</code>模块，其基本结构为：</p>
-<pre><code class="language-js">
-// 默认提供的 DecoratedFormComponent 对象，有两个工厂函数，用于创建普通AddOrEdit表单、和带Modal表单
-export const defaultDecoratedForm={
-
-    createDecoratedAddOrEditForm:function(PlainAddOrEditForm){/**/},
-
-    createDecoratedAddOrEditFormModal:function(PlainAddOrEditForm){/**/},  
-};
-
-
-
-export function addform(model,AddOrEditForm){/**/},
-
-export function datagrid(model,AddOrEditFormModal){/**/ },
-</code></pre>
-<p>然后针对具体的模型编写<code>model</code>和<code>PlainAddOrEditForm</code>就可以自动生成后台了。</p>
-<h2>示例</h2>
-<p>比如对于一个角色模型，有角色名、和描述两个字段。</p>
-<p><code>PlainAddOrEditForm</code>定义为：</p>
-<pre><code class="language-js">
-class PlainAddOrEditForm extends React.Component{
-    constructor(props){
-        super(props);
-    }
-
-
-    render(){
-        const {getFieldDecorator,getFieldsError, getFieldError, isFieldTouched,validateFields}=this.props.form;
-        const hasFieldError=(fieldname)=&gt;isFieldTouched(fieldname) &amp;&amp; getFieldError(fieldname);
-        const hasErrors=(fieldsError)=&gt;Object.keys(fieldsError).some(field =&gt; fieldsError[field]);
-        const FormItem=Form.Item;
-        return (
-        &lt;Form &gt;
-            &lt;FormItem label='角色名' validateStatus={hasFieldError('name')} help={hasFieldError('name')||''} &gt;
-            {
-                getFieldDecorator('name',{
-                    rules:[{required:true,message:'角色名必填'}],
-                    initialValue:this.props.initialValues.name,
-                })(
-                    &lt;Input placeholder='角色名' /&gt;
-                )
-            }
-            &lt;/FormItem&gt;
-        
-            &lt;FormItem label='描述' validateStatus={hasFieldError('description')} help={hasFieldError('description')||''} &gt;
-            {
-                getFieldDecorator('description',{
-                    rules:[{required:true,message:'角色描述必填'}],
-                    initialValue:this.props.initialValues.description,
-                })(
-                    &lt;Input placeholder='description' /&gt;
-                )
-            }
-            &lt;/FormItem&gt;
-        
-        &lt;/Form&gt;);
-        
-    }
-}
-
-</code></pre>
-<p>相应的<code>model</code>定义为：</p>
-<pre><code class="language-js">const model={
-    name:&quot;role&quot;,
-    fields:{
-        &quot;name&quot;:{
-            title:'角色名',
-        },
-        &quot;description&quot;:{
-            title:&quot;角色描述&quot;,
-        },
-    },
-    methods:{
-        create:function(record){
-            const {name,description}=record;
-            return createRole(name,description);
-        },
-        remove:removeRole,
-        update:function(id,record){
-            const{name,description}=record;
-            return updateRole(id,name,description);
-        },
-        list:listRoles,
-    }
-};
-</code></pre>
-<p>生成一个用于创建角色的表单：</p>
-<pre><code class="language-js">const AddOrEditForm=defaultDecoratedForm.createDecoratedAddOrEditForm(PlainAddOrEditForm);
-const AddForm=addform(model,AddOrEditForm);
-</code></pre>
-<p>生成一个用于管理角色的<code>Datagrid</code>：</p>
-<pre><code class="language-js">const AddOrEditFormModal=defaultDecoratedForm.createDecoratedAddOrEditFormModal(PlainAddOrEditForm);
-const DG=datagrid(model,AddOrEditFormModal);
-</code></pre>
-<h2>主从式二级联动表单demo</h2>
-<p>{% asset_img &quot;datagrid_admin_demo.gif&quot; &quot;datagrid admin demo&quot; %}</p>
 
               </div>
             </div>

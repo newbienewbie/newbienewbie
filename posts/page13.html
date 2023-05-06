@@ -86,6 +86,70 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/Boulevard/DataStructureAndAlgo/最短路径算法-Dijkstra算法.html">
+                    数据结构与算法笔记 最短路径算法——Dijkstra算法
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        大道
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        数据结构与算法
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#数据结构与算法">
+                    <span class="tag is-info">
+                      数据结构与算法
+                    </span>
+                  </a>
+                  <a href="tags.html#图论">
+                    <span class="tag is-info">
+                      图论
+                    </span>
+                  </a>
+                  <a href="tags.html#最短路径算法">
+                    <span class="tag is-info">
+                      最短路径算法
+                    </span>
+                  </a>
+                  <a href="tags.html#Dijkstra">
+                    <span class="tag is-info">
+                      Dijkstra
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-11-01
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>最短路径算法分为单源点到任意点的最短路径算法和任意点对之间的最短路径算法。对于简单的无权值的图，求其最短路径等同于按照深度进行遍历，此处不予赘述。求最短路径，就是要找到这样一条路径，该路径之上的边的权值之和最小。第一个顶点称之为源点(<code>Source</code>)，最后一个顶点称之为终点(<code>Destination</code>)。</p>
+<h2>Dijkstra's algorithm</h2>
+<p>对于指定的单源点(设起始点为<code>$v_0$</code>)到任意点的最短路径问题，Dijkstra 给出了按照长度递增的次序产生最短路径的算法，它是一种典型的贪心算法。对于图<code>$G=(V,E)$</code>，包含<code>$n$</code>个顶点<code>$i=1,2,...n$</code>，弧<code>&lt;i,j&gt;</code>的权值为<code>$w(i,j)$</code>。现在指定始点为<code>$v_0$</code>，考虑始点<code>$v_0$</code>到任意一顶点<code>$v_k$</code>的最短距离。</p>
+<h3>问题规模分解</h3>
+<p>首先尝试把问题分解为更小规模的问题。当始点<code>$v_0$</code>和顶点<code>$i$</code>之间不存在直接相连的弧<code>$&lt;v_0,i&gt;$</code>，若它们之间存在路径，则该路径必定要经过某个和<code>$v_0$</code>直接相连的中间顶点（这里记作<code>$x$</code>）；基于同样的原理，如果顶点<code>$x$</code>和<code>$i$</code>仍然不直接相连，则这条最短路径必定还要经过一个和顶点<code>x</code>直接相连的某个顶点：</p>
+<pre><code class="language-math">%% KaTex
+\boxed{ v_0 \xrightarrow{w(v_0,x)} x \xrightarrow{w(x,?)} ...... } \xrightarrow{w(?,i)} i
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/Boulevard/Database/数据库理论/查询语言/关系代数除法的意义与SQL转换.html">
                     数据库笔记 关系代数除法运算的意义与SQL转换
                   </a>
@@ -372,76 +436,6 @@ R \div S= \{ t^n[X] \,\mid\, t^n \in R \,\land\, \pi_y(S) \subseteq Y_x \}
 <li><code>$(\exists t) (\varphi)$</code>：表示至少有一个元组<code>$t$</code>使得<code>$\varphi$</code>为真。<code>$\exists$</code>称之为 <em>存在量词</em></li>
 <li><code>$(\forall t) (\varphi)$</code>：表示对于所有的元组<code>$t$</code>都使得<code>$\varphi$</code>为真。<code>$\forall$</code>称之为 <em>全称量词</em></li>
 </ol>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/Boulevard/OS/存储管理/虚拟内存与分页管理.html">
-                    操作系统笔记 存储管理—虚拟内存与分页管理
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        大道
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        操作系统
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        存储管理
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#操作系统">
-                    <span class="tag is-info">
-                      操作系统
-                    </span>
-                  </a>
-                  <a href="tags.html#硬件基础">
-                    <span class="tag is-info">
-                      硬件基础
-                    </span>
-                  </a>
-                  <a href="tags.html#虚拟内存">
-                    <span class="tag is-info">
-                      虚拟内存
-                    </span>
-                  </a>
-                  <a href="tags.html#地址空间">
-                    <span class="tag is-info">
-                      地址空间
-                    </span>
-                  </a>
-                  <a href="tags.html#分页管理">
-                    <span class="tag is-info">
-                      分页管理
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2017-10-27
-                </p>
-              </div>
-              <div class="content article-body">
-                <h2>虚拟内存与虚拟内存空间</h2>
-<p>在任何一台计算机上，程序引用一组内存地址，当程序执行指令：</p>
-<pre><code class="language-asm">mov reg , 1000
-</code></pre>
 
               </div>
             </div>

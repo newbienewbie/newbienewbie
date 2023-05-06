@@ -86,6 +86,401 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/ECMAScript/misc/一种-Admin-UI-设计思路——兼谈Admin-UI的自动生成.html">
+                    一种 Admin UI 设计思路——兼谈Admin UI的自动生成
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        Misc
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#ECMAScript">
+                    <span class="tag is-info">
+                      ECMAScript
+                    </span>
+                  </a>
+                  <a href="tags.html#Node.js">
+                    <span class="tag is-info">
+                      Node.js
+                    </span>
+                  </a>
+                  <a href="tags.html#React">
+                    <span class="tag is-info">
+                      React
+                    </span>
+                  </a>
+                  <a href="tags.html#AdminUI">
+                    <span class="tag is-info">
+                      AdminUI
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-10-08
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>后台管理很多都是在简单的增删改查，本文讨论的就是如何自动生成增删改查的界面。</p>
+<p>对于创建、修改工作，大部分时候我们都需要使用表单。一个普通的表单负责前端验证、简单错误提示，并将数据发送到后端。但是编写这样的代码并不愉快。
+首先，创建表单和编辑表单在很大概率上是一样的，或者差异比较小的，起码验证逻辑、错误提示的规则配置是几乎一致的。其次，为每个模型都去编写创建界面/编辑界面/删除界面/查询界面，非常琐碎、耗时。
+我们的目标就是要尽可能地少些代码，尽可能地多自动生成增删改查的管理界面。</p>
+<h2>从普通的视图组件说起</h2>
+<h3>PlainForm</h3>
+<p>必须只包含视图内容，不得含有任何远程交互代码，甚至不得含有任何远程交互的意图。必须提供 <code>initialValues</code> 属性，来设置初始值。</p>
+<pre><code class="language-js">// 一个纯粹的视图组件，将来可以用于新增或者编辑角色模型
+class PlainAddOrEditForm extends React.Component{
+    constructor(props){
+        super(props);
+    }
+
+    render(){
+        const {getFieldDecorator,getFieldsError, getFieldError, isFieldTouched,validateFields}=this.props.form;
+        const hasFieldError=(fieldname)=&gt;isFieldTouched(fieldname) &amp;&amp; getFieldError(fieldname);
+        const hasErrors=(fieldsError)=&gt;Object.keys(fieldsError).some(field =&gt; fieldsError[field]);
+        const FormItem=Form.Item;
+        return (
+        &lt;Form &gt;
+            &lt;FormItem label='角色名' validateStatus={hasFieldError('name')} help={hasFieldError('name')||''} &gt;
+            {
+                getFieldDecorator('name',{
+                    rules:[{required:true,message:'角色名必填'}],
+                    initialValue:this.props.initialValues.name,
+                })(
+                    &lt;Input placeholder='角色名' /&gt;
+                )
+            }
+            &lt;/FormItem&gt;
+        
+            &lt;FormItem label='描述' validateStatus={hasFieldError('description')} help={hasFieldError('description')||''} &gt;
+            {
+                getFieldDecorator('description',{
+                    rules:[{required:true,message:'角色描述必填'}],
+                    initialValue:this.props.initialValues.description,
+                })(
+                    &lt;Input placeholder='description' /&gt;
+                )
+            }
+            &lt;/FormItem&gt;
+        
+        &lt;/Form&gt;);
+        
+    }
+}
+</code></pre>
+<!-- more -->
+<h3>PlainViewComponent</h3>
+<p><code>PlainForm</code>可以不经过嵌套直接使用(为了方便，将之表示为 <code>PlainForm组件</code> )。
+我们大可以在其中加入<code>button</code>控制其提交，但是这会带来代码复用的问题。因为这相当于假定这个表单已经有了一个我们定义的提交按钮了。如果我们需要在对话框中显示这个表单，当点击对话框右下侧的取消按钮，我们希望什么也不做，关闭对话框；当我们单机对话框右下侧的确定按钮，表单会进行提交。这样我们就有了两个提交按钮，这无疑很扯蛋。</p>
+<p>为了更好的代码复用，一个更好的办法是让<code>PlainForm</code>本身不包含提交或者取消这类控制指令的视图元素，而是<code>PlainForm</code>嵌套在其他组件中 (表示为<code>聚合PlainForm的纯视图组件</code>)。
+一个最简单的例子是：</p>
+<pre><code class="language-js">class PlainAddOrEditFormWithSubmitButton extends React.Component{
+    constructor(props){
+        super(props);
+    }
+    render(){
+        return &lt;div&gt;
+            &lt;PlainAddOrEditForm form={this.props.form} initialValues={this.props.initialValues}/&gt;
+            &lt;Button htmlType=&quot;submit&quot; type=&quot;primary&quot; onClick={this.props.onOk}&gt; 提交 &lt;/Button&gt;
+        &lt;/div&gt;;
+    }
+}
+</code></pre>
+<p>在这里我们组合了一个新的组件，注意作为<code>PlainForm</code>的<code>PlainAddOrEditForm</code>组件并不含<code>button</code>元素。为了设置对用户点击提交按钮时的响应，我们添加了一个<code>Button</code>组件，然后将其<code>onClick</code>属性设置为由父组件传递的<code>props.onOk</code>。</p>
+<p>为了表示方便，把<code>PlainForm</code>组件或者<code>聚合PlainForm的纯视图组件</code>统称为<code>PlainViewComponent</code>。</p>
+<p>无论如何，<code>PlainViewComponent</code>都不应该包含任何的服务端交互意图；作为补偿，必须对外暴露这样几个<code>props</code>：</p>
+<ul>
+<li>initialValues : 设置初始值</li>
+<li>onOk : 钩子函数，作为提交表单时触发的 callback</li>
+<li>onCancel : 钩子函数，作为取消表单时触发的 callback</li>
+</ul>
+<h3>表单验证、错误提示</h3>
+<p>既然<code>PlainViewComponent</code>只负责显示，那么如何控制其表单验证逻辑、错误提示呢？
+这块工作可以剥离出来，我们可以根据<code>PlainViewComponent</code>和相应的字段验证规则、错误提示等配置信息，自动生成一个包装组件。最后利用包装组件对表单进行验证、错误提示、提取当前值。</p>
+<p>所幸这块工作已经有人替我们想到了，由 <code>antd.Form.create()(PlainViewComponent)</code>可以完成这种工作。包装生成的新组件，会被注入<code>form</code>属性。从而可以控制表单的验证、错误显示和提取当前值操作。</p>
+<p>为了方便，把表示为这种经过包装的组件称之为<code>DecoratedFormComponent</code></p>
+<h2>用于创建模型的表单</h2>
+<p>既然已经有了以上<code>PlainViewComponent</code>机制，让我们先来编写一个用于创建模型的表单来热热身：</p>
+<p>假设我们有:</p>
+<ul>
+<li>一个<code>model</code>定义，其中<code>model.methods.create()</code>方法定义了如何与服务器交互创建一个新的模型对象。</li>
+<li>一个经过包装的<code>DecoratedFormComponent</code>表单组件<code>AddOrEditForm</code>。</li>
+</ul>
+<p>则一个跟远程服务器通讯的的用于添加模型的表单，可以写成这种形式：</p>
+<pre><code class="language-js">class AddForm extends React.Component{
+    constructor(props){
+        super(props);
+        this.formRef=null;
+    }
+
+    onOk(){
+        return this.formRef.validateFields((err,value)=&gt;{
+            if(!err){
+                model.methods.create(value)
+                    .then(resp=&gt;{
+                        message.success(`创建成功`);
+                        this.formRef.resetFields();
+                    })
+                    .catch(e=&gt;{
+                        message.error(`失败`+e);
+                    });
+            }
+        });
+    }
+
+    render() {
+        return &lt;AddOrEditForm ref={form=&gt;this.formRef=form} onOk={this.onOk} /&gt; ;
+    }
+}
+</code></pre>
+<p>看起来很傻对不对？绕了一大圈，却只是为了一个用于创建模型的表单，为什么要这么麻烦？</p>
+<p>但是仔细观察上面这段代码，我们会发现，我们编写的这个组件除了依赖<code>model</code>和<code>DecoratedFormComponent</code>，其他完全都是样板代码！所以，根据<code>DRY</code>原则，我们可以编写这样一个函数：</p>
+<pre><code class="language-js">(model,AddOrEditForm)=&gt;AddComponent
+</code></pre>
+<p>以后只要针对具体的模型提供<code>model</code>定义、和<code>AddOrEditForm</code>即可动态生成表单。为了方便，我们还可以编写一个用于创建默认的<code>AddOrEditForm</code>的函数：</p>
+<pre><code class="language-js">createDecoratedAddOrEditForm(PlainAddOrEditForm) =&gt; DecoratedFormComponent
+</code></pre>
+<p>这样，就可以利用<code>PlainAddOrEditForm</code>创建一个<code>DecoratedFormComponent</code>，再加上一个<code>model</code>定义，我们就可以自动生成最终的添加模型的表单。</p>
+<h2>Datagrid</h2>
+<p>有了上面的思路，我们可以轻而易举封装出一个通用的<code>Datagrid</code>组件，其基本功能包括：</p>
+<ul>
+<li>列表显示</li>
+<li>每行最后一列可以针对当前行执行相应操作
+<ul>
+<li>删除当前行记录 ：有对话框确认</li>
+<li>修改当前行记录 ：保持页面不跳转，弹出对话框，编辑当前行记录</li>
+</ul>
+</li>
+<li>带分页功能</li>
+</ul>
+<p>此外，还可以添加排序、筛选功能。</p>
+<pre><code class="language-js">class List extends React.Component{
+
+    constructor(props){
+        super(props);
+        this.state={
+            data:[],                   // 当前数据源
+            pagination:{},             // 当前分页
+            loading:true,              // 表格是否正在加载，用于控制动画
+            currentRecord:{},          // 执行操作时的当前行记录
+            editModalVisible:false,    // 编辑表单是否可见
+        };
+        // 对 编辑表单组件 的引用
+        this.editForm=null;
+        // bind `this`
+        this.onTableChange=this.onTableChange.bind(this);
+        this.onRemove=this.onRemove.bind(this);
+        this.onEditFormSubmit=this.onEditFormSubmit.bind(this);
+        this.onEditFormCancel=this.onEditFormCancel.bind(this);
+    }
+
+    /**
+     * 当表单发生分页变化、过滤器变化、或者排序器变化时，应该从服务器重新加载数据
+     * @param {*} pagination 
+     * @param {*} filters 
+     * @param {*} sorter 
+     */
+    onTableChange(pagination, filters={}, sorter={}) {
+        const {pageSize,current}=pagination;
+        return model.methods.list(current,pageSize /* ,condition */)
+            .then(result=&gt;{
+                const {count,rows}=result;
+                const pagination = Object.assign({}, this.state.pagination );
+                pagination.total = count;
+                this.setState({ loading: false, data: rows, pagination, });
+            });
+    }
+
+    onRemove(record){
+        return model.methods.remove(record.id)
+            .then(resp=&gt;{
+                console.log(resp);
+                message.warning('删除成功');
+            })
+            // 刷新数据源
+            .then(_=&gt;{
+                return this.onTableChange(this.state.pagination);
+            });
+    }
+
+    onEditFormSubmit(){
+        return this.editForm.validateFields((err,values)=&gt;{
+            if(!err){
+                const {id}=this.state.currentRecord;
+                model.methods.update(id,values)
+                    .then(resp=&gt;{
+                        message.success(`修改成功`);
+                        console.log(resp);
+                        this.setState({editModalVisible:false},()=&gt;{
+                            // 刷新数据源
+                            this.onTableChange(this.state.pagination);
+                        });
+                    })
+            }
+        });
+        
+    }
+
+    onEditFormCancel(){
+        this.setState({editModalVisible:false});
+    }
+
+    componentDidMount(){
+        this.setState({loading:true},()=&gt;{
+            return this.onTableChange(this.state.pagination);
+        });
+    }
+    render() {
+        const {Column,ColumnGroup}=Table;
+        const fields=model.fields;
+        return (&lt;div&gt;
+        &lt;Table dataSource={this.state.data} pagination={this.state.pagination} loading={this.state.loading} onChange={this.onTableChange} &gt;
+            { Object.keys(fields).map(k=&gt;{
+                const field=fields[k];
+                return &lt;Column title={field.title} key={k} dataIndex={k} /&gt;;
+            }) }
+            &lt;Column title='操作' key='action' render={(text, record) =&gt; (
+                &lt;span&gt;
+                    &lt;a onClick={()=&gt;{this.setState({editModalVisible:true,currentRecord:record});return false; }} &gt;修改&lt;/a&gt;
+                    &lt;span className='ant-divider' /&gt;
+                    &lt;Popconfirm title='确认要删除吗' okText='是' cancelText='否' onConfirm={() =&gt; { this.onRemove(record); }} &gt;
+                        &lt;a href='#'&gt;删除&lt;/a&gt;
+                    &lt;/Popconfirm&gt;
+                    &lt;span className='ant-divider' /&gt;
+                &lt;/span&gt;)} /&gt;
+        &lt;/Table&gt;
+
+        &lt;AddOrEditFormModal ref={form=&gt;this.editForm=form} visible={this.state.editModalVisible}
+            initialValues={this.state.currentRecord}
+            onOk={this.onEditFormSubmit}
+            onCancel={this.onEditFormCancel}
+        /&gt;
+
+    &lt;/div&gt;);
+    }
+}
+</code></pre>
+<p>在这里，基于和上面同样的设想，我们把变化的部分提取到了<code>model</code>和<code>AddOrEditFormModal</code>这个<code>DecoratedFormComponent</code>中，从而可以创建这样形式的<code>API</code>：</p>
+<pre><code class="language-js">(model,AddOrEditFormModal)=&gt; DatagridComponent;
+</code></pre>
+<p>为各种模型自动生成一个<code>Datagrid</code>组件。为了方便，我们还可以编写一个用于创建默认的<code>AddOrEditForm</code>的函数：</p>
+<pre><code class="language-js">createDecoratedAddOrEditForm(PlainAddOrEditForm) =&gt; DecoratedFormComponent
+</code></pre>
+<p>这样，就可以利用<code>PlainAddOrEditForm</code>创建一个<code>DecoratedFormComponent</code>，再加上一个<code>model</code>定义，我们就可以自动生成最终的模型<code>Datagrid</code>组件。</p>
+<h2>Admin UI 的自动生成</h2>
+<p>为了方便，我们可以设计一个通用的<code>tiny-admin</code>模块，其基本结构为：</p>
+<pre><code class="language-js">
+// 默认提供的 DecoratedFormComponent 对象，有两个工厂函数，用于创建普通AddOrEdit表单、和带Modal表单
+export const defaultDecoratedForm={
+
+    createDecoratedAddOrEditForm:function(PlainAddOrEditForm){/**/},
+
+    createDecoratedAddOrEditFormModal:function(PlainAddOrEditForm){/**/},  
+};
+
+
+
+export function addform(model,AddOrEditForm){/**/},
+
+export function datagrid(model,AddOrEditFormModal){/**/ },
+</code></pre>
+<p>然后针对具体的模型编写<code>model</code>和<code>PlainAddOrEditForm</code>就可以自动生成后台了。</p>
+<h2>示例</h2>
+<p>比如对于一个角色模型，有角色名、和描述两个字段。</p>
+<p><code>PlainAddOrEditForm</code>定义为：</p>
+<pre><code class="language-js">
+class PlainAddOrEditForm extends React.Component{
+    constructor(props){
+        super(props);
+    }
+
+
+    render(){
+        const {getFieldDecorator,getFieldsError, getFieldError, isFieldTouched,validateFields}=this.props.form;
+        const hasFieldError=(fieldname)=&gt;isFieldTouched(fieldname) &amp;&amp; getFieldError(fieldname);
+        const hasErrors=(fieldsError)=&gt;Object.keys(fieldsError).some(field =&gt; fieldsError[field]);
+        const FormItem=Form.Item;
+        return (
+        &lt;Form &gt;
+            &lt;FormItem label='角色名' validateStatus={hasFieldError('name')} help={hasFieldError('name')||''} &gt;
+            {
+                getFieldDecorator('name',{
+                    rules:[{required:true,message:'角色名必填'}],
+                    initialValue:this.props.initialValues.name,
+                })(
+                    &lt;Input placeholder='角色名' /&gt;
+                )
+            }
+            &lt;/FormItem&gt;
+        
+            &lt;FormItem label='描述' validateStatus={hasFieldError('description')} help={hasFieldError('description')||''} &gt;
+            {
+                getFieldDecorator('description',{
+                    rules:[{required:true,message:'角色描述必填'}],
+                    initialValue:this.props.initialValues.description,
+                })(
+                    &lt;Input placeholder='description' /&gt;
+                )
+            }
+            &lt;/FormItem&gt;
+        
+        &lt;/Form&gt;);
+        
+    }
+}
+
+</code></pre>
+<p>相应的<code>model</code>定义为：</p>
+<pre><code class="language-js">const model={
+    name:&quot;role&quot;,
+    fields:{
+        &quot;name&quot;:{
+            title:'角色名',
+        },
+        &quot;description&quot;:{
+            title:&quot;角色描述&quot;,
+        },
+    },
+    methods:{
+        create:function(record){
+            const {name,description}=record;
+            return createRole(name,description);
+        },
+        remove:removeRole,
+        update:function(id,record){
+            const{name,description}=record;
+            return updateRole(id,name,description);
+        },
+        list:listRoles,
+    }
+};
+</code></pre>
+<p>生成一个用于创建角色的表单：</p>
+<pre><code class="language-js">const AddOrEditForm=defaultDecoratedForm.createDecoratedAddOrEditForm(PlainAddOrEditForm);
+const AddForm=addform(model,AddOrEditForm);
+</code></pre>
+<p>生成一个用于管理角色的<code>Datagrid</code>：</p>
+<pre><code class="language-js">const AddOrEditFormModal=defaultDecoratedForm.createDecoratedAddOrEditFormModal(PlainAddOrEditForm);
+const DG=datagrid(model,AddOrEditFormModal);
+</code></pre>
+<h2>主从式二级联动表单demo</h2>
+<p>{% asset_img &quot;datagrid_admin_demo.gif&quot; &quot;datagrid admin demo&quot; %}</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/Boulevard/Database/数据库理论/数据库并发调度与封锁协议.html">
                     数据库笔记 数据库并发调度与封锁协议
                   </a>
@@ -839,245 +1234,6 @@ typedef struct {
     return exp;
 }
 </code></pre>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/Boulevard/Compiler/自制编程语言/crowbar源码阅读笔记(6).html">
-                    crowbar源码阅读笔记(6):语句执行
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        大道
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        编译原理
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        自制编程语言
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#编译原理">
-                    <span class="tag is-info">
-                      编译原理
-                    </span>
-                  </a>
-                  <a href="tags.html#自制编程语言">
-                    <span class="tag is-info">
-                      自制编程语言
-                    </span>
-                  </a>
-                  <a href="tags.html#crowbar">
-                    <span class="tag is-info">
-                      crowbar
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2017-08-20
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>这是《自制编程语言》一书中的脚本语言<code>crowbar</code>的源码阅读笔记(6):语句执行。语句执行的实现代码主要存放于文件<code>execute.c</code>中。</p>
-<h2>语句执行总体框架</h2>
-<h3>单语句执行</h3>
-<p>运行单个语句，则和表达式求值的思路一样，要区分具体的语句类型，然后执行不同的策略，最后返回语句执行结果(<code>StatementResult</code>类型对象)：</p>
-<pre><code class="language-c">static StatementResult execute_statement(CRB_Interpreter *inter, LocalEnvironment *env, Statement *statement)
-{
-    StatementResult result;
-
-    result.type = NORMAL_STATEMENT_RESULT;
-
-    switch (statement-&gt;type) {
-    case EXPRESSION_STATEMENT:
-        result = execute_expression_statement(inter, env, statement);
-        break;
-    case GLOBAL_STATEMENT:
-        result = execute_global_statement(inter, env, statement);
-        break;
-    case IF_STATEMENT:
-        result = execute_if_statement(inter, env, statement);
-        break;
-    case WHILE_STATEMENT:
-        result = execute_while_statement(inter, env, statement);
-        break;
-    case FOR_STATEMENT:
-        result = execute_for_statement(inter, env, statement);
-        break;
-    case RETURN_STATEMENT:
-        result = execute_return_statement(inter, env, statement);
-        break;
-    case BREAK_STATEMENT:
-        result = execute_break_statement(inter, env, statement);
-        break;
-    case CONTINUE_STATEMENT:
-        result = execute_continue_statement(inter, env, statement);
-        break;
-    case STATEMENT_TYPE_COUNT_PLUS_1:   /* FALLTHRU */
-    default:
-        DBG_panic((&quot;bad case...%d&quot;, statement-&gt;type));
-    }
-
-    return result;
-}
-</code></pre>
-<!-- more -->
-<p>不同语句有不同的执行结果，语句执行结果抽象为一个结构体</p>
-<pre><code class="language-c">typedef struct {
-    StatementResultType type;
-    union {
-        CRB_Value       return_value;
-    } u;
-} StatementResult;
-</code></pre>
-<p>语句的执行结果有不同类型，可以分为:</p>
-<ul>
-<li><code>NORMAL_STATEMENT_RESULT</code>：常规语句执行</li>
-<li><code>RETURN_STATEMENT_RESULT</code>: 返回语句执行</li>
-<li><code>BREAK_STATEMENT_RESULT</code> : <code>break</code>语句执行</li>
-<li><code>CONTINUE_STATEMENT_RESULT</code>: <code>continue</code>语句执行</li>
-<li><code>STATEMENT_RESULT_TYPE_COUNT_PLUS_1</code>:</li>
-</ul>
-<p>其中，<code>RETURN_STATEMENT_RESULT</code>、<code>BREAK_STATEMENT_RESULT</code>标识了将要中断循环；而<code>CONTINUE_STATEMENT_RESULT</code>则表示要循环体语句的执行<code>crb_execute_statement_list()</code>将要被中断。</p>
-<p>语句执行后的结果值用联合<code>u</code>表示，目前只有个表示返回值的<code>return_value</code>字段，这是一个<code>CRB_Value</code>型结构，可以统一表达各种类型的返回值。</p>
-<h3>语句链表的执行</h3>
-<p>语句链表的执行，是依次执行语句并检查执行结果：</p>
-<pre><code class="language-c">StatementResult crb_execute_statement_list(CRB_Interpreter *inter, LocalEnvironment *env, StatementList *list)
-{
-    StatementList *pos;
-    StatementResult result;
-
-    result.type = NORMAL_STATEMENT_RESULT;
-    for (pos = list; pos; pos = pos-&gt;next) {
-        result = execute_statement(inter, env, pos-&gt;statement);
-        if (result.type != NORMAL_STATEMENT_RESULT)
-            goto FUNC_END;
-    }
-
-  FUNC_END:
-    return result;
-}
-</code></pre>
-<h2>表达式语句</h2>
-<p>表达式类型的语句执行非常简单，就是对相应的表达式进行求值：</p>
-<pre><code class="language-c">static StatementResult execute_expression_statement(CRB_Interpreter *inter, LocalEnvironment *env, Statement *statement)
-{
-    StatementResult result;
-    CRB_Value v;
-
-    result.type = NORMAL_STATEMENT_RESULT;
-
-    v = crb_eval_expression(inter, env, statement-&gt;u.expression_s);
-    if (v.type == CRB_STRING_VALUE) {
-        crb_release_string(v.u.string_value);
-    }
-
-    return result;
-}
-</code></pre>
-<p>表达式语句不设置语句返回值，只是填充<code>type</code>为<code>NORMAL_STATEMENT_RESULT</code>。比如：</p>
-<pre><code class="language-js">v1=3+4*2;
-</code></pre>
-<p>这是一个 <strong>赋值表达式</strong> 构成的语句。赋值表达式求值会计算等号右边的值，然后赋给<code>v1</code>标识符对应的变量。最后当这个语句执行完毕后返回一个执行结果。
-注意，该语句结果并不包含表达式的值，只告诉解释器，该语句执行完毕后是一个<code>NORMAL_STATEMENT_RESULT</code>。</p>
-<h2>与关键字相关的语句</h2>
-<h3><code>return</code> 语句执行</h3>
-<p><code>return</code>语句的执行本身比较简单，最后也是返回一个语句执行结果，该结果的<code>type</code>字段为<code>RETURN_STATEMENT_RESULT</code>，而具体的执行值在<code>u.return_value</code>字段中填充：</p>
-<ul>
-<li>如果后面跟着一个表达式，则对表达式进行求值，然后填充至结果的<code>u.return_value</code>字段。</li>
-<li>否则，设置<code>u.return_value.type</code>为<code>CRB_NULL_VALUE</code>。</li>
-</ul>
-<pre><code class="language-c">static StatementResult execute_return_statement(CRB_Interpreter *inter, LocalEnvironment *env, Statement *statement)
-{
-    StatementResult result;
-    result.type = RETURN_STATEMENT_RESULT;
-
-    if (statement-&gt;u.return_s.return_value) {
-        result.u.return_value = crb_eval_expression(inter, env, statement-&gt;u.return_s.return_value);
-    } else {
-        result.u.return_value.type = CRB_NULL_VALUE;
-    }
-
-    return result;
-}
-</code></pre>
-<h3><code>for</code> 循环语句执行</h3>
-<p>一个完整的<code>for</code>语句可以拆分4个部分，即<code>init</code>、<code>condition</code>、 <code>post</code>、<code>block</code> ：</p>
-<pre><code class="language-c">for(init;condition;post)
-    block
-</code></pre>
-<p>具体执行过程是：</p>
-<ol>
-<li>先对<code>init</code>部分的表达式进行求值，</li>
-<li>然后检测是否达到终止条件，</li>
-<li>如果未达到，则执行<code>for</code>语句块。</li>
-<li>如果执行结果满足<code>return</code>、<code>break</code>这类跳出条件的，则终止循环。</li>
-<li>如果需要继续，则执行<code>post</code>相关表达式</li>
-<li>最后开始下一次循环。</li>
-</ol>
-<pre><code class="language-c">static StatementResult execute_for_statement(CRB_Interpreter *inter, LocalEnvironment *env, Statement *statement)
-{
-    StatementResult result;
-    CRB_Value   cond;
-
-    result.type = NORMAL_STATEMENT_RESULT;
-
-    /* 对for循环的init表达式求值 */
-    if (statement-&gt;u.for_s.init) {
-        crb_eval_expression(inter, env, statement-&gt;u.for_s.init);
-    }
-    for (;;) {
-        /* 检测是否满足for循环的condition */
-        if (statement-&gt;u.for_s.condition) {
-            cond = crb_eval_expression(inter, env, statement-&gt;u.for_s.condition);
-            if (cond.type != CRB_BOOLEAN_VALUE) {
-                crb_runtime_error(statement-&gt;u.for_s.condition-&gt;line_number, NOT_BOOLEAN_TYPE_ERR, MESSAGE_ARGUMENT_END);
-            }
-            DBG_assert(cond.type == CRB_BOOLEAN_VALUE, (&quot;cond.type..%d&quot;, cond.type));
-            if (!cond.u.boolean_value)
-                break;
-        }
-        /* 执行for循环的循环体block */
-        result = crb_execute_statement_list(inter, env, statement-&gt;u.for_s.block -&gt;statement_list);
-
-        /* 检测是否需要返回 */
-        if (result.type == RETURN_STATEMENT_RESULT) {
-            break;
-        }
-        /* 检测是否需要中断循环 */
-        else if (result.type == BREAK_STATEMENT_RESULT) {
-            result.type = NORMAL_STATEMENT_RESULT;
-            break;
-        }
-
-        /* 对for循环的post表达式求值 */
-        if (statement-&gt;u.for_s.post) {
-            crb_eval_expression(inter, env, statement-&gt;u.for_s.post);
-        }
-    }
-
-    return result;
-}
-</code></pre>
-<h2>其他语句</h2>
-<p>其他语句与上述语句类似，不再赘述。</p>
 
               </div>
             </div>

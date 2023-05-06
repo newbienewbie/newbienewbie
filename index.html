@@ -86,6 +86,58 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/Instrument/VisionMaster/条码和二维码识别/1.html">
+                    使用VisionMaster进行条码与二维码识别
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        法器
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        VisionMaster
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#VisionMaster">
+                    <span class="tag is-info">
+                      VisionMaster
+                    </span>
+                  </a>
+                  <a href="tags.html#机器视觉">
+                    <span class="tag is-info">
+                      机器视觉
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2023-05-06
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>新建图像源，注意VisionMaster(4.3)的二维码、条码识别工具均不支持彩色图像！所以一定要从RGB色彩空间转到黑白图像：</p>
+<p><img src="./%E6%88%AA%E5%9B%BE/%E5%9B%BE%E5%83%8F%E6%BA%90.PNG" alt="设置图像源" /></p>
+<p>除此之外，在二维码识别工具中，还需要指定输入源为前一步的灰度图像(而非默认的图像)
+<img src="./%E6%88%AA%E5%9B%BE/%E4%BA%8C%E7%BB%B4%E7%A0%81%E8%AF%86%E5%88%AB%E7%9A%84%E8%BE%93%E5%85%A5%E6%BA%90.PNG" alt="设置输入源" /></p>
+<p>在添加图像后，测试结果如下：
+<img src="./%E6%88%AA%E5%9B%BE/%E8%AF%86%E5%88%AB%E6%95%88%E6%9E%9C%E5%9B%BE.PNG" alt="测试效果" /></p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/CSharp/ASP.NET Core/DI/如何避免在ASP.NET Core手工构建 ServiceProvider.html">
                     ASP.NET Core 依赖注入 — 如何避免手工构建 Service Provider 实例
                   </a>
@@ -161,154 +213,6 @@
 </blockquote>
 <p>这是因为构建新的<code>ServiceProvider</code>会导致构建新的服务实例副本，而且这些新的服务实例副本完全独立于原来的服务容器。这往往会造成一些难以发现的Bug，例如这个<a href="https://stackoverflow.com/q/58212736/10091607">Stack Overflow上的这个问题</a>。</p>
 <p>那么如何避免手工创建<code>ServiceCollection.BuildServiceProvider()</code>呢？</p>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/MVC/IActionResult执行/1. ObjectResultExecutor与OutputFormatter的工作原理.html">
-                    ASP.NET Core MVC — IActionResult执行(1) ObjectResultExecutor与OutputFormatter的工作原理
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        CSharp
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        ASP.NET Core
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        MVC
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        IActionResult执行
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#ASP.NET Core">
-                    <span class="tag is-info">
-                      ASP.NET Core
-                    </span>
-                  </a>
-                  <a href="tags.html#MVC">
-                    <span class="tag is-info">
-                      MVC
-                    </span>
-                  </a>
-                  <a href="tags.html#CSharp">
-                    <span class="tag is-info">
-                      CSharp
-                    </span>
-                  </a>
-                  <a href="tags.html#源码分析">
-                    <span class="tag is-info">
-                      源码分析
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2019-12-26
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>在命名空间<code>Microsoft.AspNetCore.Mvc.Infrastructure</code>下，有一个<code>ObjectResultExecutor</code>类，继承自<code>IActionResultExecutor&lt;ObjectResult&gt;</code>，负责执行<code>ObjectResult</code>。其构造函数会注入被两个参数：</p>
-<ul>
-<li><code>OutputFormatterSelector</code>: 用于选择当前输出格式</li>
-<li><code>IHttpResponseStreamWriterFactory</code>: 用于向 HttpResponse 写入Stream的Writer</li>
-</ul>
-<pre><code class="language-csharp">public class ObjectResultExecutor : IActionResultExecutor&lt;ObjectResult&gt;
-{
-    public ObjectResultExecutor( OutputFormatterSelector formatterSelector,IHttpResponseStreamWriterFactory writerFactory, ILoggerFactory loggerFactory)
-    {
-        if (formatterSelector == null) { /* throw ;*/ }
-        if (writerFactory == null) { /* throw ;*/ }
-        if (loggerFactory == null) { /* throw ;*/ }
-
-        FormatterSelector = formatterSelector;
-        WriterFactory = writerFactory.CreateWriter;
-        Logger = loggerFactory.CreateLogger&lt;ObjectResultExecutor&gt;();
-    }
-    
-    ...
-}
-</code></pre>
-<p>这里的<code>ObjectResultExecutor</code>所依赖的服务是在<code>AddMvcCore()</code>时自动注册的</p>
-<pre><code class="language-csharp">services.TryAddSingleton&lt;IHttpResponseStreamWriterFactory, MemoryPoolHttpResponseStreamWriterFactory&gt;();
-...
-services.TryAddSingleton&lt;OutputFormatterSelector, DefaultOutputFormatterSelector&gt;();
-</code></pre>
-<p>注意这里的<a href="https://github.com/aspnet/AspNetCore/blob/c565386a3ed135560bc2e9017aa54a950b4e35dd/src/Mvc/Mvc.Core/src/Infrastructure/MemoryPoolHttpResponseStreamWriterFactory.cs#L15"><code>MemoryPoolHttpResponseStreamWriterFactory</code></a>会生成一个<a href="https://github.com/aspnet/AspNetCore/blob/92cae6faab9cd414eccf77eab687c32c7a6a0f1b/src/Http/WebUtilities/src/HttpResponseStreamWriter.cs#L18"><code>HttpResponseStreamWriter</code></a>向 HttpResponse中写入文本数据：</p>
-<pre><code class="language-csharp">internal class MemoryPoolHttpResponseStreamWriterFactory : IHttpResponseStreamWriterFactory
-{
-    ...
-    
-    public TextWriter CreateWriter(Stream stream, Encoding encoding)
-    {
-        if (stream == null) { /* throw ;*/ }
-        if (encoding == null){ /* throw ;*/ }
-
-        return new HttpResponseStreamWriter(stream, encoding, DefaultBufferSize, _bytePool, _charPool);
-    }
-}
-</code></pre>
-<p>总之，借助于此工厂函数生成的<code>TextWriter</code>,我们可以把<code>Text</code>型数据（不可用于<code>Binary</code>数据）输出到响应流。</p>
-<p><code>ObjectResultExecutor</code>的关键方法实现如下:</p>
-<pre><code class="language-csharp">public virtual Task ExecuteAsync(ActionContext context, ObjectResult result)
-{
-    if (context == null) { /* throw ;*/ }
-    if (result == null) { /* throw ;*/ }
-
-    InferContentTypes(context, result);
-
-    var objectType = result.DeclaredType;
-    if (objectType == null || objectType == typeof(object))
-    {
-        objectType = result.Value?.GetType();
-    }
-    
-    // 构建格式器上下文
-    var formatterContext = new OutputFormatterWriteContext( context.HttpContext,  WriterFactory, objectType, result.Value);
-    // 生成对应的Formatter
-    var selectedFormatter = FormatterSelector.SelectFormatter( formatterContext, (IList&lt;IOutputFormatter&gt;)result.Formatters ?? Array.Empty&lt;IOutputFormatter&gt;(), result.ContentTypes);
-    
-    if (selectedFormatter == null) { /* sttauscode=406 */ }
-
-    Logger.ObjectResultExecuting(result.Value);
-    // change result.ContentTypes
-    result.OnFormatting(context);  
-    
-    // 使用指定的格式化器写数据
-    return selectedFormatter.WriteAsync(formatterContext);
-}
-</code></pre>
-<p>总体逻辑是：</p>
-<ol>
-<li>构建格式化上下文(<code>OutputFormatterWriteContext</code>)</li>
-<li>选择对应的输出格式化器(<code>IOutputFormatter</code>)</li>
-<li>执行<code>IOutputFormatter::WriteAsync(formatterContext)</code></li>
-</ol>
-<p>这里的<code>FormatterSelector</code>服务类似于一个<code>Provider</code>，会根据指定的<code>FormatterContext</code>等信息生成一个<code>IOutputFormatter</code>。从而根据运行时的外部请求和特定条件把<code>ObjectResult</code>转换成特定格式的输出。</p>
 
               </div>
             </div>
@@ -572,8 +476,8 @@ services.TryAddSingleton&lt;OutputFormatterSelector, DefaultOutputFormatterSelec
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
-                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/MVC/MVC执行概貌/3. ControllerActionInvker与模型绑定、模型校验.html">
-                    ASP.NET Core MVC — MVC执行概貌(3) ControllerActionInvker与模型绑定、模型校验
+                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/MVC/IActionResult执行/1. ObjectResultExecutor与OutputFormatter的工作原理.html">
+                    ASP.NET Core MVC — IActionResult执行(1) ObjectResultExecutor与OutputFormatter的工作原理
                   </a>
                 </p>
                 <nav class="breadcrumb">
@@ -600,7 +504,7 @@ services.TryAddSingleton&lt;OutputFormatterSelector, DefaultOutputFormatterSelec
                     </li>
                     <li>
                       <a href="">
-                        MVC执行概貌
+                        IActionResult执行
                       </a>
                     </li>
                   </ul>
@@ -635,251 +539,83 @@ services.TryAddSingleton&lt;OutputFormatterSelector, DefaultOutputFormatterSelec
                 </p>
               </div>
               <div class="content article-body">
-                <p><code>ControllerActionInvker</code>中有一个字段<code>_arguments</code>，类型为<code>Dictionary&lt;string, object&gt;</code>，用于存放参数绑定的结构。该类提供了<code>BinArgumentsAsync()</code>方法用于绑定参数：</p>
-<pre><code class="language-csharp">private Task BindArgumentsAsync()
+                <p>在命名空间<code>Microsoft.AspNetCore.Mvc.Infrastructure</code>下，有一个<code>ObjectResultExecutor</code>类，继承自<code>IActionResultExecutor&lt;ObjectResult&gt;</code>，负责执行<code>ObjectResult</code>。其构造函数会注入被两个参数：</p>
+<ul>
+<li><code>OutputFormatterSelector</code>: 用于选择当前输出格式</li>
+<li><code>IHttpResponseStreamWriterFactory</code>: 用于向 HttpResponse 写入Stream的Writer</li>
+</ul>
+<pre><code class="language-csharp">public class ObjectResultExecutor : IActionResultExecutor&lt;ObjectResult&gt;
 {
-    var actionDescriptor = _controllerContext.ActionDescriptor;
-    if (actionDescriptor.BoundProperties.Count == 0 &amp;&amp; actionDescriptor.Parameters.Count == 0) {
-        return Task.CompletedTask;
-    }
+    public ObjectResultExecutor( OutputFormatterSelector formatterSelector,IHttpResponseStreamWriterFactory writerFactory, ILoggerFactory loggerFactory)
+    {
+        if (formatterSelector == null) { /* throw ;*/ }
+        if (writerFactory == null) { /* throw ;*/ }
+        if (loggerFactory == null) { /* throw ;*/ }
 
-    Debug.Assert(_cacheEntry.ControllerBinderDelegate != null);
-    return _cacheEntry.ControllerBinderDelegate(_controllerContext, _instance, _arguments);
+        FormatterSelector = formatterSelector;
+        WriterFactory = writerFactory.CreateWriter;
+        Logger = loggerFactory.CreateLogger&lt;ObjectResultExecutor&gt;();
+    }
+    
+    ...
 }
 </code></pre>
-<p>该方法执行后，会为字段<code>_arguments</code>逐一添加以参数名为键名的键值。这里的<code>ControllerBinderDelegate</code>是一个委托类型，负责绑定参数：</p>
-<pre><code class="language-csharp">internal delegate Task ControllerBinderDelegate(ControllerContext controllerContext, object controller, Dictionary&lt;string, object&gt; arguments);
+<p>这里的<code>ObjectResultExecutor</code>所依赖的服务是在<code>AddMvcCore()</code>时自动注册的</p>
+<pre><code class="language-csharp">services.TryAddSingleton&lt;IHttpResponseStreamWriterFactory, MemoryPoolHttpResponseStreamWriterFactory&gt;();
+...
+services.TryAddSingleton&lt;OutputFormatterSelector, DefaultOutputFormatterSelector&gt;();
 </code></pre>
-<p>该委托的实例由<code>ControllerBinderDelegateProvider</code>的静态方法<code> CreateBinderDelegate()</code>提供:<!-- more --></p>
-<pre><code class="language-csharp">internal static class ControllerBinderDelegateProvider
+<p>注意这里的<a href="https://github.com/aspnet/AspNetCore/blob/c565386a3ed135560bc2e9017aa54a950b4e35dd/src/Mvc/Mvc.Core/src/Infrastructure/MemoryPoolHttpResponseStreamWriterFactory.cs#L15"><code>MemoryPoolHttpResponseStreamWriterFactory</code></a>会生成一个<a href="https://github.com/aspnet/AspNetCore/blob/92cae6faab9cd414eccf77eab687c32c7a6a0f1b/src/Http/WebUtilities/src/HttpResponseStreamWriter.cs#L18"><code>HttpResponseStreamWriter</code></a>向 HttpResponse中写入文本数据：</p>
+<pre><code class="language-csharp">internal class MemoryPoolHttpResponseStreamWriterFactory : IHttpResponseStreamWriterFactory
 {
-    public static ControllerBinderDelegate CreateBinderDelegate(ParameterBinder parameterBinder, IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor, MvcOptions mvcOptions)
+    ...
+    
+    public TextWriter CreateWriter(Stream stream, Encoding encoding)
     {
-        // ... check null
-        
-        var parameterBindingInfo = GetParameterBindingInfo(modelBinderFactory, modelMetadataProvider, actionDescriptor, mvcOptions);
-        var propertyBindingInfo = GetPropertyBindingInfo(modelBinderFactory, modelMetadataProvider, actionDescriptor);
-        if (parameterBindingInfo == null &amp;&amp; propertyBindingInfo == null)
-        {
-            return null;
-        }
+        if (stream == null) { /* throw ;*/ }
+        if (encoding == null){ /* throw ;*/ }
 
-        return Bind;
+        return new HttpResponseStreamWriter(stream, encoding, DefaultBufferSize, _bytePool, _charPool);
     }
 }
 </code></pre>
-<p>可以看到，这里的有两个重要的方法调用：<code>GetParameterBindingInfo()</code>和<code>GetPropertyBindingInfo()</code>，分别用于生成参数绑定信息和属性绑定信息:</p>
-<pre><code class="language-csharp">private static BinderItem[] GetParameterBindingInfo( IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor, MvcOptions mvcOptions)
+<p>总之，借助于此工厂函数生成的<code>TextWriter</code>,我们可以把<code>Text</code>型数据（不可用于<code>Binary</code>数据）输出到响应流。</p>
+<p><code>ObjectResultExecutor</code>的关键方法实现如下:</p>
+<pre><code class="language-csharp">public virtual Task ExecuteAsync(ActionContext context, ObjectResult result)
 {
-    var parameters = actionDescriptor.Parameters;
-    if (parameters.Count == 0) { return null; }
+    if (context == null) { /* throw ;*/ }
+    if (result == null) { /* throw ;*/ }
 
-    var parameterBindingInfo = new BinderItem[parameters.Count];
-    for (var i = 0; i &lt; parameters.Count; i++)
+    InferContentTypes(context, result);
+
+    var objectType = result.DeclaredType;
+    if (objectType == null || objectType == typeof(object))
     {
-        var parameter = parameters[i];
-
-        ModelMetadata metadata;
-        if (mvcOptions.AllowValidatingTopLevelNodes &amp;&amp;
-            modelMetadataProvider is ModelMetadataProvider modelMetadataProviderBase &amp;&amp;
-            parameter is ControllerParameterDescriptor controllerParameterDescriptor)
-        {
-            // The default model metadata provider derives from ModelMetadataProvider
-            // and can therefore supply information about attributes applied to parameters.
-            metadata = modelMetadataProviderBase.GetMetadataForParameter(controllerParameterDescriptor.ParameterInfo);
-        }
-        else
-        {
-            // For backward compatibility, if there's a custom model metadata provider that
-            // only implements the older IModelMetadataProvider interface, access the more
-            // limited metadata information it supplies. In this scenario, validation attributes
-            // are not supported on parameters.
-            metadata = modelMetadataProvider.GetMetadataForType(parameter.ParameterType);
-        }
-
-        var binder = modelBinderFactory.CreateBinder(new ModelBinderFactoryContext
-        {
-            BindingInfo = parameter.BindingInfo,
-            Metadata = metadata,
-            CacheToken = parameter,
-        });
-
-        parameterBindingInfo[i] = new BinderItem(binder, metadata);
+        objectType = result.Value?.GetType();
     }
+    
+    // 构建格式器上下文
+    var formatterContext = new OutputFormatterWriteContext( context.HttpContext,  WriterFactory, objectType, result.Value);
+    // 生成对应的Formatter
+    var selectedFormatter = FormatterSelector.SelectFormatter( formatterContext, (IList&lt;IOutputFormatter&gt;)result.Formatters ?? Array.Empty&lt;IOutputFormatter&gt;(), result.ContentTypes);
+    
+    if (selectedFormatter == null) { /* sttauscode=406 */ }
 
-    return parameterBindingInfo;
-}
-
-private static BinderItem[] GetPropertyBindingInfo( IModelBinderFactory modelBinderFactory, IModelMetadataProvider modelMetadataProvider, ControllerActionDescriptor actionDescriptor)
-{
-    var properties = actionDescriptor.BoundProperties;
-    if (properties.Count == 0) { return null; }
-
-    var propertyBindingInfo = new BinderItem[properties.Count];
-    var controllerType = actionDescriptor.ControllerTypeInfo.AsType();
-    for (var i = 0; i &lt; properties.Count; i++)
-    {
-        var property = properties[i];
-        var metadata = modelMetadataProvider.GetMetadataForProperty(controllerType, property.Name);
-        var binder = modelBinderFactory.CreateBinder(new ModelBinderFactoryContext
-        {
-            BindingInfo = property.BindingInfo,
-            Metadata = metadata,
-            CacheToken = property,
-        });
-
-        propertyBindingInfo[i] = new BinderItem(binder, metadata);
-    }
-
-    return propertyBindingInfo;
+    Logger.ObjectResultExecuting(result.Value);
+    // change result.ContentTypes
+    result.OnFormatting(context);  
+    
+    // 使用指定的格式化器写数据
+    return selectedFormatter.WriteAsync(formatterContext);
 }
 </code></pre>
-<p><code>CreateBinderDelegate</code>方法调用的最后返回了一个<code>Bind</code>函数，这个<code>Bind</code>的实现是：</p>
-<pre><code class="language-csharp">async Task Bind(ControllerContext controllerContext, object controller, Dictionary&lt;string, object&gt; arguments)
-{
-    var valueProvider = await CompositeValueProvider.CreateAsync(controllerContext);
-    var parameters = actionDescriptor.Parameters;
-
-    for (var i = 0; i &lt; parameters.Count; i++)
-    {
-        var parameter = parameters[i];
-        var bindingInfo = parameterBindingInfo[i];
-        var modelMetadata = bindingInfo.ModelMetadata;
-
-        if (!modelMetadata.IsBindingAllowed) { continue; }
-
-        var result = await parameterBinder.BindModelAsync(controllerContext, bindingInfo.ModelBinder, valueProvider, parameter, modelMetadata, value: null);
-
-        if (result.IsModelSet)
-        {
-            arguments[parameter.Name] = result.Model;
-        }
-    }
-
-    var properties = actionDescriptor.BoundProperties;
-    for (var i = 0; i &lt; properties.Count; i++)
-    {
-        var property = properties[i];
-        var bindingInfo = propertyBindingInfo[i];
-        var modelMetadata = bindingInfo.ModelMetadata;
-
-        if (!modelMetadata.IsBindingAllowed) { continue; }
-
-        var result = await parameterBinder.BindModelAsync(controllerContext, bindingInfo.ModelBinder, valueProvider, property, modelMetadata, value: null);
-
-        if (result.IsModelSet)
-        {
-            PropertyValueSetter.SetValue(bindingInfo.ModelMetadata, controller, result.Model);
-        }
-    }
-}
-}
-</code></pre>
-<p>内部调用的是<code>ParameterBinder</code>类，故名思义，该类负责绑定参数。其<code>BindModelAsync()</code>有两部分工作：</p>
+<p>总体逻辑是：</p>
 <ol>
-<li>模型绑定：<code>ParameterBinder</code>类通过依赖注入传入一个<code> IModelMetadataProvider</code>和<code>IModelBinderFactory</code>，然后由<code> IModelMetadataProvider</code>创建<code>metadata</code>，再由<code>BinderFactory</code>生成<code>binder</code>，最后调用<code>binder</code>绑定参数，</li>
-<li>模型校验：<code>ParameterBinder</code>类通过依赖注入传入一个<code>IObjectModelValidator</code>实例，在<code>modelBinder.BindModelAsync()</code>完成之后，通过该<code>IObjectModelValidator</code>实例来完成模型校验：</li>
+<li>构建格式化上下文(<code>OutputFormatterWriteContext</code>)</li>
+<li>选择对应的输出格式化器(<code>IOutputFormatter</code>)</li>
+<li>执行<code>IOutputFormatter::WriteAsync(formatterContext)</code></li>
 </ol>
-<pre><code class="language-csharp">public virtual async Task&lt;ModelBindingResult&gt; BindModelAsync( ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, object value)
-{
-    ... check null
-                if (parameter.BindingInfo?.RequestPredicate?.Invoke(actionContext) == false)
-    {
-        Logger.ParameterBinderRequestPredicateShortCircuit(parameter, metadata);
-        return ModelBindingResult.Failed();
-    }
-
-    var modelBindingContext = DefaultModelBindingContext.CreateBindingContext( actionContext, valueProvider, metadata, parameter.BindingInfo, parameter.Name);
-    modelBindingContext.Model = value;
-
-    var parameterModelName = parameter.BindingInfo?.BinderModelName ?? metadata.BinderModelName;
-    if (parameterModelName != null)
-    {
-        // The name was set explicitly, always use that as the prefix.
-        modelBindingContext.ModelName = parameterModelName;
-    }
-    else if (modelBindingContext.ValueProvider.ContainsPrefix(parameter.Name))
-    {
-        // We have a match for the parameter name, use that as that prefix.
-        modelBindingContext.ModelName = parameter.Name;
-    }
-    else
-    {
-        // No match, fallback to empty string as the prefix.
-        modelBindingContext.ModelName = string.Empty;
-    }
-
-    await modelBinder.BindModelAsync(modelBindingContext);
-
-    Logger.DoneAttemptingToBindParameterOrProperty(parameter, metadata);
-
-    var modelBindingResult = modelBindingContext.Result;
-
-    if (_objectModelValidator is ObjectModelValidator baseObjectValidator)
-    {
-        Logger.AttemptingToValidateParameterOrProperty(parameter, metadata);
-
-        EnforceBindRequiredAndValidate( baseObjectValidator, actionContext, parameter, metadata, modelBindingContext, modelBindingResult);
-
-        Logger.DoneAttemptingToValidateParameterOrProperty(parameter, metadata);
-    }
-    else
-    {
-        // For legacy implementations (which directly implemented IObjectModelValidator), fall back to the
-        // back-compatibility logic. In this scenario, top-level validation attributes will be ignored like
-        // they were historically.
-        if (modelBindingResult.IsModelSet)
-        {
-            _objectModelValidator.Validate( actionContext, modelBindingContext.ValidationState, modelBindingContext.ModelName, modelBindingResult.Model);
-        }
-    }
-
-    return modelBindingResult;
-}
-</code></pre>
-<p>这里的<code>EnforceBindRequiredAndValidate</code>：</p>
-<pre><code class="language-csharp">private void EnforceBindRequiredAndValidate( ObjectModelValidator baseObjectValidator, ActionContext actionContext, ParameterDescriptor parameter, ModelMetadata metadata, ModelBindingContext modelBindingContext, ModelBindingResult modelBindingResult) 
-{
-    RecalculateModelMetadata(parameter, modelBindingResult, ref metadata);
-
-    if (!modelBindingResult.IsModelSet &amp;&amp; metadata.IsBindingRequired)
-    {
-        // Enforce BindingBehavior.Required (e.g., [BindRequired])
-        var modelName = modelBindingContext.FieldName;
-        var message = metadata.ModelBindingMessageProvider.MissingBindRequiredValueAccessor(modelName);
-        actionContext.ModelState.TryAddModelError(modelName, message);
-    }
-    else if (modelBindingResult.IsModelSet)
-    {
-        // Enforce any other validation rules
-        baseObjectValidator.Validate( actionContext, modelBindingContext.ValidationState, modelBindingContext.ModelName, modelBindingResult.Model, metadata); 
-    }
-    else if (metadata.IsRequired)
-    {
-        // We need to special case the model name for cases where a 'fallback' to empty
-        // prefix occurred but binding wasn't successful. For these cases there will be no
-        // entry in validation state to match and determine the correct key.
-        //
-        // See https://github.com/aspnet/Mvc/issues/7503
-        //
-        // This is to avoid adding validation errors for an 'empty' prefix when a simple
-        // type fails to bind. The fix for #7503 uncovered this issue, and was likely the
-        // original problem being worked around that regressed #7503.
-        var modelName = modelBindingContext.ModelName;
-
-        if (string.IsNullOrEmpty(modelBindingContext.ModelName) &amp;&amp;
-            parameter.BindingInfo?.BinderModelName == null)
-        {
-            // If we get here then this is a fallback case. The model name wasn't explicitly set
-            // and we ended up with an empty prefix.
-            modelName = modelBindingContext.FieldName;
-        }
-
-        // Run validation, we expect this to validate [Required].
-        baseObjectValidator.Validate( actionContext, modelBindingContext.ValidationState, modelName, modelBindingResult.Model, metadata);
-    }
-}
-</code></pre>
+<p>这里的<code>FormatterSelector</code>服务类似于一个<code>Provider</code>，会根据指定的<code>FormatterContext</code>等信息生成一个<code>IOutputFormatter</code>。从而根据运行时的外部请求和特定条件把<code>ObjectResult</code>转换成特定格式的输出。</p>
 
               </div>
             </div>

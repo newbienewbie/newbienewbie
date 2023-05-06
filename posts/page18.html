@@ -86,6 +86,202 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/Python/Python-类与三个内置装饰器.html">
+                    Python 类与三个内置装饰器
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Python
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#Python">
+                    <span class="tag is-info">
+                      Python
+                    </span>
+                  </a>
+                  <a href="tags.html#装饰器">
+                    <span class="tag is-info">
+                      装饰器
+                    </span>
+                  </a>
+                  <a href="tags.html#原理分析">
+                    <span class="tag is-info">
+                      原理分析
+                    </span>
+                  </a>
+                  <a href="tags.html#AOP">
+                    <span class="tag is-info">
+                      AOP
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-03-12
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>在<a href="http://www.itminus.com/2015/04/10/WindWhisper/Python/Python%E5%87%BD%E6%95%B0%E8%A3%85%E9%A5%B0%E5%99%A8%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">Python函数装饰器原理分析</a>中说到，Python有几个内置装饰器：</p>
+<ul>
+<li>类属性<code>@property</code></li>
+<li>静态方法<code>@staticmethod</code></li>
+<li>类方法<code>@classmethod</code></li>
+</ul>
+<p>可以用来包装属性、静态方法、和类方法。</p>
+<p>首先要说明，本文中所有的类都使用的新式类，即使使用了Python2.7.x版本，某些特性在“old-style”类中也不适用。要使用新式类，有两种方法：</p>
+<ol>
+<li>在<code>module</code>顶部添加语句：<code>__metaclass__ = type</code></li>
+<li>定义的类要是内置<code>object</code>对象的子类。</li>
+</ol>
+<h2><code>staticmethod</code>和<code>classmethod</code></h2>
+<p>静态方法和类方法都是不需要具体实例就可以运行的。区别在于<code>classmethod</code>的第一个参数是<code>cls</code>，这是个对“类”的引用。可以通过<code>cls</code>对类的属性进行获取。</p>
+<p>在没有装饰器的情况下，我们可以使用原始的<code>staticmethod()</code>和<code>classmethod()</code>函数来定义静态方法和类方法：</p>
+<pre><code class="language-Python">class MyClass:
+    
+    a=3
+
+    def my_static_method():
+        print('This is a static method')
+    my_static_method = staticmethod(my_static_method)
+
+    def my_class_method(cls,sth):
+        print('This is a class method of', cls.a,sth)
+    my_class_method = classmethod(my_class_method)
+</code></pre>
+<p>有了装饰器语法糖，以上代码可以改写为：</p>
+<pre><code class="language-Python">class MyClass:
+
+    a=3
+
+    @staticmethod
+    def my_static_method():
+        print('This is a static method')
+
+    @classmethod
+    def my_class_method(cls,sth):
+        print('This is a class method of', cls.a,sth)
+</code></pre>
+<h2>property</h2>
+<p>假设现在有个矩形，可以设置其宽、高。</p>
+<ul>
+<li>如果需要面积，我们可以使用类似于<code>area()</code>的方法来计算。</li>
+<li>如果需要周长，我们可以使用类似于<code>perimeter()</code>的方法来计算。</li>
+</ul>
+<p>现在问题来了，类的用户获取宽度的时候用的是<code>rect.width</code>，获取面积的时候却要使用<code>rect.area()</code>，多了一个冒号！对于这种简单的情况用户似乎还可以分辨，问题是对于一些复杂的类如何保持一致呢？</p>
+<p><code>Java</code>中的惯用方法是定义私有的<code>width</code>、<code>height</code>，然后定义公有方法<code>getWidth()</code>、<code>getHeight()</code>、<code>getArea()</code>、<code>getPerimeter()</code>。<code>C#</code>的惯用方法是采用：</p>
+<pre><code class="language-CSharp">class Rectangle {
+    public double Width { get; set; }
+    public double Height { get; set; }
+    public double Area {
+        get{ return Width*Height; }
+    }
+    public double Perimeter {
+        get{ return (Width+Height)*2; }
+    }
+}
+</code></pre>
+<p>对于<code>Python</code>这种动态语言来说，上<code>Java</code>那一套是不符合价值观的，可以用<code>perperty()</code>加以包装：</p>
+<pre><code class="language-Python">class Rectangle(object):
+    def __init__ (self,width,height):
+        self.__width = width
+        self.__height = height
+
+    def get_width(self):
+        return self.__width
+    def set_width(self, size):
+        self.__width= size
+    width=property(get_width,set_width)
+    
+    def get_height(self):
+        return self.__height
+    def set_height(self,size):
+        self.__height=size
+    height=property(get_height,set_height)
+
+    def area(self):
+        return self.width*self.height
+    area=property(area)
+    
+
+    def perimeter(self):
+        return (self.width+self.height)*2
+    perimeter=property(perimeter)
+</code></pre>
+<p>这样，就使用了<code>property()</code>函数包装出了<code>width</code>、<code>height</code>、<code>area</code>、<code>perimeter</code>三个特性:</p>
+<pre><code class="language-Python">rect=Rectangle(3,4)
+rect.width=5
+rect.height=6
+print(rect.width)
+print(rect.height)
+print(rect.area)
+print(rect.perimeter)
+</code></pre>
+<p>有了装饰器语法，以上代码可以简化为：</p>
+<pre><code class="language-Python">class Rectangle(object):
+    def __init__ (self,width,height):
+        self.__width = width
+        self.__height = height
+
+    @property
+    def width(self):
+        return self.__width
+    
+    @width.setter
+    def width(self, size):
+        self.__width= size
+    
+    @property
+    def height(self):
+        return self.__height
+    
+    @height.setter
+    def height(self,size):
+        self.__height=size
+
+    @property
+    def area(self):
+        return self.width*self.height
+    
+    @property
+    def perimeter(self):
+        return (self.width+self.height)*2
+</code></pre>
+<h2>Property 魔法</h2>
+<p>利用<code>@property</code>装饰一个方法函数，看起来非常完美。但是有一个问题，经过<code>property()</code>函数返回的还是一个函数，为什么<code>Python</code>可以直接通过<code>rect.width</code>这种普通属性语法拿到宽度值呢？</p>
+<p>这其实是<code>Python</code>的魔法：<code>property</code>返回了一种特殊的属性，访问时会计算它的值！如果没有<code>property</code>，则会以简单属性的方式去访问。</p>
+<p>事实上，<code>Python</code>类实例方法的调用也是很意思的，对于这样一个类：</p>
+<pre><code class="language-Python">class Foo(object):
+    def bar(self,x):
+        return x
+</code></pre>
+<p>实例方法的调用某种程度上可以认为是这样：</p>
+<pre><code class="language-Python">foo=Foo()
+bar=foo.bar    # 这里返回的方法不是原始的bar函数，是绑定方法对象
+bar(x)
+</code></pre>
+<p>首先获取 Foo 类的 bar 的绑定方法（<code>bound method</code>）对象，它类似于<code>partial</code>方法，已经绑定了<code>self</code>参数，显然，这个绑定方法并原始的函数对象 bar。绑定方法对象是由在后台执行的特性函数静默创建的！</p>
+<p><code>@staticmethod</code> <code>@classmethod</code> 定义静态方法和类方法时，实际上就指定了使用不同的特性函数，以不同的方式处理对这些方法的访问。<code>staticmethod</code>表明按原样返回方法函数，不会进行任何包装。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/Misc/ASP-NET-厂网再改造笔记.html">
                     ASP.NET 厂网再改造笔记
                   </a>
@@ -699,8 +895,8 @@ export const Contact = React.createClass({
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
-                  <a href="posts/WindWhisper/ECMAScript/JScript/JScript-与自动化.html">
-                    JScript 与自动化
+                  <a href="posts/WindWhisper/ECMAScript/JScript/JScript-与模块化.html">
+                    JScript 与模块化
                   </a>
                 </p>
                 <nav class="breadcrumb">
@@ -742,228 +938,70 @@ export const Contact = React.createClass({
                 </p>
               </div>
               <div class="content article-body">
-                <p><code>JScript</code>实现的<code>ECMAScript Edition 3</code>，也是<code>IE8</code>使用的引擎。然而，随着<code>V8</code>大放光彩，微软放弃了之前规划的托管<code>JavaScript</code>计划（同期规划的<code>VB</code>变身为<code>VB.NET</code>活了下来），<code>JScript</code>开发组另起炉灶搞了<code>Chakra</code>与<code>Node.js</code>一争长短，这也是<code>IE9</code>之后使用的<code>JS</code>引擎。
-按理说，<code>JScript</code>这玩意儿停止开发这么多年了，早应该寿终正寝了。然而我一想到时不时要帮女票和朋友们批量修改<code>Excel</code>，我就觉得未来很久一段时间内仍然不得不去求助于这货。说起来，我对<code>VB</code>/<code>VBA</code>实在无爱——尽管这是我高中学的第一门编程语言，而且在当年干物资的确实帮我省了大量的时间。加之目前使用<code>Web</code>技能开发<code>Office Addin App</code>貌似生态还不成熟、开发起来也不简便，毕竟对于一些临时任务单独架设<code>https</code>服务器有些牛刀宰鸡之感，于是需要使用<code>JScript</code>代替之。</p>
-<p>目前能想到的应用方向包括：</p>
+                <h2>Windows Script Files (.wsf)</h2>
+<p><code>Windows script file</code>(<code>*.wsf</code>) 是一个<code>XML</code>文件，表现的像个<code>Windows Script</code>容器，然而它们并非和特定的<code>engine</code>相关，可以包含任意<code>Windows Script</code>：</p>
+<p>比如，有一个<code>JScript</code>文件的代码为：</p>
+<pre><code class="language-JavaScript">//fso.js
+function GetFreeSpace(drvPath) {
+   var fs, d, s;
+   fs = new ActiveXObject(&quot;Scripting.FileSystemObject&quot;);
+   d = fs.GetDrive(fs.GetDriveName(drvPath));
+   s = &quot;Drive &quot; + drvPath + &quot; - &quot; ;
+   s += d.VolumeName;
+   s += &quot; Free Space: &quot; + d.FreeSpace/1024 + &quot; Kbytes&quot;;
+   return s;
+} 
+</code></pre>
+<p>现在创建一个<code>*.wsf</code>文件来引用<code>JScript</code>脚本，然后使用<code>VBScript</code>调用之：</p>
+<pre><code class="language-XML">&lt;job id=&quot;IncludeExample&quot;&gt;
+   &lt;script language=&quot;JScript&quot; src=&quot;fso.JS&quot;/&gt;
+   &lt;script language=&quot;VBScript&quot;&gt;
+      ' Get the free space for drive C.
+      s = GetFreeSpace(&quot;c:&quot;)
+      WScript.Echo s
+   &lt;/script&gt;
+&lt;/job&gt;
+</code></pre>
+<h2>模块化编写脚本</h2>
+<p>注意上面使用脚本的方式，是不是和在<code>HTML</code>中引用、创建<code>script</code>脚本非常类似？<code>*.wsf</code>给了我们模块化开发<code>JScript</code>的能力。
+比如，我们可以引用一个<code>MyLib1.js</code>、再创建一个<code>MyLib2.js</code>的库：</p>
+<pre><code class="language-XML">&lt;!-- MyJob.wsf --&gt;
+&lt;job id=&quot;IncludeExample&quot;&gt;
+  &lt;script language=&quot;JScript&quot; src=&quot;MyLib1.js&quot;/&gt;
+  &lt;script language=&quot;JScript&quot; src=&quot;MyLib2.js&quot;/&gt;
+  &lt;script language=&quot;JScript&quot;&gt;
+    WScript.Echo(myLib1.foo());
+    WScript.Echo(myLib2.bar());
+  &lt;/script&gt;
+&lt;/job&gt;
+</code></pre>
+<p>事实上，更多时候可以使用<code>package</code>，这样就能同时处理多个任务——从另一个角度说，能提供更高级别的封装。</p>
+<p>比如要显示：</p>
 <ul>
-<li><code>Excel</code>、<code>Word</code>办公自动化</li>
-<li>简单的系统管理，如文件遍历、改名、删除</li>
+<li>domain name</li>
+<li>computer name</li>
+<li>user name</li>
 </ul>
-<h2>JScript 与宿主</h2>
-<p><code>JScript</code>、<code>VBScript</code>同属于官方支持的<code>Windows Script</code>，当年，这俩脚本都需要依赖于特定的宿主(<code>Host</code>)才能执行，比如，<code>JavaScript</code>大多时候运行在浏览器中。除了浏览器环境之外，他们，还可以运行在<code>Windows Script Host</code>中。
-<code>Windows Script Host</code>是一个<code>language-independent</code>的脚本宿主环境，主要用于执行<code>Windows</code>管理任务，其对象层级为：</p>
-<pre><code>// WSH 对象模型层级
-WScript
-    WshArguments
-        WshNamed
-        WshUnnamed
-    WshController
-        WshRemote
-            WshRemoteError
-    WshNetwork
-    WshShell
-        WshShortcut
-        WshUrlShortcut
-        WshEnvironment
-        WshSpecialFolders
-        WshScriptExec
-</code></pre>
-<p><code>WSH</code>提供的对象都与相应的管理<code>Task</code>相关，比如根对象<code>WScript</code>负责：</p>
-<ul>
-<li>Set and retrieve command line arguments</li>
-<li>Determine the name of the script file</li>
-<li>Determine the host file name (wscript.exe or cscript.exe)</li>
-<li>Determine the host version information</li>
-<li>Create, connect to, and disconnect from COM objects</li>
-<li>Sink events</li>
-<li>Stop a script's execution programmatically</li>
-<li>Output information to the default output device (for example, a dialog box or the command line)</li>
-</ul>
-<p>在<code>JScript</code>中，永远不需要去实例化根对象<code>WScript</code>，正如同浏览器中的直接全局对象一样。</p>
-<p>再如<code>WshShell</code>对象提供的功能为:</p>
-<ul>
-<li>在本地运行一个程序</li>
-<li>操作注册表</li>
-<li>创建快捷方式</li>
-<li>访问<code>system folder</code></li>
-<li>操作环境变量，比如 <code>WINDIR</code>、<code>PATH</code>、<code>PROMPT</code></li>
-</ul>
-<p>注意<code>WshShell</code>提供了操作注册表的功能！</p>
-<ul>
-<li><code>RegRead</code> 读</li>
-<li><code>RegWrite</code> 写</li>
-<li><code>RegDelete</code> 删</li>
-</ul>
-<p>示例代码：</p>
-<pre><code class="language-JavaScript">var shell = new ActiveXObject('Wscript.Shell'); 
-var val = shell.RegRead('HKCU\\Control Panel\\Desktop\\Wallpaper'); 
+<p>我们使用<code>VBScript</code>、<code>JScript</code>分别完成：</p>
+<pre><code class="language-XML">&lt;package&gt;
+   &lt;job id=&quot;vbs&quot;&gt;
+      &lt;script language=&quot;VBScript&quot;&gt;
+         Set WshNetwork = WScript.CreateObject(&quot;WScript.Network&quot;)
+         WScript.Echo &quot;Domain = &quot; &amp; WshNetwork.UserDomain
+         WScript.Echo &quot;Computer Name = &quot; &amp; WshNetwork.ComputerName
+         WScript.Echo &quot;User Name = &quot; &amp; WshNetwork.UserName
+      &lt;/script&gt;
+   &lt;/job&gt;
 
-WScript.Echo(val);
-</code></pre>
-<p><code>WSH</code>对象模型提供的<code>COM</code>接口可以分为两类：</p>
-<ol>
-<li>Script Execution and Troubleshooting ：这类接口运行脚本执行<code>WSH</code>的基本的操作, 输出信息、执行基本的<code>COM</code>函数（如<code>CreateObject</code>、<code>GetObject</code>）</li>
-<li>Helper Functions ：执行诸如映射网络驱动器、连接打印机、获取/修改环境变量、操作注册表之类操作</li>
-</ol>
-<h2><code>Excel</code>自动化</h2>
-<p><code>JScript</code>这货操作<code>Excel</code>，依靠的是自动化接口，和<code>VBScript</code>调用机理完全一直。唯一需要注意的是，为了避免出现中文乱码现象，记得以<code>GBK</code>格式进行存储脚本文件！</p>
-<pre><code class="language-JavaScript">var app=WScript.CreateObject(&quot;Excel.Application&quot;);
-var fso=WScript.CreateObject('Scripting.FileSystemObject');
-
-var excelFile=fso.GetFile(&quot;./生产管理专业业务对接表单（1.20）.xlsx&quot;);
-var book=app.Workbooks.Open(excelFile);
-app.Visible=true;
-var sheet=book.Worksheets(1);
-var cell=sheet.Cells(2,1);
-WScript.Echo(cell.Value);
-book.Close();
-
-app=null;
-fso=null;
-</code></pre>
-<p>文件以<code>GBK</code>编码格式保存，利用<code>wscript</code>或者<code>cscript</code>执行之，即可得到相应结果。</p>
-<p>在<code>JScript</code>中，创建对<code>Excel</code>应用对象的引用、解除引用的语法为：</p>
-<pre><code class="language-JavaScript">// 创建引用
-var app=WScript.CreateObject(&quot;Excel.Application&quot;);
-
-// 解除引用
-app=null;
-</code></pre>
-<p>注意，解除对象引用并不会导致<code>Excel.Application</code>对象关闭！关闭对象需要调用对象的专有的关闭方法！</p>
-<h2>JScript 执行</h2>
-<p>可以使用以下两种程序运行<code>JScript</code>脚本：</p>
-<ol>
-<li>Windows-based script host (Wscript.exe)</li>
-<li>command-based script host (CScript.exe)</li>
-</ol>
-<p>相应的命令行启动方式类似于：</p>
-<pre><code>&gt; wscript index.js
-&gt; cscript index.js
-</code></pre>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/ECMAScript/JScript/JScript-与对象遍历.html">
-                    JScript 与对象遍历
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        ECMAScript
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        JScript
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#ECMAScript">
-                    <span class="tag is-info">
-                      ECMAScript
-                    </span>
-                  </a>
-                  <a href="tags.html#JScript">
-                    <span class="tag is-info">
-                      JScript
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2017-01-24
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>有些<code>COM</code>集合，本身就支持按索引访问元素，比如：</p>
-<pre><code class="language-JavaScript">var app=new ActiveXObject(&quot;Excel.Application&quot;);
-var fso=new ActiveXObject('Scripting.FileSystemObject');
-
-var excelFile=fso.GetFile(&quot;./生产管理专业业务对接表单（1.20）.xlsx&quot;);
-var book=app.Workbooks.Open(excelFile);
-app.Visible=true;
-
-var sheet=book.Worksheets(1);
-var list=[];
-for(var i=1;i&lt;=book.Worksheets.Count;i++){
-    var item=book.Worksheets.Item(i);
-    list.push(item.Name);
-}
-WScript.Echo(list);
-book.Close();
-</code></pre>
-<p>对于这类集合，我们可以循环使用<code>Item(i)</code>的方式，遍历其元素。</p>
-<p>然而，还有某些<code>COM</code>集合，并不支持按索引访问元素。要使用<code>JScript</code>遍历这种集合，需要借助于<code>Enumerator</code>接口。枚举器(<code>Enumerator</code>)定义可以用<code>TypeScript</code>表示如下：</p>
-<pre><code class="language-TypeScript">/**
- * Allows enumerating over a COM collection, which may not have indexed item access.
- */
-interface Enumerator&lt;T&gt; {
-    /**
-     * Returns true if the current item is the last one in the collection, or the collection is empty,
-     * or the current item is undefined.
-     */
-    atEnd(): boolean;
-
-    /**
-     * Returns the current item in the collection
-     */
-    item(): T;
-
-    /**
-     * Resets the current item in the collection to the first item. If there are no items in the collection,
-     * the current item is set to undefined.
-     */
-    moveFirst(): void;
-
-    /**
-     * Moves the current item to the next item in the collection. If the enumerator is at the end of
-     * the collection or the collection is empty, the current item is set to undefined.
-     */
-    moveNext(): void;
-}
-</code></pre>
-<p><code>Enumerator</code>并非是<code>ECMAScript</code>规范，而是<code>JScript</code>的私货。我们可以使用这种枚举器来遍历<code>COM</code>接口，比如，使用枚举器来遍历目录：</p>
-<pre><code class="language-JavaScript">var fs=new ActiveXObject('Scripting.FileSystemObject');
-var f=fs.GetFolder(&quot;C:\\Windows&quot;);
-
-var list=[];
-for(var e=new Enumerator(f.SubFolders);!e.atEnd();e.moveNext()){
-    list.push(e.item());
-}
-WScript.Echo(list);
-</code></pre>
-<p>甚至还可以用枚举器遍历之前那个支持按索引访问元素的<code>COM</code>集合，对代码改写如下：</p>
-<pre><code class="language-JavaScript">var app=new ActiveXObject(&quot;Excel.Application&quot;);
-var fso=new ActiveXObject('Scripting.FileSystemObject');
-
-var excelFile=fso.GetFile(&quot;./生产管理专业业务对接表单（1.20）.xlsx&quot;);
-var book=app.Workbooks.Open(excelFile);
-app.Visible=true;
-
-var sheet=book.Worksheets(1);
-var list=[];
-for(var e=new Enumerator(book.Worksheets);!e.atEnd();e.moveNext()){
-    var item=e.item();
-    list.push(item.Name);
-}
-WScript.Echo(list);
-book.Close();
+   &lt;job id=&quot;js&quot;&gt;
+      &lt;script language=&quot;JScript&quot;&gt;
+         var WshNetwork = WScript.CreateObject(&quot;WScript.Network&quot;);
+         WScript.Echo(&quot;Domain = &quot; + WshNetwork.UserDomain);
+         WScript.Echo(&quot;Computer Name = &quot; + WshNetwork.ComputerName);
+         WScript.Echo(&quot;User Name = &quot; + WshNetwork.UserName);
+      &lt;/script&gt;
+   &lt;/job&gt;
+&lt;/package&gt;
 </code></pre>
 
               </div>

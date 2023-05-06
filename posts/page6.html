@@ -86,6 +86,69 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读2.html">
+                    BotBuilder 源码通读2 —— 中间件的实现
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        CSharp
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Bot Framework
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#Bot Framework">
+                    <span class="tag is-info">
+                      Bot Framework
+                    </span>
+                  </a>
+                  <a href="tags.html#CSharp">
+                    <span class="tag is-info">
+                      CSharp
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-01-30
+                </p>
+              </div>
+              <div class="content article-body">
+                <p><code>BotBuilder</code>的中间件非常简单，从实现上说，这里的中间件全部都是基于接口的中间件，并不存在基于约定的中间件。</p>
+<h2>中间件接口</h2>
+<p><code>BotBuilder</code>中间件接口本身非常简单，只有一个方法<code>OnTurnAsync(context,next,cancelToken)</code>用于处理收到的<code>Activity</code>。</p>
+<pre><code class="language-csharp">public interface IMiddleware
+{
+    Task OnTurnAsync(ITurnContext context, NextDelegate next, CancellationToken cancellationToken = default(CancellationToken));
+}
+</code></pre>
+<p>而所谓<code>NextDelegate</code>，也非常简单：</p>
+<pre><code class="language-csharp"> public delegate Task NextDelegate(CancellationToken cancellationToken);
+</code></pre>
+<p>含义是调用下一个中间件的<code>OnTurnAsync(ctx,next,ct)</code>方法。</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/CSharp/Bot Framework/BotBuilder 源码通读1.html">
                     BotBuilder 源码通读1 —— A Big Picture
                   </a>
@@ -492,84 +555,6 @@ private static BotFrameworkAdapter BotFrameworkAdapterSingletonFactory(IServiceP
 <ol>
 <li>重构个人网站</li>
 </ol>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/Boulevard/Alchemy/machine-learning/机器学习 - BP网络/BP神经网络的原理.html">
-                    机器学习 BP神经网络原理
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        大道
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        炼丹
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        机器学习
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#炼丹">
-                    <span class="tag is-info">
-                      炼丹
-                    </span>
-                  </a>
-                  <a href="tags.html#机器学习">
-                    <span class="tag is-info">
-                      机器学习
-                    </span>
-                  </a>
-                  <a href="tags.html#神经网络">
-                    <span class="tag is-info">
-                      神经网络
-                    </span>
-                  </a>
-                  <a href="tags.html#反向传播算法">
-                    <span class="tag is-info">
-                      反向传播算法
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2018-06-12
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>在<a href="/blog/2018/06/12/Boulevard/Alchemy/machine-learning/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%20-%20%20%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95/%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95/">关于梯度下降法的机器学习笔记中</a>，我们给出了一个通用的理论，也即每次沿着梯度的反方向进行迭代搜素最小值。</p>
-<h2>使用最速下降法进行BP网络求解</h2>
-<p>考虑有一个多层神经网络，我们可以迭代调节各层的权重<code>$w^{m}_{i,j}$</code>，来令性能函数<code>$F$</code>取得更小的值。这里采用最速下降法，为了计算其梯度，不妨先考察其通用形式：<code>$\frac {\partial F}{ \partial w^{m}_{i,j}}$</code>。又由于<code>$n^{m}_{i}$</code>和<code>$w^{m}_{i,j}$</code>存在函数关系:</p>
-<pre><code class="language-math">%% KaTex
-n^{m}_{i}=\displaystyle\sum_{j}{ w^{m}_{i,j}a^{m-1}_{j}}+ b^{m}_{i}
-</code></pre>
-<p>根据链式法则，有：</p>
-<pre><code class="language-math">%% KaTex
-\frac {\partial F}{ \partial w^{m}_{i,j}} = \underbrace{\frac{\partial F}{\partial n^{m}_{i} }} _{\text{记作} s^{m}_{i}} \cdot \frac{\partial n^{m}_{i}}{\partial w^{m}_{i,j}} = s^{m}_{i} \cdot a^{m-1}_{j}
-</code></pre>
-<p>其中，<code>$s^{m}_{i}$</code>表达了性能函数<code>$F$</code>对第<code>$m$</code>层的第<code>$i$</code>个的元素发生变化的敏感程度。</p>
-<p>显然，根据最速下降法，迭代式为：</p>
-<pre><code class="language-math">%% KaTex
-w^{m}_{i,j}(k+1) = w^{m}_{i,j}(k) - \alpha s^{m}_{i} a^{m}_{j}
-
-b^{m}_{i}(k+1) = b^{m}_{i}(k) - \alpha s^{m}_{i} 
-</code></pre>
 
               </div>
             </div>

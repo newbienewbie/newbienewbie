@@ -86,58 +86,28 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
-                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (3) ASP.NET Core 的授权中间件和MVC授权过滤器.html">
-                    Authorization — (3) ASP.NET Core 的授权中间件和MVC授权过滤器
+                  <a href="posts/Misc/写在2019的年末.html">
+                    写在2019的年末
                   </a>
                 </p>
                 <nav class="breadcrumb">
                   <ul>
                     <li>
                       <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        CSharp
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        ASP.NET Core
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        Security
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        Authorization
+                        Misc
                       </a>
                     </li>
                   </ul>
                 </nav>
                 <p class="post-tags">
-                  <a href="tags.html#ASP.NET Core">
+                  <a href="tags.html#随笔">
                     <span class="tag is-info">
-                      ASP.NET Core
+                      随笔
                     </span>
                   </a>
-                  <a href="tags.html#Authorization">
+                  <a href="tags.html#年终总结">
                     <span class="tag is-info">
-                      Authorization
-                    </span>
-                  </a>
-                  <a href="tags.html#CSharp">
-                    <span class="tag is-info">
-                      CSharp
-                    </span>
-                  </a>
-                  <a href="tags.html#源码分析">
-                    <span class="tag is-info">
-                      源码分析
+                      年终总结
                     </span>
                   </a>
                 </p>
@@ -145,343 +115,67 @@
                   <a href="#">
                     
                   </a>
-                  on 2019-08-20
+                  on 2019-12-11
                 </p>
               </div>
               <div class="content article-body">
-                <h2>授权中间件</h2>
-<p>和<code>ASP.NET Core 2.1</code>中的路由中间件不同，在<code>3.0</code>中新的<code>EndPoint</code>路由机制无需实际执行路由便可获取当前所匹配的<code>EndPoint</code>。正是得益于这套新引入的<code>EndPoint</code>路由系统，<code>ASP.NET Core</code>框架可在执行<code>MVC</code>路由之前，就可以捕捉到相应<code>EndPoint</code>的授权配置信息(<code>IAuthorizeData</code>)。基于此，<code>ASP.NET Core</code> <code>3.0</code>中为授权机制做了重大调整，即引入了<strong>授权中间件</strong>。这意味着在<code>3.0</code>中我们需要在<code>UseAuthentication()</code>之后尽快调用<code>UseAuthorization()</code>方法：</p>
-<pre><code class="language-csharp">    app.UseRouting();
-    // ...
-    app.UseAuthentication();
-    app.UseAuthorization();           // 启用授权中间件
-    // ...
-    app.UseEndpoints(endpoints =&gt;
-    {
-        endpoints.MapHub&lt;ChatHub&gt;(&quot;/chat&quot;);
-        endpoints.MapControllerRoute(&quot;default&quot;, &quot;{controller=Home}/{action=Index}/{id?}&quot;);
-    })
-</code></pre>
-<p>新引入的授权中间件的核心工作主要分成两部分：</p>
+                <p>还记得我在去年年末感慨，2018年过得飞快，如同飞鸟一般，时间就倏忽飞走了。而2019年，这鸟飞得更快，连影子没留下。</p>
+<p>今年最重大的事件莫过于儿子出生，几乎每个周末都在围着老婆和宝宝转。用于学习的空闲时间自然是没挤出来。我以前并不觉得那些能在带娃期间备考的有多厉害，如今才体会到其中的不易。如果从外部来观察我的活动记录，最直观的表现是博客停更了，这一点非常不好。我的个人博客大多是笔记性质的文字，用于对所见所学进行记录与总结。子曰，吾日三省吾身。我今年动辄连续数月没有总结，虽说在有道云经常还有些学习笔记，但是总归没有放到博客，形成总结性的正式记录。难怪要到年末总结的时候才意识到好多计划没有落实。</p>
+<h3>年初目标与惨淡的2019</h3>
+<p>总结来说，2019年立的众多Flag里，只有寥寥数个是完成了的：</p>
+<ol>
+<li>编程语言学习：我之前说，要每年尝试接触新的编程语言。2019年学了点<code>F#</code>皮毛，虽说没有深入研究，但在用<code>F#</code>写了个斗地主引擎的过程中，让我真正感受到了<code>F#</code>语言的超强表现力。以前老听人说<code>F#</code>函数式编程有多优越，当时我并未理解，甚至对模式匹配的过人之处也不屑一顾。如今自己动手实践了，才体会到模式匹配、<code>Options</code>、主动模式等特性的精妙之处。学了一门语言，总不免要和其他语言对比。由于都采用缩进语法，我在学习<code>F#</code>的过程中，经常不由自主地对<code>Python</code>产生鄙夷：大家都说<code>Python</code>简洁优雅：优雅问题不大，然而没有<code>|&gt;</code>、<code>&gt;&gt;</code>的编程语言，如何能称简洁？这种思想非常不好，为了矫正我的这个观念，我不停地跟自己讲：不宜过多评判编程语言本身，编程语言本身设计的优劣与否并不重要——<code>Python</code>远比<code>F#</code>流行，放弃<code>Python</code>就是自绝于生态。面对技术，不可有虚假的优越感。</li>
+</ol>
+<!-- more -->
+<ol start="2">
+<li>取证：取证要趁早是我前年才体会到的道理。我去年跟媳妇说，要争取每年拿一个证，可惜早些年并不懂这个道理，总觉得那些资质和证书并无什么了不起，也没有什么实际用处——很惭愧，我在这方面的眼界和见识总是跟不上形势的发展，已经吃了次很多这种亏了。无奈的是今年的时间实在太过短缺，并没有准备什么认证考试。由于我之前工作的特殊性，甚至大家都学的驾照也没有尝试去考。2019年唯一跟取证沾边的是，虽然很晚，我终于拿到了驾照，好在迟到好过没有。再次提醒自己：任何时候，千万不要小瞧资质与证书，切记！。</li>
+<li>源码与标准的研究：
 <ul>
-<li>借助于<code>IAuthorizationPolicyProvider</code>服务和当前<code>EndPoint</code>的<code>IAuthorizeData</code>，构建一个<code>Policy</code>对象。如果没有相应的<code>Policy</code>，则直接调用后续中间件（跳过剩余的授权过程）。</li>
-<li>通过<code>IPolicyEvaluator</code>服务判断当前<code>HttpContext</code>是否满足<code>Policy</code>。如果不满足，根据授权结果决定是<code>Challenge</code>还是<code>Forbid</code>；否则，则继续调用后续中间件对请求进行处理。<!-- more --></li>
+<li>我通读了<code>ASP.NET Core</code>大部分子项目的源码，同时在有道云记录了一系列源码分析笔记，并把认证、授权相关的笔记放到了博客上，后续要陆续把其他部分的源码分析整理出来；</li>
+<li>通读<code>BotBuilder</code>源码实现，记录了一系列源码分析笔记，同时做了个无<code>Azure</code>的<code>InDirectLine</code>项目，可以让<code>Bot</code>运行在无<code>Azure</code>/<code>Internet</code>的内网环境；</li>
+<li><code>EF Core</code>源码：去年立下的目标，今年并未有空去实现。</li>
+<li>掌握<code>XAML</code>：学习了<code>XAML</code>语法，但是并未去做个<code>Demo</code>来巩固所学。</li>
+<li>理解<code>MQTT</code>协议：上半年花了些时间学习了下，可惜隔了大半年，如今感觉细节又都记不清楚了。</li>
 </ul>
-<pre><code class="language-csharp">public class AuthorizationMiddleware
-{
-    // Property key is used by other systems, e.g. MVC, to check if authorization middleware has run
-    private const string AuthorizationMiddlewareInvokedKey = &quot;__AuthorizationMiddlewareInvoked&quot;;
-    private static readonly object AuthorizationMiddlewareInvokedValue = new object();
-
-    private readonly RequestDelegate _next;
-    private readonly IAuthorizationPolicyProvider _policyProvider;
-
-    public AuthorizationMiddleware(RequestDelegate next, IAuthorizationPolicyProvider policyProvider)
-    {
-        _next = next ?? throw new ArgumentNullException(nameof(next));
-        _policyProvider = policyProvider ?? throw new ArgumentNullException(nameof(policyProvider));
-    }
-
-    public async Task Invoke(HttpContext context)
-    {
-        if (context == null){ /*  throw */}
-
-        var endpoint = context.GetEndpoint();
-
-        // Flag to indicate to other systems, e.g. MVC, that authorization middleware was run for this request
-        context.Items[AuthorizationMiddlewareInvokedKey] = AuthorizationMiddlewareInvokedValue;
-
-        // IMPORTANT: Changes to authorization logic should be mirrored in MVC's AuthorizeFilter
-        var authorizeData = endpoint?.Metadata.GetOrderedMetadata&lt;IAuthorizeData&gt;() ?? Array.Empty&lt;IAuthorizeData&gt;();
-        var policy = await AuthorizationPolicy.CombineAsync(_policyProvider, authorizeData);
-        if (policy == null)
-        {
-            await _next(context);
-            return;
-        }
-
-        // Policy evaluator has transient lifetime so it fetched from request services instead of injecting in constructor
-        var policyEvaluator = context.RequestServices.GetRequiredService&lt;IPolicyEvaluator&gt;();
-
-        var authenticateResult = await policyEvaluator.AuthenticateAsync(policy, context);
-
-        // Allow Anonymous skips all authorization
-        if (endpoint?.Metadata.GetMetadata&lt;IAllowAnonymous&gt;() != null)
-        {
-            await _next(context);
-            return;
-        }
-
-        // Note that the resource will be null if there is no matched endpoint
-        var authorizeResult = await policyEvaluator.AuthorizeAsync(policy, authenticateResult, context, resource: endpoint);
-
-        if (authorizeResult.Challenged)
-        {
-            if (policy.AuthenticationSchemes.Any())
-            {
-                foreach (var scheme in policy.AuthenticationSchemes)
-                {
-                    await context.ChallengeAsync(scheme);
-                }
-            } else {
-                await context.ChallengeAsync();
-            }
-
-            return;
-        } else if (authorizeResult.Forbidden) {
-            if (policy.AuthenticationSchemes.Any())
-            {
-                foreach (var scheme in policy.AuthenticationSchemes)
-                {
-                    await context.ForbidAsync(scheme);
-                }
-            } else {
-                await context.ForbidAsync();
-            }
-
-            return;
-        }
-
-        await _next(context);
-    }
-}
-</code></pre>
-<h2>MVC授权过滤器</h2>
-<p><code>MVC</code>内置了一个授权过滤器<code>AuthorizeFilter</code>，其基本实现非常类似于授权中间件：</p>
-<pre><code class="language-csharp">namespace Microsoft.AspNetCore.Mvc.Authorization
-{
-    public class AuthorizeFilter : IAsyncAuthorizationFilter, IFilterFactory
-    {
-        // ...  构造函数与属性
-
-        /// &lt;inheritdoc /&gt;
-        public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
-        {
-            if (context == null){ /* throw */ }
-            var effectivePolicy = await GetEffectivePolicyAsync(context);
-            if (effectivePolicy == null) { return; }
-
-            var policyEvaluator = context.HttpContext.RequestServices.GetRequiredService&lt;IPolicyEvaluator&gt;();
-
-            var authenticateResult = await policyEvaluator.AuthenticateAsync(effectivePolicy, context.HttpContext);
-
-            // Allow Anonymous skips all authorization
-            if (HasAllowAnonymous(context.Filters)) { return; }
-
-            var authorizeResult = await policyEvaluator.AuthorizeAsync(effectivePolicy, authenticateResult, context.HttpContext, context);
-
-            if (authorizeResult.Challenged)
-            {
-                context.Result = new ChallengeResult(effectivePolicy.AuthenticationSchemes.ToArray());
-            }
-            else if (authorizeResult.Forbidden)
-            {
-                context.Result = new ForbidResult(effectivePolicy.AuthenticationSchemes.ToArray());
-            }
-        }
-
-    }
-}
-</code></pre>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (1) 授权选项与Policy获取.html">
-                    Authorization — (1) 授权选项与Policy获取
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        CSharp
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        ASP.NET Core
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        Security
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        Authorization
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#ASP.NET Core">
-                    <span class="tag is-info">
-                      ASP.NET Core
-                    </span>
-                  </a>
-                  <a href="tags.html#Authorization">
-                    <span class="tag is-info">
-                      Authorization
-                    </span>
-                  </a>
-                  <a href="tags.html#CSharp">
-                    <span class="tag is-info">
-                      CSharp
-                    </span>
-                  </a>
-                  <a href="tags.html#源码分析">
-                    <span class="tag is-info">
-                      源码分析
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2019-08-20
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>和<code>Authentication</code>一样，<code>Authorization</code>机制也有一个对应的<code>AuthorizationOptions</code>供开发者进行配置。更进一步地，和<code>AuthenticationOptions.AddScheme(name,configureBuilder)</code>类似，<code>AuthorizationOptions</code>也提供了一个名为<code>AddPolicy(string name, Action&lt;AuthorizationPolicyBuilder&gt; configurePolicy)</code>方法来配置授权策略。</p>
-<p>不过和<code>Authentication</code>机制不同的是，<code>AddAuthentication()</code>返回的是一个<code>AuthenticationBuilder</code>实例，这样开发者就可以链式构建<code>AuthenticationOptions</code>：</p>
-<pre><code class="language-csharp">services.AddAuthentication(options =&gt;{
-    ...
-})
-    .AddCookie(IdentityConstants.ApplicationScheme, o =&gt;
-    {
-        o.LoginPath = new PathString(&quot;/Account/Login&quot;);
-        o.Events = new CookieAuthenticationEvents
-        {
-            OnValidatePrincipal = SecurityStampValidator.ValidatePrincipalAsync
-        };
-    })
-    .AddCookie(IdentityConstants.ExternalScheme, o =&gt;
-    {
-        o.Cookie.Name = IdentityConstants.ExternalScheme;
-        o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
-    })
-</code></pre>
-<p>但是<code>AddAuthorization()</code>并没有返回一个<code>Builder</code>之类东西来供开发者链式构建<code>AuthorizationOptions</code>，这可能是基于向后兼容考虑。在<code>Authorization</code>中，开发者直接使用<code>AddPolicy()</code>等实例方法来配置授权策略：<!-- more --></p>
-<pre><code class="language-csharp">services.AddAuthorization(options =&gt;
-{
-    options.AddPolicy(&quot;policy1&quot;, policyBuilder =&gt; { /* ... */ } );
-    options.AddPolicy(&quot;policy2&quot;, policyBuilder =&gt; { /* ... */ } );
-    ... // other policies
-});
-</code></pre>
-<p>注意这里<code>options.AddPolicy()</code>方法对具体的<code>AuthorizationHandler</code>一无所知，所以也不会去把相关<code>AuthorizationHandler</code>注册为服务，这也导致了在授权服务的配置过程中，我们需要手工把相关授权处理器注册为服务。</p>
-<p>不管怎么说，开发者都可以根据项目需要配置多种授权策略。</p>
-<h2>AuthorizationOptions</h2>
-<p><code>AuthorizationOptions</code>负责三件事：一是存储当前<code>WebApp</code>中注册的所有<code>Policy</code>，这块工作主要是通过一个私有的字典<code>IDictionary&lt;string,AuthorizationPolicy&gt;</code>完成；二是为当前<code>WebApp</code>指定默认策略(<code>DefaultPolicy</code>)和回退策略(<code>FallbackPolicy</code>)；三是为当前<code>WebApp</code>指定认证失败后的钩子。</p>
-<h4>策略的添加与查询</h4>
-<pre><code class="language-csharp">public class AuthorizationOptions
-{
-    private IDictionary&lt;string, AuthorizationPolicy&gt; PolicyMap { get; } = new Dictionary&lt;string, AuthorizationPolicy&gt;(StringComparer.OrdinalIgnoreCase);
-    
-    public void AddPolicy(string name, AuthorizationPolicy policy)
-    {
-        if (name == null) { /* throw */ }
-        if (policy == null) { /* throw */ }
-        PolicyMap[name] = policy;
-    }
-
-    public void AddPolicy(string name, Action&lt;AuthorizationPolicyBuilder&gt; configurePolicy)
-    {
-        if (name == null) { /* throw */ }
-        if (configurePolicy == null) { /* throw */ }
-
-        var policyBuilder = new AuthorizationPolicyBuilder();
-        configurePolicy(policyBuilder);
-        PolicyMap[name] = policyBuilder.Build();
-    }
-
-    public AuthorizationPolicy GetPolicy(string name)
-    {
-        if (name == null) { /* throw */ }
-        
-        return PolicyMap.ContainsKey(name) ? PolicyMap[name] : null;
-    }
-
-    // ...
-
-}
-</code></pre>
-<h4>默认策略、回退策略和认证失败钩子</h4>
-<p>此三个属性较为简单，其中默认策略是要求用户登陆。</p>
-<pre><code class="language-csharp">public class AuthorizationOptions
-{
-    // ...
-    
-    public AuthorizationPolicy DefaultPolicy { get; set; } = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
-    public AuthorizationPolicy FallbackPolicy { get; set; }
-
-    public bool InvokeHandlersAfterFailure { get; set; } = true;
-
-}
-</code></pre>
-<h2>AuthorizationPolicyProvider</h2>
-<p>顾名思义，<code>IAuthorizationPolicyProvider</code>用于向外部提供<code>Policy</code>。根据<code>Policy</code>的不同，该接口提供三种调用方式：</p>
+</li>
+<li>读书与刷题:
 <ul>
-<li>获取指定名称的<code>Policy</code></li>
-<li>获取默认的<code>Policy</code></li>
-<li>获取用于<code>Fallback</code>的<code>Policy</code></li>
+<li>去年曾想今年要重温GoF 的《设计模式》 、Andrew S. Tanenbaum 《现代操作系统》、和Ian Sommerville 《软件工程》，可惜今年未曾付诸实践。</li>
+<li>去年还想每周至少一次<code>LeetCode</code>，今天想想真是害臊。</li>
 </ul>
-<pre><code class="language-csharp">public interface IAuthorizationPolicyProvider
-{
-    Task&lt;AuthorizationPolicy&gt; GetPolicyAsync(string policyName);    // 获取指定名称的Policy
-    Task&lt;AuthorizationPolicy&gt; GetDefaultPolicyAsync();              // 获取默认的Policy
-    Task&lt;AuthorizationPolicy&gt; GetFallbackPolicyAsync();             // 获取用于Fallback的Policy
-}
-</code></pre>
-<p>作为<code>IAuthorizationPolicyProvider</code>的默认实现，<code>DefaultAuthorizationPolicyProvider</code>会从<code>DI</code>容器中获取<code>AuthorizationOptions</code>，然后向外部提供特定的<code>Policy</code>：</p>
-<pre><code class="language-csharp">public class DefaultAuthorizationPolicyProvider : IAuthorizationPolicyProvider
-{
-    private readonly AuthorizationOptions _options;
-    private Task&lt;AuthorizationPolicy&gt; _cachedDefaultPolicy;
-    private Task&lt;AuthorizationPolicy&gt; _cachedFallbackPolicy;
-
-   
-    public DefaultAuthorizationPolicyProvider(IOptions&lt;AuthorizationOptions&gt; options)
-    {
-        if (options == null){ /* throw */ }
-        _options = options.Value;
-    }
-    
-    // 返回默认的Policy（优先从本地缓存加载）
-    public Task&lt;AuthorizationPolicy&gt; GetDefaultPolicyAsync()
-    {
-        return GetCachedPolicy(ref _cachedDefaultPolicy, _options.DefaultPolicy);
-    }
-
-    // 返回用于Fallback的Policy（优先从本地缓存加载）
-    public Task&lt;AuthorizationPolicy&gt; GetFallbackPolicyAsync()
-    {
-        return GetCachedPolicy(ref _cachedFallbackPolicy, _options.FallbackPolicy);
-    }
-    
-    // 从Options返回指定名称的Policy
-    public virtual Task&lt;AuthorizationPolicy&gt; GetPolicyAsync(string policyName)
-    {
-        return Task.FromResult(_options.GetPolicy(policyName));
-    }
-    
-    private Task&lt;AuthorizationPolicy&gt; GetCachedPolicy(ref Task&lt;AuthorizationPolicy&gt; cachedPolicy, AuthorizationPolicy currentPolicy)
-    { /* ... */ }
-    
-}
-</code></pre>
+</li>
+</ol>
+<h3>2020年的个人提升计划</h3>
+<ul>
+<li><p>读书</p>
+<ol>
+<li>重读《数据结构(Java语言描述)》，并开始刷<code>LeetCode</code></li>
+<li>重温 GoF《设计模式》</li>
+<li>读完《The Language of SQL》，并把其中例子都亲自跑一遍(如果还有富裕时间，选择性读一点《SQL 权威指南》)</li>
+<li>读完《Concurrency in C# Cookbook》(如果有富裕时间，有选择的读一点《Pro .NET Performance》)</li>
+<li>读完《RabbitMQ in Depth》</li>
+</ol>
+</li>
+<li><p>OpenCV &amp; Machine Learning</p>
+<ol>
+<li>学习<code>OpenCV</code>：读完《OpenCV Computer Vision with Python》</li>
+<li>正式开始学习Machine Learning，阅读《Data Science from Scratch- First Principles with Python》</li>
+</ol>
+</li>
+<li><p>Practice</p>
+<ol>
+<li>熟悉<code>Moq</code>库</li>
+<li>如何为SignalR Core编写单元测试/集成测试</li>
+<li>理解并掌握eShopOnContainer架构</li>
+<li>上线一个电子书分享网站(受限于存储空间，暂时只专注于小部分计算机方面的电子书)</li>
+</ol>
+</li>
+<li><p>源码</p>
+<ul>
+<li>通读 EFCore 源码</li>
+</ul>
+</li>
+</ul>
 
               </div>
             </div>
@@ -708,6 +402,205 @@ services.AddSingleton&lt;IAuthorizationHandler, LogicalOrAuthorizationHandler&gt
 public IActionResult Privacy()
 {
     return View();
+}
+</code></pre>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
+                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (1) 授权选项与Policy获取.html">
+                    Authorization — (1) 授权选项与Policy获取
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        CSharp
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        ASP.NET Core
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Security
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Authorization
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#ASP.NET Core">
+                    <span class="tag is-info">
+                      ASP.NET Core
+                    </span>
+                  </a>
+                  <a href="tags.html#Authorization">
+                    <span class="tag is-info">
+                      Authorization
+                    </span>
+                  </a>
+                  <a href="tags.html#CSharp">
+                    <span class="tag is-info">
+                      CSharp
+                    </span>
+                  </a>
+                  <a href="tags.html#源码分析">
+                    <span class="tag is-info">
+                      源码分析
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2019-08-20
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>和<code>Authentication</code>一样，<code>Authorization</code>机制也有一个对应的<code>AuthorizationOptions</code>供开发者进行配置。更进一步地，和<code>AuthenticationOptions.AddScheme(name,configureBuilder)</code>类似，<code>AuthorizationOptions</code>也提供了一个名为<code>AddPolicy(string name, Action&lt;AuthorizationPolicyBuilder&gt; configurePolicy)</code>方法来配置授权策略。</p>
+<p>不过和<code>Authentication</code>机制不同的是，<code>AddAuthentication()</code>返回的是一个<code>AuthenticationBuilder</code>实例，这样开发者就可以链式构建<code>AuthenticationOptions</code>：</p>
+<pre><code class="language-csharp">services.AddAuthentication(options =&gt;{
+    ...
+})
+    .AddCookie(IdentityConstants.ApplicationScheme, o =&gt;
+    {
+        o.LoginPath = new PathString(&quot;/Account/Login&quot;);
+        o.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = SecurityStampValidator.ValidatePrincipalAsync
+        };
+    })
+    .AddCookie(IdentityConstants.ExternalScheme, o =&gt;
+    {
+        o.Cookie.Name = IdentityConstants.ExternalScheme;
+        o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+    })
+</code></pre>
+<p>但是<code>AddAuthorization()</code>并没有返回一个<code>Builder</code>之类东西来供开发者链式构建<code>AuthorizationOptions</code>，这可能是基于向后兼容考虑。在<code>Authorization</code>中，开发者直接使用<code>AddPolicy()</code>等实例方法来配置授权策略：<!-- more --></p>
+<pre><code class="language-csharp">services.AddAuthorization(options =&gt;
+{
+    options.AddPolicy(&quot;policy1&quot;, policyBuilder =&gt; { /* ... */ } );
+    options.AddPolicy(&quot;policy2&quot;, policyBuilder =&gt; { /* ... */ } );
+    ... // other policies
+});
+</code></pre>
+<p>注意这里<code>options.AddPolicy()</code>方法对具体的<code>AuthorizationHandler</code>一无所知，所以也不会去把相关<code>AuthorizationHandler</code>注册为服务，这也导致了在授权服务的配置过程中，我们需要手工把相关授权处理器注册为服务。</p>
+<p>不管怎么说，开发者都可以根据项目需要配置多种授权策略。</p>
+<h2>AuthorizationOptions</h2>
+<p><code>AuthorizationOptions</code>负责三件事：一是存储当前<code>WebApp</code>中注册的所有<code>Policy</code>，这块工作主要是通过一个私有的字典<code>IDictionary&lt;string,AuthorizationPolicy&gt;</code>完成；二是为当前<code>WebApp</code>指定默认策略(<code>DefaultPolicy</code>)和回退策略(<code>FallbackPolicy</code>)；三是为当前<code>WebApp</code>指定认证失败后的钩子。</p>
+<h4>策略的添加与查询</h4>
+<pre><code class="language-csharp">public class AuthorizationOptions
+{
+    private IDictionary&lt;string, AuthorizationPolicy&gt; PolicyMap { get; } = new Dictionary&lt;string, AuthorizationPolicy&gt;(StringComparer.OrdinalIgnoreCase);
+    
+    public void AddPolicy(string name, AuthorizationPolicy policy)
+    {
+        if (name == null) { /* throw */ }
+        if (policy == null) { /* throw */ }
+        PolicyMap[name] = policy;
+    }
+
+    public void AddPolicy(string name, Action&lt;AuthorizationPolicyBuilder&gt; configurePolicy)
+    {
+        if (name == null) { /* throw */ }
+        if (configurePolicy == null) { /* throw */ }
+
+        var policyBuilder = new AuthorizationPolicyBuilder();
+        configurePolicy(policyBuilder);
+        PolicyMap[name] = policyBuilder.Build();
+    }
+
+    public AuthorizationPolicy GetPolicy(string name)
+    {
+        if (name == null) { /* throw */ }
+        
+        return PolicyMap.ContainsKey(name) ? PolicyMap[name] : null;
+    }
+
+    // ...
+
+}
+</code></pre>
+<h4>默认策略、回退策略和认证失败钩子</h4>
+<p>此三个属性较为简单，其中默认策略是要求用户登陆。</p>
+<pre><code class="language-csharp">public class AuthorizationOptions
+{
+    // ...
+    
+    public AuthorizationPolicy DefaultPolicy { get; set; } = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    public AuthorizationPolicy FallbackPolicy { get; set; }
+
+    public bool InvokeHandlersAfterFailure { get; set; } = true;
+
+}
+</code></pre>
+<h2>AuthorizationPolicyProvider</h2>
+<p>顾名思义，<code>IAuthorizationPolicyProvider</code>用于向外部提供<code>Policy</code>。根据<code>Policy</code>的不同，该接口提供三种调用方式：</p>
+<ul>
+<li>获取指定名称的<code>Policy</code></li>
+<li>获取默认的<code>Policy</code></li>
+<li>获取用于<code>Fallback</code>的<code>Policy</code></li>
+</ul>
+<pre><code class="language-csharp">public interface IAuthorizationPolicyProvider
+{
+    Task&lt;AuthorizationPolicy&gt; GetPolicyAsync(string policyName);    // 获取指定名称的Policy
+    Task&lt;AuthorizationPolicy&gt; GetDefaultPolicyAsync();              // 获取默认的Policy
+    Task&lt;AuthorizationPolicy&gt; GetFallbackPolicyAsync();             // 获取用于Fallback的Policy
+}
+</code></pre>
+<p>作为<code>IAuthorizationPolicyProvider</code>的默认实现，<code>DefaultAuthorizationPolicyProvider</code>会从<code>DI</code>容器中获取<code>AuthorizationOptions</code>，然后向外部提供特定的<code>Policy</code>：</p>
+<pre><code class="language-csharp">public class DefaultAuthorizationPolicyProvider : IAuthorizationPolicyProvider
+{
+    private readonly AuthorizationOptions _options;
+    private Task&lt;AuthorizationPolicy&gt; _cachedDefaultPolicy;
+    private Task&lt;AuthorizationPolicy&gt; _cachedFallbackPolicy;
+
+   
+    public DefaultAuthorizationPolicyProvider(IOptions&lt;AuthorizationOptions&gt; options)
+    {
+        if (options == null){ /* throw */ }
+        _options = options.Value;
+    }
+    
+    // 返回默认的Policy（优先从本地缓存加载）
+    public Task&lt;AuthorizationPolicy&gt; GetDefaultPolicyAsync()
+    {
+        return GetCachedPolicy(ref _cachedDefaultPolicy, _options.DefaultPolicy);
+    }
+
+    // 返回用于Fallback的Policy（优先从本地缓存加载）
+    public Task&lt;AuthorizationPolicy&gt; GetFallbackPolicyAsync()
+    {
+        return GetCachedPolicy(ref _cachedFallbackPolicy, _options.FallbackPolicy);
+    }
+    
+    // 从Options返回指定名称的Policy
+    public virtual Task&lt;AuthorizationPolicy&gt; GetPolicyAsync(string policyName)
+    {
+        return Task.FromResult(_options.GetPolicy(policyName));
+    }
+    
+    private Task&lt;AuthorizationPolicy&gt; GetCachedPolicy(ref Task&lt;AuthorizationPolicy&gt; cachedPolicy, AuthorizationPolicy currentPolicy)
+    { /* ... */ }
+    
 }
 </code></pre>
 
@@ -1021,8 +914,8 @@ services.AddSingleton&lt;IAuthorizationHandler, MinimumAgeHandler&gt;();
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
-                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (0) 基础概念 Policy的组合与构建.html">
-                    Authorization — (0) 基础概念 Policy的组合与构建
+                  <a href="posts/WindWhisper/CSharp/ASP.NET Core/Security/Authorization/Authorization — (3) ASP.NET Core 的授权中间件和MVC授权过滤器.html">
+                    Authorization — (3) ASP.NET Core 的授权中间件和MVC授权过滤器
                   </a>
                 </p>
                 <nav class="breadcrumb">
@@ -1084,206 +977,138 @@ services.AddSingleton&lt;IAuthorizationHandler, MinimumAgeHandler&gt;();
                 </p>
               </div>
               <div class="content article-body">
-                <p><code>ASP.NET Core</code>中，<code>Authorization</code>和<code>Authentication</code>机制有很大的相似之处：</p>
-<ol>
-<li>一个<code>WebApp</code>中，可以有多种<code>AuthenticationScheme</code>；类似的，也可以指定多种<code>AuthorizationPolicy</code>。</li>
-<li><code>Authentication</code>通过<code>AuthentionOptions</code>来配置认证行为；类似的，<code>Authorization</code>通过<code>AuthorizationOptions</code>来配置授权行为。</li>
-<li><code>AuthenticationOptions</code>提供<code>AddScheme(name,func)</code>方法来注册认证模式，并提供通过<code>AuthenticationBuilder</code>来构建<code>AuthenticationOptions</code>；而<code>AuthorizationOptions</code>提供<code>AddPolicy(name,func)</code>方法来添加授权策略，<code>AuthorizationBuilder</code> 则负责多个<code>Requirements</code>/<code>Policy</code>的组合，从而构建出最终的<code>AuthorizationOptions</code>。</li>
-<li>认证处理器<code>AuthenticationHandler&lt;TSchemeOptions&gt;</code>依据某种具体模式选项进行认证；而授权处理器<code>AuthorizationHandler&lt;TRequirement&gt;</code>则依据某种具体的<code>TRequirement</code>进行授权。</li>
-<li><code>Authentication</code>提供了一个中间件来自动认证；<code>Authorization</code>也提供了一个<code>MVC</code> <code>Filter</code>来授权，在3.0之后，甚至还添加了一个<code>AuthorizationMiddleware</code>来做授权工作。</li>
-</ol>
-<p>当然，在细节上，二者的实现还有很大的不同。比如<code>Authorization</code>并没有向<code>Authentication</code>那样，提供一个方法自动为用户注册自定义的<code>AuthorizationHandler&lt;TRequirement&gt;</code>（需要开发者手工注册）。这些具体的细节会后续几篇源码分析笔记中讲述。</p>
-<h3><code>Policy</code> 和 <code>Requirement</code></h3>
-<p><code>Requirement</code>只是表达“要求”这个概念的一个空接口：</p>
-<pre><code class="language-csharp">public interface IAuthorizationRequirement { }
-</code></pre>
-<p>一个授权<code>Policy</code>由多条要求组成：</p>
-<pre><code class="language-csharp">public class AuthorizationPolicy
-{
-    public AuthorizationPolicy(IEnumerable&lt;IAuthorizationRequirement&gt; requirements, IEnumerable&lt;string&gt; authenticationSchemes)
-    {
-        if (requirements == null) { /* throw */ }
-        if (authenticationSchemes == null){ /* throw */ }
-        if (requirements.Count() == 0){ /* throw */ }
-        
-        Requirements = new List&lt;IAuthorizationRequirement&gt;(requirements).AsReadOnly();
-        AuthenticationSchemes = new List&lt;string&gt;(authenticationSchemes).AsReadOnly();
-    }
-
-    public IReadOnlyList&lt;IAuthorizationRequirement&gt; Requirements { get; }
-
-    public IReadOnlyList&lt;string&gt; AuthenticationSchemes { get; }
-}
-</code></pre>
-<!-- more -->
-<h2><code>AuthorizationPolicyBuilder</code></h2>
-<p><code>AuthorizationPolicyBuilder</code>的核心是两个<code>Requirement</code>列表和<code>AuthenticationSchemes</code>列表两个字段：</p>
-<pre><code class="language-csharp">public class AuthorizationPolicyBuilder
-{
-    public IList&lt;IAuthorizationRequirement&gt; Requirements { get; set; } = new List&lt;IAuthorizationRequirement&gt;();
-    public IList&lt;string&gt; AuthenticationSchemes { get; set; } = new List&lt;string&gt;();
-    
+                <h2>授权中间件</h2>
+<p>和<code>ASP.NET Core 2.1</code>中的路由中间件不同，在<code>3.0</code>中新的<code>EndPoint</code>路由机制无需实际执行路由便可获取当前所匹配的<code>EndPoint</code>。正是得益于这套新引入的<code>EndPoint</code>路由系统，<code>ASP.NET Core</code>框架可在执行<code>MVC</code>路由之前，就可以捕捉到相应<code>EndPoint</code>的授权配置信息(<code>IAuthorizeData</code>)。基于此，<code>ASP.NET Core</code> <code>3.0</code>中为授权机制做了重大调整，即引入了<strong>授权中间件</strong>。这意味着在<code>3.0</code>中我们需要在<code>UseAuthentication()</code>之后尽快调用<code>UseAuthorization()</code>方法：</p>
+<pre><code class="language-csharp">    app.UseRouting();
     // ...
-    
-    public AuthorizationPolicy Build()
+    app.UseAuthentication();
+    app.UseAuthorization();           // 启用授权中间件
+    // ...
+    app.UseEndpoints(endpoints =&gt;
     {
-        return new AuthorizationPolicy(Requirements, AuthenticationSchemes.Distinct());
-    }
-}
+        endpoints.MapHub&lt;ChatHub&gt;(&quot;/chat&quot;);
+        endpoints.MapControllerRoute(&quot;default&quot;, &quot;{controller=Home}/{action=Index}/{id?}&quot;);
+    })
 </code></pre>
-<p>可以看到<code>Build()</code>方法非常简单，只是简单用自身的<code>Requirements</code>和<code>AuthenticationSchemes</code>创建一个新的<code>AuthenticationPolicy</code>。<code>Policy</code>的构建过程，本质上对认证模式、Requirement、Policy的组合过程。<code>Builder</code>为组合这些字段提供了一系列<code>RequireXyz()</code>辅助方法。</p>
-<h3>RequireXyz()等系列方法</h3>
-<p><code>AuthorizationPolicyBuilder</code>还提供了一系列添加<code>Requirement</code>的辅助方法：</p>
+<p>新引入的授权中间件的核心工作主要分成两部分：</p>
 <ul>
-<li><code>RequireClaim()</code>系列</li>
-<li><code>RequireRole()</code>系列</li>
-<li><code>RequireUserName()</code></li>
-<li><code>RequireAuthenticatedUser()</code></li>
-<li><code>RequireAssertion()</code>系列</li>
+<li>借助于<code>IAuthorizationPolicyProvider</code>服务和当前<code>EndPoint</code>的<code>IAuthorizeData</code>，构建一个<code>Policy</code>对象。如果没有相应的<code>Policy</code>，则直接调用后续中间件（跳过剩余的授权过程）。</li>
+<li>通过<code>IPolicyEvaluator</code>服务判断当前<code>HttpContext</code>是否满足<code>Policy</code>。如果不满足，根据授权结果决定是<code>Challenge</code>还是<code>Forbid</code>；否则，则继续调用后续中间件对请求进行处理。<!-- more --></li>
 </ul>
-<h4><code>RequireClaim()</code>系列：</h4>
-<pre><code class="language-csharp">public class AuthorizationPolicyBuilder
+<pre><code class="language-csharp">public class AuthorizationMiddleware
 {
-    // ...
-    
-    public AuthorizationPolicyBuilder RequireClaim(string claimType, params string[] allowedValues)
+    // Property key is used by other systems, e.g. MVC, to check if authorization middleware has run
+    private const string AuthorizationMiddlewareInvokedKey = &quot;__AuthorizationMiddlewareInvoked&quot;;
+    private static readonly object AuthorizationMiddlewareInvokedValue = new object();
+
+    private readonly RequestDelegate _next;
+    private readonly IAuthorizationPolicyProvider _policyProvider;
+
+    public AuthorizationMiddleware(RequestDelegate next, IAuthorizationPolicyProvider policyProvider)
     {
-        if (claimType == null){ /*  throw  */ }
-        return RequireClaim(claimType, (IEnumerable&lt;string&gt;)allowedValues);
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _policyProvider = policyProvider ?? throw new ArgumentNullException(nameof(policyProvider));
     }
 
-    public AuthorizationPolicyBuilder RequireClaim(string claimType, IEnumerable&lt;string&gt; allowedValues)
+    public async Task Invoke(HttpContext context)
     {
-        if (claimType == null){ /*  throw  */ }
-        Requirements.Add(new ClaimsAuthorizationRequirement(claimType, allowedValues));
-        return this;
-    }
+        if (context == null){ /*  throw */}
 
-    public AuthorizationPolicyBuilder RequireClaim(string claimType)
-    {
-        if (claimType == null){ /*  throw  */ }
-        Requirements.Add(new ClaimsAuthorizationRequirement(claimType, allowedValues: null));
-        return this;
-    }
-    
-    // ...
-}
-</code></pre>
-<h4><code>RequireRole()</code>系列</h4>
-<pre><code class="language-csharp">public class AuthorizationPolicyBuilder
-{
-    //  ...
-    public AuthorizationPolicyBuilder RequireRole(params string[] roles)
-    {
-        if (roles == null){ /*  throw  */ }
-        return RequireRole((IEnumerable&lt;string&gt;)roles);
-    }
+        var endpoint = context.GetEndpoint();
 
-    public AuthorizationPolicyBuilder RequireRole(IEnumerable&lt;string&gt; roles)
-    {
-        if (roles == null){ /*  throw  */ }
-        Requirements.Add(new RolesAuthorizationRequirement(roles));
-        return this;
-    }
-</code></pre>
-<h4><code>NameAuthorizationRequirement</code>和<code>DenyAnonymousAuthorizationRequirement</code></h4>
-<pre><code class="language-csharp">    public AuthorizationPolicyBuilder RequireUserName(string userName)
-    {
-        if (userName == null){ /*  throw  */ }
-        Requirements.Add(new NameAuthorizationRequirement(userName));
-        return this;
-    }
+        // Flag to indicate to other systems, e.g. MVC, that authorization middleware was run for this request
+        context.Items[AuthorizationMiddlewareInvokedKey] = AuthorizationMiddlewareInvokedValue;
 
-    public AuthorizationPolicyBuilder RequireAuthenticatedUser()
-    {
-        Requirements.Add(new DenyAnonymousAuthorizationRequirement());
-        return this;
-    }
-
-}
-</code></pre>
-<h4><code>AssertionRequirement</code>系列</h4>
-<pre><code class="language-csharp">    public AuthorizationPolicyBuilder RequireAssertion(Func&lt;AuthorizationHandlerContext, bool&gt; handler)
-    {
-        if (handler == null){ /*  throw  */ }
-        Requirements.Add(new AssertionRequirement(handler));
-        return this;
-    }
-    
-    public AuthorizationPolicyBuilder RequireAssertion(Func&lt;AuthorizationHandlerContext, Task&lt;bool&gt;&gt; handler)
-    {
-        if (handler == null){ /*  throw  */ }
-        Requirements.Add(new AssertionRequirement(handler));
-        return this;
-    }
-</code></pre>
-<h3>认证模式，Requirement，和Policy的组合</h3>
-<p><code>AuthorizationPolicyBuilder</code>提供了三个帮助方法来向这两个列表字段中添加新的认证模式、<code>Requirement</code>、和<code>Policy</code></p>
-<pre><code class="language-csharp">public class AuthorizationPolicyBuilder
-{
-    // ...
-    
-    public AuthorizationPolicyBuilder AddAuthenticationSchemes(params string[] schemes)
-    {
-        foreach (var authType in schemes){
-            AuthenticationSchemes.Add(authType);
+        // IMPORTANT: Changes to authorization logic should be mirrored in MVC's AuthorizeFilter
+        var authorizeData = endpoint?.Metadata.GetOrderedMetadata&lt;IAuthorizeData&gt;() ?? Array.Empty&lt;IAuthorizeData&gt;();
+        var policy = await AuthorizationPolicy.CombineAsync(_policyProvider, authorizeData);
+        if (policy == null)
+        {
+            await _next(context);
+            return;
         }
-        return this;
-    }
 
-    public AuthorizationPolicyBuilder AddRequirements(params IAuthorizationRequirement[] requirements)
-    {
-        foreach (var req in requirements){
-            Requirements.Add(req);
+        // Policy evaluator has transient lifetime so it fetched from request services instead of injecting in constructor
+        var policyEvaluator = context.RequestServices.GetRequiredService&lt;IPolicyEvaluator&gt;();
+
+        var authenticateResult = await policyEvaluator.AuthenticateAsync(policy, context);
+
+        // Allow Anonymous skips all authorization
+        if (endpoint?.Metadata.GetMetadata&lt;IAllowAnonymous&gt;() != null)
+        {
+            await _next(context);
+            return;
         }
-        return this;
-    }
 
-    public AuthorizationPolicyBuilder Combine(AuthorizationPolicy policy)
-    {
-        if (policy == null) { /*  throw  */ }
-        AddAuthenticationSchemes(policy.AuthenticationSchemes.ToArray());
-        AddRequirements(policy.Requirements.ToArray());
-        return this;
+        // Note that the resource will be null if there is no matched endpoint
+        var authorizeResult = await policyEvaluator.AuthorizeAsync(policy, authenticateResult, context, resource: endpoint);
+
+        if (authorizeResult.Challenged)
+        {
+            if (policy.AuthenticationSchemes.Any())
+            {
+                foreach (var scheme in policy.AuthenticationSchemes)
+                {
+                    await context.ChallengeAsync(scheme);
+                }
+            } else {
+                await context.ChallengeAsync();
+            }
+
+            return;
+        } else if (authorizeResult.Forbidden) {
+            if (policy.AuthenticationSchemes.Any())
+            {
+                foreach (var scheme in policy.AuthenticationSchemes)
+                {
+                    await context.ForbidAsync(scheme);
+                }
+            } else {
+                await context.ForbidAsync();
+            }
+
+            return;
+        }
+
+        await _next(context);
     }
-    // ...
 }
 </code></pre>
-<h3>AuthorizationPolicy 类自身的三个辅助方法</h3>
-<p>此外，在<code>AuthorizationPolicyBuilder</code>的基础上，<code>AuthorizationPolicy</code>还提供了两个静态的<code>Combine()</code>帮助方法，用于组合一组<code>Policy</code>：</p>
-<pre><code class="language-csharp">public static AuthorizationPolicy Combine(IEnumerable&lt;AuthorizationPolicy&gt; policies)
+<h2>MVC授权过滤器</h2>
+<p><code>MVC</code>内置了一个授权过滤器<code>AuthorizeFilter</code>，其基本实现非常类似于授权中间件：</p>
+<pre><code class="language-csharp">namespace Microsoft.AspNetCore.Mvc.Authorization
 {
-    if (policies == null){ /* throw */ }
-    var builder = new AuthorizationPolicyBuilder();
-    foreach (var policy in policies){
-        builder.Combine(policy);
-    }
-    return builder.Build();
-}
-
-public static AuthorizationPolicy Combine(params AuthorizationPolicy[] policies)
-{
-    if (policies == null){ /* throw */ }
-    return Combine((IEnumerable&lt;AuthorizationPolicy&gt;)policies);
-}
-</code></pre>
-<p>最后，<code>AuthorizatinoPolicy</code>还提供了一个<code>CombineAsync(policyProvider, authorizeData)</code>方法从<code>PolicyProvider</code>中动态生成<code>Policy</code>：</p>
-<pre><code class="language-csharp">public static async Task&lt;AuthorizationPolicy&gt; CombineAsync(IAuthorizationPolicyProvider policyProvider, IEnumerable&lt;IAuthorizeData&gt; authorizeData)
-{
-    if (policyProvider == null){ /* throw */ }
-    if (authorizeData == null) { /* throw */ }
-
-    // Avoid allocating enumerator if the data is known to be empty
-    var skipEnumeratingData = false;
-    if (authorizeData is IList&lt;IAuthorizeData&gt; dataList)
+    public class AuthorizeFilter : IAsyncAuthorizationFilter, IFilterFactory
     {
-        skipEnumeratingData = dataList.Count == 0;
+        // ...  构造函数与属性
+
+        /// &lt;inheritdoc /&gt;
+        public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+        {
+            if (context == null){ /* throw */ }
+            var effectivePolicy = await GetEffectivePolicyAsync(context);
+            if (effectivePolicy == null) { return; }
+
+            var policyEvaluator = context.HttpContext.RequestServices.GetRequiredService&lt;IPolicyEvaluator&gt;();
+
+            var authenticateResult = await policyEvaluator.AuthenticateAsync(effectivePolicy, context.HttpContext);
+
+            // Allow Anonymous skips all authorization
+            if (HasAllowAnonymous(context.Filters)) { return; }
+
+            var authorizeResult = await policyEvaluator.AuthorizeAsync(effectivePolicy, authenticateResult, context.HttpContext, context);
+
+            if (authorizeResult.Challenged)
+            {
+                context.Result = new ChallengeResult(effectivePolicy.AuthenticationSchemes.ToArray());
+            }
+            else if (authorizeResult.Forbidden)
+            {
+                context.Result = new ForbidResult(effectivePolicy.AuthenticationSchemes.ToArray());
+            }
+        }
+
     }
-
-    AuthorizationPolicyBuilder policyBuilder = null;
-    // ...
-
-    return policyBuilder?.Build();
 }
 </code></pre>
 

@@ -155,6 +155,81 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/WindWhisper/Rust/智能指针/Rust智能指针1——解引用.html">
+                    Rust智能指针1——解引用
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        风语
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        Rust
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        智能指针
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#Rust">
+                    <span class="tag is-info">
+                      Rust
+                    </span>
+                  </a>
+                  <a href="tags.html#智能指针">
+                    <span class="tag is-info">
+                      智能指针
+                    </span>
+                  </a>
+                  <a href="tags.html#Deref">
+                    <span class="tag is-info">
+                      Deref
+                    </span>
+                  </a>
+                  <a href="tags.html#DerefMut">
+                    <span class="tag is-info">
+                      DerefMut
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2018-02-27
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>本文是正式开始智能指针学习之前的基础知识之一：解引用。</p>
+<p><code>Deref</code>这个<code>trait</code>允许我们在一定形式上重载<code>*</code>操作符。换言之，通过智能指针实现<code>Deref</code>的方式，就能让智能指针被当作一个普通引用来使用：在那些需要操作引用的地方，我们也可以直接使用智能指针。</p>
+<h2><code>*</code>操作符的工作机制</h2>
+<p>在本质上，<code>Rust</code>中的常规引用是与<code>C</code>语言中的指针相等价的，而<code>*</code>操作符所做的就是解引用。以下这段<code>Rust</code>代码和<code>C</code>的指针用法完全一致：</p>
+<pre><code class="language-Rust">fn main() {
+    let x = 42;
+    let y = &amp;x;
+
+    assert_eq!(42, x);
+    assert_eq!(42, *y);
+}
+</code></pre>
+<p>在上述例子中，<code>y</code>是个常规引用，<code>*</code>操作符会顺着指针进行取值。事实上，如果一个任意类型实现了<code>Deref</code>，<code>Rust</code>编译器就会自动对<code>*</code>解引用操作进行替换：先进行<code>Deref</code>的<code>deref()</code>方法调用，然后再对返回值进行一个普通的解引用。</p>
+<p>举个例子，为了获取宇宙的终极奥秘，我们写一个任意类型：</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/WindWhisper/ECMAScript/build-in/一种MVVM单向数据流的设计2——也许不需要React.js.html">
                     一种MVVM单向数据流的设计2:—也许不需要React.js
                   </a>
@@ -330,67 +405,6 @@
               </div>
               <div class="content article-body">
                 
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/WASM/基本原理/WASM基本原理4——Table.html">
-                    WebAssembly基本原理4——Table
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        WASM
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#WASM">
-                    <span class="tag is-info">
-                      WASM
-                    </span>
-                  </a>
-                  <a href="tags.html#WebAssembly">
-                    <span class="tag is-info">
-                      WebAssembly
-                    </span>
-                  </a>
-                  <a href="tags.html#JavaScript">
-                    <span class="tag is-info">
-                      JavaScript
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2018-01-20
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>总的来说，<code>Table</code>是一个<code>JavaScript</code>包装对象，具有<code>array-like</code>结构，目前只能用来存储的函数引用。不管是<code>JavaScript</code>还是<code>WASM</code>，都可以访问、修改<code>Table</code>。</p>
-<p>为什么需要<code>Table</code>? <code>call</code>指令可以直接调用函数名来调用函数，然而这种方式是静态的，编译时就需要确定函数名。如果我们有一个运行时才能确定的函数，又如何才能调用？设想有一段<code>C</code>函数<code>dispatch()</code>，可以接收一个函数指针作为参数，然后调用之。</p>
-<pre><code class="language-c">typedef void(*fp)();
-
-void dispatch(fp x) {
-  x();
-}
-</code></pre>
-<p>注意这里<code>fp</code>类型的函数指针所指向的内容是运行期才能确定的，怎么构造与之等价的<code>WASM</code>？</p>
-<p>直观的解决办法当然是给出一个函数地址，然后让<code>WASM</code>根据函数地址找到相关函数，这样就不用写死函数名了。问题是在线性内存中存储函数，再直接给出一个函数地址让<code>WASM</code>调用的做法是十分不安全的，因为线性内存暴露了所存储的原始内容。在计算机编程中，没有什么纸老虎问题是不能用封装解决的；如果有，那就再加一层。所以解决办法是引入一个包装对象——<code>table</code>。从<code>JavaScript</code>的角度看，<code>table</code>是个<code>array-like</code>，在<code>table</code>中可以存储一系列的函数引用，可以按索引来访问相关位置上的元素(函数引用)。最后，通过向<code>call_indirect</code>指令传递一个表格索引值（也就是<code>i32</code>型索引值，代表函数指针在表格中的位置），而非一个具体的函数指针，就可以实现运行时的动态函数调用。</p>
-
               </div>
             </div>
           </div>

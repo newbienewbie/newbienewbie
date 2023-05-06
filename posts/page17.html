@@ -86,6 +86,137 @@
             <div class="card-content">
               <div class="media-content has-text-centered">
                 <p class="title article-title">
+                  <a href="posts/Instrument/VSCode/使用-VSCode-TDM-GCC-学习CPP.html">
+                    笔记：使用 VSCode + TDM-GCC 学习CPP
+                  </a>
+                </p>
+                <nav class="breadcrumb">
+                  <ul>
+                    <li>
+                      <a href="">
+                        法器
+                      </a>
+                    </li>
+                    <li>
+                      <a href="">
+                        VSCode
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+                <p class="post-tags">
+                  <a href="tags.html#VSCode">
+                    <span class="tag is-info">
+                      VSCode
+                    </span>
+                  </a>
+                  <a href="tags.html#TDM-GCC">
+                    <span class="tag is-info">
+                      TDM-GCC
+                    </span>
+                  </a>
+                  <a href="tags.html#Cpp">
+                    <span class="tag is-info">
+                      Cpp
+                    </span>
+                  </a>
+                </p>
+                <p class="subtitle is-6 article-subtitle">
+                  <a href="#">
+                    
+                  </a>
+                  on 2017-08-02
+                </p>
+              </div>
+              <div class="content article-body">
+                <p>由于一些原因，打算捡起<code>C/C++</code>来做些习题。虽说个人电脑上装了大慈善家微软的<code>Visual Studio 2017</code>（社区版），但是对于简单的习题而言，VS 这个大杀器还是稍重了些。考虑到最近一年来，我已经用<code>VSCode</code>替换<code>Vim</code>作为主力编辑器，故而我开始在网上搜寻<code>VSCode</code>编写<code>C/C++</code>的相关资料。</p>
+<p><a href="https://code.visualstudio.com/docs/languages/cpp">微软官方对使用 VSCode 编写 C/C++ 的文档描述</a>并不给力，显然远远没有更上<code>VSCode</code>的发展速度。然后我在知乎上搜到微软员工 <a href="https://www.zhihu.com/people/be5invis">Belleve</a>写的<a href="https://www.zhihu.com/question/40929777/answer/90015056">使用 VSCode + TDM-GCC</a> 的回答，读后受益匪浅。相比较而言，微软官方的VSCode C/CPP文档简直完全没有帮助——如今其<code>C/C++</code>插件已经提供了代码高亮、调试等功能，设置默认的引擎后，已经无需再单独配置<code>c_cpp_properties.json</code>文件即可使用了。</p>
+<p>特此记录备忘。</p>
+<h2>基本思路：</h2>
+<ol>
+<li>使用<code>TDM-GCC</code>提供的<code>gcc</code>、<code>g++</code>、<code>gdb</code>等工具链编译、调试</li>
+<li>使用<code>VSCode</code>编辑代码，安装微软官方插件<a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools">C/C++</a>来提供语言服务（代码格式化、自动补全、符号搜索等)和Debugging</li>
+</ol>
+<h2>安装与配置</h2>
+<h3>安装</h3>
+<ul>
+<li>安装<code>TDM-GCC</code>，配置<code>PATH</code>方便以后使用</li>
+<li>安装<code>VSCode</code>+ 官方<code>C/C++</code>插件，在首选项中配置智能提示引擎为默认:</li>
+</ul>
+<pre><code class="language-JavaScript">&quot;C_Cpp.intelliSenseEngine&quot;: &quot;Default&quot;
+</code></pre>
+<h3>项目相关配置</h3>
+<p>调试的基本过程：</p>
+<ol>
+<li>每次调试之前使用<code>g++</code>以<code>-g</code>参数编译源程序</li>
+<li><code>VSCode</code>调用<code>gdb</code>对编译好的文件进行调试</li>
+</ol>
+<p>第1步可以通过配置<code>Task</code>完成，假定我们要编译的源文件为<code>main.cpp</code>。可以在目录中<code>.vscode/</code>下建立<code>tasks.json</code>文件:</p>
+<pre><code class="language-JSON">{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    &quot;version&quot;: &quot;2.0.0&quot;,
+    &quot;tasks&quot;: [
+        {
+            &quot;taskName&quot;: &quot;g++-g&quot;,
+            &quot;command&quot;: &quot;g++&quot;,
+            &quot;args&quot;: [
+                &quot;-g&quot;,
+                &quot;main.cpp&quot;,
+                &quot;-o&quot;,
+                &quot;debug/main.exe&quot;
+            ]
+        }
+    ]
+}
+</code></pre>
+<p>我们在该<code>JSON</code>文件中配置了一个任务，起名为<code>g++-g</code>，每次执行后都会编译输出为<code>debug/main.exe</code>。</p>
+<p>至于使用<code>VSCode</code>发起调试，需要在<code>.vscode/</code>下创建<code>launch.json</code>配置：</p>
+<pre><code>{
+    &quot;version&quot;: &quot;0.2.0&quot;,
+    &quot;configurations&quot;: [
+        {
+            &quot;name&quot;: &quot;(gdb) Launch&quot;,
+            &quot;type&quot;: &quot;cppdbg&quot;,
+            &quot;request&quot;: &quot;launch&quot;,
+            &quot;program&quot;: &quot;${workspaceRoot}/debug/main.exe&quot;,
+            &quot;args&quot;: [],
+            &quot;stopAtEntry&quot;: false,
+            &quot;cwd&quot;: &quot;${workspaceRoot}&quot;,
+            &quot;environment&quot;: [],
+            &quot;externalConsole&quot;: true,
+            &quot;preLaunchTask&quot;: &quot;g++-g&quot;,
+            &quot;MIMode&quot;: &quot;gdb&quot;,
+            &quot;miDebuggerPath&quot;: &quot;gdb.exe&quot;,
+            &quot;setupCommands&quot;: [
+                {
+                    &quot;description&quot;: &quot;Enable pretty-printing for gdb&quot;,
+                    &quot;text&quot;: &quot;-enable-pretty-printing&quot;,
+                    &quot;ignoreFailures&quot;: true
+                }
+            ]
+        }
+    ]
+}
+</code></pre>
+<p>这里我们配置了一个<code>launch</code>请求:</p>
+<ul>
+<li><code>type</code>为<code>cppdbg</code>，</li>
+<li><code>MIMode</code>为<code>gdb</code>，</li>
+<li><code>miDebuggerPath</code>为<code>gdb</code>的路径，</li>
+<li>目标程序为我们用<code>Task</code>编译好的<code>debug/main.exe</code>，</li>
+</ul>
+<p>此外，还需注意<code>preLaunchTash</code>这个属性值我们设置为<code>g++-g</code>，保证了我们按下<code>F5</code>启动<code>Launch</code>后先执行对应的<code>Task</code>完成编译。</p>
+<h2>demo</h2>
+<p>{% asset_img &quot;demo.gif&quot; &quot;demo&quot; %}</p>
+
+              </div>
+            </div>
+          </div>
+          <div class="card article">
+            <div class="card-content">
+              <div class="media-content has-text-centered">
+                <p class="title article-title">
                   <a href="posts/Boulevard/DesignPattern/责任链模式的一种实现方式.html">
                     责任链模式的一种实现方式
                   </a>
@@ -962,202 +1093,6 @@ The command completed successfully
 SQL&gt; alter database open ;
 </code></pre>
 <p>再次尝试连接，成功。</p>
-
-              </div>
-            </div>
-          </div>
-          <div class="card article">
-            <div class="card-content">
-              <div class="media-content has-text-centered">
-                <p class="title article-title">
-                  <a href="posts/WindWhisper/Python/Python-类与三个内置装饰器.html">
-                    Python 类与三个内置装饰器
-                  </a>
-                </p>
-                <nav class="breadcrumb">
-                  <ul>
-                    <li>
-                      <a href="">
-                        风语
-                      </a>
-                    </li>
-                    <li>
-                      <a href="">
-                        Python
-                      </a>
-                    </li>
-                  </ul>
-                </nav>
-                <p class="post-tags">
-                  <a href="tags.html#Python">
-                    <span class="tag is-info">
-                      Python
-                    </span>
-                  </a>
-                  <a href="tags.html#装饰器">
-                    <span class="tag is-info">
-                      装饰器
-                    </span>
-                  </a>
-                  <a href="tags.html#原理分析">
-                    <span class="tag is-info">
-                      原理分析
-                    </span>
-                  </a>
-                  <a href="tags.html#AOP">
-                    <span class="tag is-info">
-                      AOP
-                    </span>
-                  </a>
-                </p>
-                <p class="subtitle is-6 article-subtitle">
-                  <a href="#">
-                    
-                  </a>
-                  on 2017-03-12
-                </p>
-              </div>
-              <div class="content article-body">
-                <p>在<a href="http://www.itminus.com/2015/04/10/WindWhisper/Python/Python%E5%87%BD%E6%95%B0%E8%A3%85%E9%A5%B0%E5%99%A8%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">Python函数装饰器原理分析</a>中说到，Python有几个内置装饰器：</p>
-<ul>
-<li>类属性<code>@property</code></li>
-<li>静态方法<code>@staticmethod</code></li>
-<li>类方法<code>@classmethod</code></li>
-</ul>
-<p>可以用来包装属性、静态方法、和类方法。</p>
-<p>首先要说明，本文中所有的类都使用的新式类，即使使用了Python2.7.x版本，某些特性在“old-style”类中也不适用。要使用新式类，有两种方法：</p>
-<ol>
-<li>在<code>module</code>顶部添加语句：<code>__metaclass__ = type</code></li>
-<li>定义的类要是内置<code>object</code>对象的子类。</li>
-</ol>
-<h2><code>staticmethod</code>和<code>classmethod</code></h2>
-<p>静态方法和类方法都是不需要具体实例就可以运行的。区别在于<code>classmethod</code>的第一个参数是<code>cls</code>，这是个对“类”的引用。可以通过<code>cls</code>对类的属性进行获取。</p>
-<p>在没有装饰器的情况下，我们可以使用原始的<code>staticmethod()</code>和<code>classmethod()</code>函数来定义静态方法和类方法：</p>
-<pre><code class="language-Python">class MyClass:
-    
-    a=3
-
-    def my_static_method():
-        print('This is a static method')
-    my_static_method = staticmethod(my_static_method)
-
-    def my_class_method(cls,sth):
-        print('This is a class method of', cls.a,sth)
-    my_class_method = classmethod(my_class_method)
-</code></pre>
-<p>有了装饰器语法糖，以上代码可以改写为：</p>
-<pre><code class="language-Python">class MyClass:
-
-    a=3
-
-    @staticmethod
-    def my_static_method():
-        print('This is a static method')
-
-    @classmethod
-    def my_class_method(cls,sth):
-        print('This is a class method of', cls.a,sth)
-</code></pre>
-<h2>property</h2>
-<p>假设现在有个矩形，可以设置其宽、高。</p>
-<ul>
-<li>如果需要面积，我们可以使用类似于<code>area()</code>的方法来计算。</li>
-<li>如果需要周长，我们可以使用类似于<code>perimeter()</code>的方法来计算。</li>
-</ul>
-<p>现在问题来了，类的用户获取宽度的时候用的是<code>rect.width</code>，获取面积的时候却要使用<code>rect.area()</code>，多了一个冒号！对于这种简单的情况用户似乎还可以分辨，问题是对于一些复杂的类如何保持一致呢？</p>
-<p><code>Java</code>中的惯用方法是定义私有的<code>width</code>、<code>height</code>，然后定义公有方法<code>getWidth()</code>、<code>getHeight()</code>、<code>getArea()</code>、<code>getPerimeter()</code>。<code>C#</code>的惯用方法是采用：</p>
-<pre><code class="language-CSharp">class Rectangle {
-    public double Width { get; set; }
-    public double Height { get; set; }
-    public double Area {
-        get{ return Width*Height; }
-    }
-    public double Perimeter {
-        get{ return (Width+Height)*2; }
-    }
-}
-</code></pre>
-<p>对于<code>Python</code>这种动态语言来说，上<code>Java</code>那一套是不符合价值观的，可以用<code>perperty()</code>加以包装：</p>
-<pre><code class="language-Python">class Rectangle(object):
-    def __init__ (self,width,height):
-        self.__width = width
-        self.__height = height
-
-    def get_width(self):
-        return self.__width
-    def set_width(self, size):
-        self.__width= size
-    width=property(get_width,set_width)
-    
-    def get_height(self):
-        return self.__height
-    def set_height(self,size):
-        self.__height=size
-    height=property(get_height,set_height)
-
-    def area(self):
-        return self.width*self.height
-    area=property(area)
-    
-
-    def perimeter(self):
-        return (self.width+self.height)*2
-    perimeter=property(perimeter)
-</code></pre>
-<p>这样，就使用了<code>property()</code>函数包装出了<code>width</code>、<code>height</code>、<code>area</code>、<code>perimeter</code>三个特性:</p>
-<pre><code class="language-Python">rect=Rectangle(3,4)
-rect.width=5
-rect.height=6
-print(rect.width)
-print(rect.height)
-print(rect.area)
-print(rect.perimeter)
-</code></pre>
-<p>有了装饰器语法，以上代码可以简化为：</p>
-<pre><code class="language-Python">class Rectangle(object):
-    def __init__ (self,width,height):
-        self.__width = width
-        self.__height = height
-
-    @property
-    def width(self):
-        return self.__width
-    
-    @width.setter
-    def width(self, size):
-        self.__width= size
-    
-    @property
-    def height(self):
-        return self.__height
-    
-    @height.setter
-    def height(self,size):
-        self.__height=size
-
-    @property
-    def area(self):
-        return self.width*self.height
-    
-    @property
-    def perimeter(self):
-        return (self.width+self.height)*2
-</code></pre>
-<h2>Property 魔法</h2>
-<p>利用<code>@property</code>装饰一个方法函数，看起来非常完美。但是有一个问题，经过<code>property()</code>函数返回的还是一个函数，为什么<code>Python</code>可以直接通过<code>rect.width</code>这种普通属性语法拿到宽度值呢？</p>
-<p>这其实是<code>Python</code>的魔法：<code>property</code>返回了一种特殊的属性，访问时会计算它的值！如果没有<code>property</code>，则会以简单属性的方式去访问。</p>
-<p>事实上，<code>Python</code>类实例方法的调用也是很意思的，对于这样一个类：</p>
-<pre><code class="language-Python">class Foo(object):
-    def bar(self,x):
-        return x
-</code></pre>
-<p>实例方法的调用某种程度上可以认为是这样：</p>
-<pre><code class="language-Python">foo=Foo()
-bar=foo.bar    # 这里返回的方法不是原始的bar函数，是绑定方法对象
-bar(x)
-</code></pre>
-<p>首先获取 Foo 类的 bar 的绑定方法（<code>bound method</code>）对象，它类似于<code>partial</code>方法，已经绑定了<code>self</code>参数，显然，这个绑定方法并原始的函数对象 bar。绑定方法对象是由在后台执行的特性函数静默创建的！</p>
-<p><code>@staticmethod</code> <code>@classmethod</code> 定义静态方法和类方法时，实际上就指定了使用不同的特性函数，以不同的方式处理对这些方法的访问。<code>staticmethod</code>表明按原样返回方法函数，不会进行任何包装。</p>
 
               </div>
             </div>
